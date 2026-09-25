@@ -7,6 +7,7 @@ import { ArrowLeft, CalendarClock, Pencil, Plus, Trash2, Users } from "lucide-re
 import { api, getErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import FilePreview from "@/components/ui/FilePreview";
+import AccessibilityPanel from "@/components/teacher/AccessibilityPanel";
 import { formatDate, subjectTone } from "@/lib/format";
 import { useLesson, useTeacherMutation, type Assignment } from "@/lib/teacher";
 import Modal from "@/components/ui/Modal";
@@ -91,10 +92,18 @@ export default function LessonDetailPage({ params }: { params: Promise<{ id: str
         {lesson.file_url && lesson.file_name && (
           <div className="mt-6 border-t border-slate-100 pt-6">
             <h2 className="mb-3 font-semibold">Material</h2>
-            <FilePreview url={lesson.file_url} name={lesson.file_name} />
+            <FilePreview
+              url={lesson.file_url}
+              name={lesson.file_name}
+              subtitleUrl={lesson.a11y?.subtitle_vtt_url}
+              segments={lesson.a11y?.segments}
+              imageDescription={lesson.a11y?.image_description}
+            />
           </div>
         )}
       </div>
+
+      <AccessibilityPanel lessonId={lessonId} a11y={lesson.a11y} />
 
       <div>
         <div className="mb-4 flex items-center justify-between">

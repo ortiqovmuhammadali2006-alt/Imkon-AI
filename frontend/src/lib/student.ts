@@ -27,6 +27,8 @@ export type StudentLesson = {
   teacher_name: string;
   subject: string | null;
   assignments_count: number;
+  has_subtitles: boolean;
+  has_simple_text: boolean;
 };
 
 export type LessonAssignment = {
@@ -40,9 +42,24 @@ export type LessonAssignment = {
   feedback: string | null;
 };
 
-export type StudentLessonDetail = Omit<StudentLesson, "assignments_count"> & {
+export type TranscriptSegment = { start: number; end: number; text: string };
+
+// Qulaylik to'plami: o'qituvchi materialidan avtomatik yaratilgan formatlar
+export type StudentA11y = {
+  subtitle_vtt_url: string | null;
+  segments: TranscriptSegment[];
+  transcript: string | null;
+  extracted_text: string | null;
+  image_description: string | null;
+  simple_text: string | null;
+  key_terms: { term: string; meaning: string }[];
+  processing: boolean;
+};
+
+export type StudentLessonDetail = Omit<StudentLesson, "assignments_count" | "has_subtitles" | "has_simple_text"> & {
   content: string | null;
   file_url: string | null;
+  a11y: StudentA11y;
   assignments: LessonAssignment[];
 };
 
@@ -118,6 +135,8 @@ export const useStudentLesson = (id: number) =>
   useQuery({
     queryKey: ["student", "lessons", id],
     queryFn: () => get<StudentLessonDetail>(`/student/lessons/${id}`),
+    // Material hali qayta ishlanayotgan bo'lsa, tayyor bo'lguncha yangilab turadi
+    refetchInterval: (q) => (q.state.data?.a11y.processing ? 5000 : false),
   });
 
 export const useStudentAssignments = () =>

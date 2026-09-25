@@ -33,6 +33,21 @@ export type MyStudent = {
   attendance_rate: number | null;
 };
 
+export type A11yStepStatus = { status: "done" | "failed"; error?: string; source?: "teacher" | "ai" };
+
+// Qulaylik to'plami (backend: services/accessibility.js)
+export type LessonA11y = {
+  status?: "pending" | "processing" | "done" | "partial" | "failed";
+  steps?: Partial<Record<"subtitle" | "text" | "image" | "simple", A11yStepStatus>>;
+  subtitle_vtt_url?: string;
+  transcript?: string;
+  segments?: { start: number; end: number; text: string }[];
+  extracted_text?: string;
+  image_description?: string;
+  simple_text?: string;
+  key_terms?: { term: string; meaning: string }[];
+};
+
 export type Lesson = {
   id: number;
   title: string;
@@ -41,6 +56,10 @@ export type Lesson = {
   category: Category | null;
   file_url: string | null;
   file_name: string | null;
+  subtitle_url?: string | null;
+  subtitle_name?: string | null;
+  a11y?: LessonA11y;
+  a11y_status?: LessonA11y["status"] | null;
   created_at: string;
   assignments_count?: number;
 };
@@ -126,10 +145,12 @@ export const useMySchedule = () =>
 export const useLessons = () =>
   useQuery({ queryKey: ["teacher", "lessons"], queryFn: () => get<Lesson[]>("/teacher/lessons") });
 
+// Qulaylik to'plami tayyorlanayotgan bo'lsa, har 3 soniyada yangilab turadi
 export const useLesson = (id: number) =>
   useQuery({
     queryKey: ["teacher", "lessons", id],
     queryFn: () => get<LessonDetail>(`/teacher/lessons/${id}`),
+    refetchInterval: (q) => (["pending", "processing"].includes(q.state.data?.a11y?.status ?? "") ? 3000 : false),
   });
 
 export const useSubmissions = (assignmentId: number | null) =>

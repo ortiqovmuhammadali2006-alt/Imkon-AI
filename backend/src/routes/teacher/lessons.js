@@ -1,4 +1,5 @@
 const { Router } = require("express");
+const path = require("path");
 const pool = require("../../config/db");
 const { upload, fileInfo, removeFile } = require("../../middleware/upload");
 const {
@@ -9,8 +10,27 @@ const {
   parseOptionalCategory,
 } = require("../../utils/validation");
 const { getMyLesson, getMyAssignment } = require("./access");
+const { enqueueLesson, removeGeneratedFiles } = require("../../services/accessibility");
 
 const router = Router();
+
+// Dars: asosiy material (file) + ixtiyoriy subtitr fayli (subtitle: .srt / .vtt)
+const lessonUpload = upload.fields([
+  { name: "file", maxCount: 1 },
+  { name: "subtitle", maxCount: 1 },
+]);
+
+function uploadedFiles(req) {
+  const file = req.files?.file?.[0];
+  const subtitle = req.files?.subtitle?.[0];
+  return { file, subtitle };
+}
+
+function cleanupUploads(req) {
+  const { file, subtitle } = uploadedFiles(req);
+  if (file) removeFile(fileInfo(file).file_url);
+  if (subtitle) removeFile(fileInfo(subtitle).file_url);
+}
 
 function parseLessonFields(body) {
   const title = (body.title || "").trim();
@@ -33,12 +53,16 @@ function parseAssignmentFields(body) {
   };
 }
 
-// Validatsiya xato bersa, yuklangan faylni o'chirib yuboradi
+// Validatsiya xato bersa, yuklangan fayllarni o'chirib yuboradi
 function validateWithUpload(req, parse) {
   try {
+    const { subtitle } = uploadedFiles(req);
+    if (subtitle && ![".srt", ".vtt"].includes(path.extname(subtitle.originalname).toLowerCase())) {
+      throw new HttpError(400, "Subtitr fayli .srt yoki .vtt formatida bo'lishi kerak");
+    }
     return parse(req.body || {});
   } catch (err) {
-    if (req.file) removeFile(fileInfo(req.file).file_url);
+    cleanupUploads(req);
     throw err;
   }
 }
@@ -48,6 +72,7 @@ function validateWithUpload(req, parse) {
 router.get("/lessons", async (req, res) => {
   const { rows } = await pool.query(
     `SELECT l.id, l.title, l.description, l.category, l.file_url, l.file_name, l.created_at,
+            l.a11y->>'status' AS a11y_status,
             (SELECT COUNT(*) FROM assignments a WHERE a.lesson_id = l.id)::int AS assignments_count
      FROM lessons l
      WHERE l.teacher_id = $1
@@ -73,40 +98,62 @@ router.get("/lessons/:id", async (req, res) => {
   res.json({ ...lesson, assignments });
 });
 
-router.post("/lessons", upload.single("file"), async (req, res) => {
+router.post("/lessons", lessonUpload, async (req, res) => {
   const fields = validateWithUpload(req, parseLessonFields);
-  const file = fileInfo(req.file) || { file_url: null, file_name: null };
+  const { file: f, subtitle: sub } = uploadedFiles(req);
+  const file = fileInfo(f) || { file_url: null, file_name: null };
+  const subtitle = fileInfo(sub) || { file_url: null, file_name: null };
 
   const { rows } = await pool.query(
-    `INSERT INTO lessons (teacher_id, title, description, content, category, file_url, file_name)
-     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-    [req.user.id, fields.title, fields.description, fields.content, fields.category, file.file_url, file.file_name]
+    `INSERT INTO lessons (teacher_id, title, description, content, category, file_url, file_name,
+                          subtitle_url, subtitle_name, a11y)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, '{"status":"pending"}') RETURNING *`,
+    [req.user.id, fields.title, fields.description, fields.content, fields.category,
+     file.file_url, file.file_name, subtitle.file_url, subtitle.file_name]
   );
+  enqueueLesson(rows[0].id); // qulaylik to'plami fonda tayyorlanadi
   res.status(201).json(rows[0]);
 });
 
-// Yangi fayl yuborilsa — almashtiriladi; remove_file=true bo'lsa — o'chiriladi
-router.put("/lessons/:id", upload.single("file"), async (req, res) => {
+// Yangi fayl/subtitr yuborilsa — almashtiriladi; remove_file / remove_subtitle = "true" bo'lsa — o'chiriladi
+router.put("/lessons/:id", lessonUpload, async (req, res) => {
   let lesson;
   try {
     lesson = await getMyLesson(req.user.id, parseId(req.params.id));
   } catch (err) {
-    if (req.file) removeFile(fileInfo(req.file).file_url);
+    cleanupUploads(req);
     throw err;
   }
   const fields = validateWithUpload(req, parseLessonFields);
+  const { file: f, subtitle: sub } = uploadedFiles(req);
 
   let file = { file_url: lesson.file_url, file_name: lesson.file_name };
-  if (req.file) file = fileInfo(req.file);
+  if (f) file = fileInfo(f);
   else if (req.body.remove_file === "true") file = { file_url: null, file_name: null };
 
+  let subtitle = { file_url: lesson.subtitle_url, file_name: lesson.subtitle_name };
+  if (sub) subtitle = fileInfo(sub);
+  else if (req.body.remove_subtitle === "true") subtitle = { file_url: null, file_name: null };
+
   const { rows } = await pool.query(
-    `UPDATE lessons SET title = $1, description = $2, content = $3, category = $4, file_url = $5, file_name = $6
-     WHERE id = $7 RETURNING *`,
-    [fields.title, fields.description, fields.content, fields.category, file.file_url, file.file_name, lesson.id]
+    `UPDATE lessons SET title = $1, description = $2, content = $3, category = $4, file_url = $5, file_name = $6,
+                        subtitle_url = $7, subtitle_name = $8, a11y = jsonb_set(a11y, '{status}', '"pending"')
+     WHERE id = $9 RETURNING *`,
+    [fields.title, fields.description, fields.content, fields.category, file.file_url, file.file_name,
+     subtitle.file_url, subtitle.file_name, lesson.id]
   );
   if (lesson.file_url !== file.file_url) removeFile(lesson.file_url);
+  if (lesson.subtitle_url !== subtitle.file_url) removeFile(lesson.subtitle_url);
+  enqueueLesson(lesson.id);
   res.json(rows[0]);
+});
+
+// Qulaylik to'plamini qayta yaratish (masalan, OpenAI hisobi to'ldirilgandan keyin)
+router.post("/lessons/:id/accessibility", async (req, res) => {
+  const lesson = await getMyLesson(req.user.id, parseId(req.params.id));
+  await pool.query(`UPDATE lessons SET a11y = jsonb_set(a11y, '{status}', '"pending"') WHERE id = $1`, [lesson.id]);
+  enqueueLesson(lesson.id);
+  res.status(202).json({ status: "pending" });
 });
 
 router.delete("/lessons/:id", async (req, res) => {
@@ -119,6 +166,8 @@ router.delete("/lessons/:id", async (req, res) => {
   );
   await pool.query("DELETE FROM lessons WHERE id = $1", [lesson.id]);
   removeFile(lesson.file_url);
+  removeFile(lesson.subtitle_url);
+  removeGeneratedFiles(lesson.a11y);
   files.forEach((f) => removeFile(f.file_url));
   res.status(204).end();
 });

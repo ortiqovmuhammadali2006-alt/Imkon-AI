@@ -28,7 +28,7 @@ async function getProfile(studentId) {
 async function getLesson(studentId, lessonId) {
   const { rows } = await pool.query(
     `SELECT l.id, l.title, l.description, l.content, l.category, l.file_url, l.file_name, l.created_at,
-            tu.full_name AS teacher_name, t.subject
+            l.a11y, tu.full_name AS teacher_name, t.subject
      ${ACCESSIBLE_LESSONS} AND l.id = $2`,
     [studentId, lessonId]
   );
@@ -118,6 +118,8 @@ router.get("/lessons", async (req, res) => {
   const { rows } = await pool.query(
     `SELECT l.id, l.title, l.description, l.category, l.file_name, l.created_at,
             tu.full_name AS teacher_name, t.subject,
+            (l.a11y ? 'subtitle_vtt_url') AS has_subtitles,
+            (l.a11y ? 'simple_text') AS has_simple_text,
             (SELECT COUNT(*) FROM assignments a WHERE a.lesson_id = l.id)::int AS assignments_count
      ${ACCESSIBLE_LESSONS}
      ORDER BY l.created_at DESC`,
@@ -137,7 +139,19 @@ router.get("/lessons/:id", async (req, res) => {
      ORDER BY a.created_at`,
     [lesson.id, req.user.id]
   );
-  res.json({ ...lesson, assignments });
+  // O'quvchiga faqat tayyor formatlar — ishlov bosqichlari va xato matnlari emas
+  const a = lesson.a11y || {};
+  const a11y = {
+    subtitle_vtt_url: a.subtitle_vtt_url || null,
+    segments: a.segments || [],
+    transcript: a.transcript || null,
+    extracted_text: a.extracted_text || null,
+    image_description: a.image_description || null,
+    simple_text: a.simple_text || null,
+    key_terms: a.key_terms || [],
+    processing: ["pending", "processing"].includes(a.status),
+  };
+  res.json({ ...lesson, a11y, assignments });
 });
 
 // AI tushuntirish. body.messages — oldingi suhbat (bo'sh bo'lsa, darsni to'liq tushuntiradi)

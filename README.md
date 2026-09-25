@@ -40,3 +40,4 @@ backend/    Express API (http://localhost:5000/api)
 - [x] O'qituvchi API: darslar va fayllar, uy vazifalari, davomat, baholar
 - [x] O'qituvchi paneli: darslar, vazifalarni tekshirish, davomat, baholar
 - [x] O'quvchi paneli: jadval, darslar, AI tushuntirish (OpenAI), ovoz bilan o'qish, vazifa topshirish, baholar, ovozli boshqaruv
+- [x] Qulaylik to'plami: avtomatik subtitr (Whisper), .srt/.vtt subtitr, PDF/Word matni, rasm tavsifi, oddiy til va atamalar lug'ati

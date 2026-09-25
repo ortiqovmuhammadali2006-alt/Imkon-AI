@@ -94,6 +94,10 @@ router.delete("/:id", async (req, res) => {
   const { rows: files } = await pool.query(
     `SELECT file_url FROM lessons WHERE teacher_id = $1 AND file_url IS NOT NULL
      UNION ALL
+     SELECT subtitle_url FROM lessons WHERE teacher_id = $1 AND subtitle_url IS NOT NULL
+     UNION ALL
+     SELECT a11y->>'auto_subtitle_url' FROM lessons WHERE teacher_id = $1 AND a11y ? 'auto_subtitle_url'
+     UNION ALL
      SELECT s.file_url FROM submissions s JOIN assignments a ON a.id = s.assignment_id
        JOIN lessons l ON l.id = a.lesson_id
      WHERE l.teacher_id = $1 AND s.file_url IS NOT NULL`,

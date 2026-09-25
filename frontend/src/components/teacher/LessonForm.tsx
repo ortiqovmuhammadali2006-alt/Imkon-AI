@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { FileUp, Loader2, Paperclip, X } from "lucide-react";
+import { Captions, FileUp, Loader2, Paperclip, Sparkles, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { CATEGORIES } from "@/lib/format";
 import { useTeacherMutation, type Lesson } from "@/lib/teacher";
@@ -9,7 +9,19 @@ import type { Category } from "@/lib/types";
 
 const MAX_MB = 100;
 const ACCEPT =
-  ".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.jpg,.jpeg,.png,.webp,.gif,.mp3,.wav,.ogg,.m4a,.mp4,.webm,.vtt,.srt,.zip";
+  ".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.jpg,.jpeg,.png,.webp,.gif,.mp3,.wav,.ogg,.m4a,.mp4,.webm,.zip";
+const MEDIA_EXT = ["mp3", "wav", "ogg", "m4a", "mp4", "webm"];
+
+// Material turiga qarab o'quvchi uchun avtomatik nimalar yaratilishi (backend: services/accessibility.js)
+function autoFeatures(fileName: string | null | undefined, hasSubtitle: boolean) {
+  const ext = fileName?.split(".").pop()?.toLowerCase() ?? "";
+  const list: string[] = [];
+  if (MEDIA_EXT.includes(ext)) list.push(hasSubtitle ? "Sizning subtitringiz + sinxron matn" : "Avtomatik subtitr va to'liq matn (AI)");
+  if (["pdf", "docx", "txt"].includes(ext)) list.push("Fayldagi matn ajratib olinadi — ovoz bilan o'qiladi");
+  if (["jpg", "jpeg", "png", "webp", "gif"].includes(ext)) list.push("Rasm tavsifi — ko'rishi cheklanganlar uchun (AI)");
+  list.push("Oddiy tildagi qisqa variant va atamalar lug'ati (AI)");
+  return list;
+}
 
 // Toifaga qarab qaysi format qulayligi haqida maslahat
 const HINTS: Record<Category | "all", string> = {
@@ -35,6 +47,8 @@ export default function LessonForm({
   });
   const [file, setFile] = useState<File | null>(null);
   const [removeFile, setRemoveFile] = useState(false);
+  const [subtitle, setSubtitle] = useState<File | null>(null);
+  const [removeSubtitle, setRemoveSubtitle] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -50,6 +64,8 @@ export default function LessonForm({
       data.append("category", form.category === "all" ? "" : form.category);
       if (file) data.append("file", file);
       else if (removeFile) data.append("remove_file", "true");
+      if (subtitle) data.append("subtitle", subtitle);
+      else if (removeSubtitle) data.append("remove_subtitle", "true");
 
       const config = { onUploadProgress: (e: { loaded: number; total?: number }) => e.total && setProgress(Math.round((e.loaded / e.total) * 100)) };
       const res = lesson
@@ -72,6 +88,8 @@ export default function LessonForm({
   };
 
   const currentFileName = file?.name ?? (!removeFile ? lesson?.file_name : null);
+  const currentSubtitleName = subtitle?.name ?? (!removeSubtitle ? lesson?.subtitle_name : null);
+  const isMedia = MEDIA_EXT.includes(currentFileName?.split(".").pop()?.toLowerCase() ?? "");
 
   return (
     <form
@@ -151,6 +169,62 @@ export default function LessonForm({
             <input ref={inputRef} type="file" accept={ACCEPT} className="sr-only" onChange={(e) => pickFile(e.target.files?.[0])} />
           </label>
         )}
+      </div>
+
+      {/* Subtitr: video/audio uchun (bo'lmasa AI avtomatik yaratadi) */}
+      {(isMedia || currentSubtitleName) && (
+        <div>
+          <span className="label">Subtitr fayli (ixtiyoriy, .srt yoki .vtt)</span>
+          {currentSubtitleName ? (
+            <div className="flex items-center gap-3 rounded-lg border border-slate-300 px-3.5 py-2.5">
+              <Captions className="size-5 shrink-0 text-sky-600" aria-hidden />
+              <span className="flex-1 truncate">{currentSubtitleName}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setSubtitle(null);
+                  setRemoveSubtitle(true);
+                }}
+                className="icon-btn"
+                aria-label="Subtitrni olib tashlash"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+          ) : (
+            <label className="btn-secondary cursor-pointer">
+              <Captions className="size-4" aria-hidden /> Subtitr biriktirish
+              <input
+                type="file"
+                accept=".srt,.vtt"
+                className="sr-only"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) {
+                    setSubtitle(f);
+                    setRemoveSubtitle(false);
+                  }
+                }}
+              />
+            </label>
+          )}
+          <p className="mt-1.5 text-sm text-slate-500">Subtitr bo&apos;lmasa, AI nutqdan uni avtomatik yaratadi.</p>
+        </div>
+      )}
+
+      {/* O'quvchi uchun avtomatik tayyorlanadigan formatlar */}
+      <div className="rounded-xl bg-indigo-50 p-4 ring-1 ring-indigo-100">
+        <p className="mb-2 flex items-center gap-2 font-semibold text-indigo-900">
+          <Sparkles className="size-4" aria-hidden /> O&apos;quvchilar uchun avtomatik tayyorlanadi
+        </p>
+        <ul className="space-y-1 text-sm text-indigo-900/80">
+          {autoFeatures(currentFileName, !!currentSubtitleName).map((f) => (
+            <li key={f} className="flex gap-2">
+              <span aria-hidden>✓</span>
+              {f}
+            </li>
+          ))}
+        </ul>
       </div>
 
       {mutation.isPending && file && progress !== null && (

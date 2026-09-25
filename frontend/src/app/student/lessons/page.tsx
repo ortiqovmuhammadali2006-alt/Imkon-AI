@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { OPEN_LESSON_EVENT, speak } from "@/lib/speech";
 import useVoiceRead from "@/components/student/useVoiceRead";
-import { BookOpen, ClipboardList, Search, UserRound } from "lucide-react";
+import { BookOpen, Captions, ClipboardList, MessageSquareText, Search, UserRound } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
 import { formatDate, subjectTone } from "@/lib/format";
 import { useStudentLessons } from "@/lib/student";
@@ -131,6 +131,16 @@ export default function StudentLessonsPage() {
                         </span>
                       )}
                       {l.file_name && <FileTypeBadge name={l.file_name} />}
+                      {l.has_subtitles && (
+                        <span className="badge bg-sky-50 text-sky-700">
+                          <Captions className="size-3.5" aria-hidden /> Subtitr
+                        </span>
+                      )}
+                      {l.has_simple_text && (
+                        <span className="badge bg-emerald-50 text-emerald-700">
+                          <MessageSquareText className="size-3.5" aria-hidden /> Oddiy til
+                        </span>
+                      )}
                     </div>
                   </div>
                 </Link>

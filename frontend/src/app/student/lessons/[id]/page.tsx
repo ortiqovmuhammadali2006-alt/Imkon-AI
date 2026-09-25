@@ -1,8 +1,9 @@
 "use client";
 
-import { use, useEffect, useRef } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, UserRound } from "lucide-react";
+import { ArrowLeft, Loader2, UserRound } from "lucide-react";
+import LessonTextTabs from "@/components/student/LessonTextTabs";
 import { getErrorMessage } from "@/lib/api";
 import { formatDate, subjectTone } from "@/lib/format";
 import { onVoiceAction, speak, stopSpeaking } from "@/lib/speech";
@@ -20,9 +21,9 @@ export default function StudentLessonPage({ params }: { params: Promise<{ id: st
   const { data: lesson, isLoading, error } = useStudentLesson(lessonId);
   const { data: profile } = useStudentProfile();
 
-  const lessonText = lesson
-    ? [lesson.title, lesson.description, lesson.content].filter(Boolean).join(". ")
-    : "";
+  // Ochiq yorliqdagi matn (asl, oddiy til, materialdagi matn...) — "O'qib ber" shuni o'qiydi
+  const [activeText, setActiveText] = useState("");
+  const lessonText = lesson ? [lesson.title, lesson.description, activeText].filter(Boolean).join(". ") : "";
 
   // Ovozli buyruq: "O'qib ber" / "To'xta"
   const textRef = useRef(lessonText);
@@ -65,18 +66,27 @@ export default function StudentLessonPage({ params }: { params: Promise<{ id: st
         </div>
 
         <div className="px-6 py-8 sm:px-10">
-          {lesson.content ? (
-            <p className="max-w-[70ch] text-lg leading-8 whitespace-pre-wrap text-slate-800">{lesson.content}</p>
-          ) : (
-            <p className="text-slate-500">Dars matni kiritilmagan. Materialni ko&apos;ring yoki AI yordamchidan tushuntirishni so&apos;rang.</p>
+          {lesson.a11y.processing && (
+            <p role="status" className="mb-6 flex items-center gap-2 rounded-xl bg-indigo-50 px-4 py-3 text-indigo-900 ring-1 ring-indigo-100">
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+              Material tayyorlanmoqda: subtitr va qo&apos;shimcha formatlar tez orada shu yerda paydo bo&apos;ladi.
+            </p>
           )}
+
+          <LessonTextTabs content={lesson.content} a11y={lesson.a11y} category={profile?.category} onActiveText={setActiveText} />
 
           {lesson.file_url && lesson.file_name && (
             <div className="mt-8 border-t border-slate-100 pt-8">
               <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold tracking-tight">
                 Dars materiali <FileTypeBadge name={lesson.file_name} />
               </h2>
-              <FilePreview url={lesson.file_url} name={lesson.file_name} />
+              <FilePreview
+                url={lesson.file_url}
+                name={lesson.file_name}
+                subtitleUrl={lesson.a11y.subtitle_vtt_url}
+                segments={lesson.a11y.segments}
+                imageDescription={lesson.a11y.image_description}
+              />
             </div>
           )}
         </div>

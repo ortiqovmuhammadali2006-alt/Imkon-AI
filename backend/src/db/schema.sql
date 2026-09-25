@@ -116,3 +116,7 @@ CREATE TABLE IF NOT EXISTS schedule (
   CHECK (end_time > start_time)
 );
 CREATE INDEX IF NOT EXISTS schedule_teacher_day_idx ON schedule (teacher_id, day_of_week);
+-- Qulaylik to'plami: o'qituvchi bergan subtitr + avtomatik yaratilgan matn, subtitr, tavsif, oddiy til, atamalar
+ALTER TABLE lessons ADD COLUMN IF NOT EXISTS subtitle_url  TEXT;
+ALTER TABLE lessons ADD COLUMN IF NOT EXISTS subtitle_name TEXT;
+ALTER TABLE lessons ADD COLUMN IF NOT EXISTS a11y JSONB NOT NULL DEFAULT '{}'::jsonb;

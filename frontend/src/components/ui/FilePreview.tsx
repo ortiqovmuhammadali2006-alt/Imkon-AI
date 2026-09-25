@@ -1,17 +1,32 @@
 import { Download } from "lucide-react";
 import { fileUrl } from "@/lib/api";
+import MediaPlayer, { type Segment } from "./MediaPlayer";
 
-// Fayl turiga qarab sahifaning o'zida ko'rsatish (audio, video, rasm, PDF) + yuklab olish tugmasi
-export default function FilePreview({ url, name }: { url: string; name: string }) {
+// Fayl turiga qarab sahifaning o'zida ko'rsatish (audio/video — subtitrli pleyer, rasm, PDF) + yuklab olish
+export default function FilePreview({
+  url,
+  name,
+  subtitleUrl,
+  segments,
+  imageDescription,
+}: {
+  url: string;
+  name: string;
+  subtitleUrl?: string | null;
+  segments?: Segment[];
+  imageDescription?: string | null;
+}) {
   const src = fileUrl(url);
   const ext = name.split(".").pop()?.toLowerCase() ?? "";
 
+  if (["mp3", "wav", "ogg", "m4a", "mp4", "webm"].includes(ext)) {
+    return <MediaPlayer url={url} name={name} subtitleUrl={subtitleUrl} segments={segments} />;
+  }
+
   let preview: React.ReactNode = null;
-  if (["mp3", "wav", "ogg", "m4a"].includes(ext)) preview = <audio controls src={src} className="w-full" />;
-  else if (["mp4", "webm"].includes(ext)) preview = <video controls src={src} className="max-h-96 w-full rounded-lg bg-black" />;
-  else if (["jpg", "jpeg", "png", "webp", "gif"].includes(ext))
+  if (["jpg", "jpeg", "png", "webp", "gif"].includes(ext))
     // eslint-disable-next-line @next/next/no-img-element
-    preview = <img src={src} alt={name} className="max-h-96 rounded-lg" />;
+    preview = <img src={src} alt={imageDescription || name} className="max-h-96 rounded-lg" />;
   else if (ext === "pdf") preview = <iframe src={src} title={name} className="h-96 w-full rounded-lg ring-1 ring-slate-200" />;
 
   return (

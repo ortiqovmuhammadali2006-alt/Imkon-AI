@@ -256,6 +256,14 @@ body {
   border-radius: 8px;
 }
 
+/* Video subtitrlari: yirik, to'q fonda oq — eshitishi cheklangan o'quvchilar uchun o'qilishi oson */
+video::cue {
+  font-size: 1.25em;
+  line-height: 1.45;
+  color: #fff;
+  background: rgb(0 0 0 / 0.78);
+}
+
 ::selection {
   background: rgb(99 102 241 / 0.18);
 }
