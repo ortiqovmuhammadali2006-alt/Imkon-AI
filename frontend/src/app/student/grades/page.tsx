@@ -5,6 +5,7 @@ import { formatDate } from "@/lib/format";
 import { useStudentAttendance, useStudentGrades, useStudentStats } from "@/lib/student";
 import { ErrorState, LoadingState, PageHeader } from "@/components/ui/States";
 import { ScoreBadge } from "@/components/teacher/ScorePicker";
+import useVoiceRead from "@/components/student/useVoiceRead";
 
 const ATTENDANCE_LABEL = {
   present: { label: "Keldi", className: "bg-emerald-100 text-emerald-700" },
@@ -16,6 +17,18 @@ export default function StudentGradesPage() {
   const stats = useStudentStats();
   const grades = useStudentGrades();
   const attendance = useStudentAttendance();
+
+  useVoiceRead(
+    stats.data && grades.data
+      ? [
+          stats.data.avg_score != null ? `O'rtacha bahoingiz ${stats.data.avg_score}.` : "Hali baho qo'yilmagan.",
+          stats.data.attendance_rate != null ? `Davomatingiz ${stats.data.attendance_rate} foiz.` : "",
+          grades.data.grades.slice(0, 5).length
+            ? "So'nggi baholar: " + grades.data.grades.slice(0, 5).map((g) => `${g.subject ?? "dars"} ${g.score}`).join(", ") + "."
+            : "",
+        ].join(" ")
+      : null
+  );
 
   if (grades.isLoading) return <LoadingState />;
   if (grades.error || !grades.data) return <ErrorState message={getErrorMessage(grades.error)} />;

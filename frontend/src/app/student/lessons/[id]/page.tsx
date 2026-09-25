@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, UserRound } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
 import { formatDate } from "@/lib/format";
-import { speak, stopSpeaking, VOICE_EVENT, type VoiceAction } from "@/lib/speech";
+import { onVoiceAction, speak, stopSpeaking } from "@/lib/speech";
 import { useStudentLesson, useStudentProfile } from "@/lib/student";
 import FilePreview from "@/components/ui/FilePreview";
 import { ErrorState, LoadingState } from "@/components/ui/States";
@@ -29,14 +29,11 @@ export default function StudentLessonPage({ params }: { params: Promise<{ id: st
     textRef.current = lessonText;
   });
   useEffect(() => {
-    const onVoice = (e: Event) => {
-      const action = (e as CustomEvent<VoiceAction>).detail;
+    const off = onVoiceAction((action) => {
       if (action === "read" && textRef.current) speak(textRef.current);
-      if (action === "stop") stopSpeaking();
-    };
-    window.addEventListener(VOICE_EVENT, onVoice);
+    });
     return () => {
-      window.removeEventListener(VOICE_EVENT, onVoice);
+      off();
       stopSpeaking();
     };
   }, []);

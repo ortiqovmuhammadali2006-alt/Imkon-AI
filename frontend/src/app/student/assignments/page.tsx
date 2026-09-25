@@ -5,6 +5,8 @@ import { getErrorMessage } from "@/lib/api";
 import { useStudentAssignments, type StudentAssignment } from "@/lib/student";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/ui/States";
 import AssignmentCard from "@/components/student/AssignmentCard";
+import useVoiceRead from "@/components/student/useVoiceRead";
+import { formatDate } from "@/lib/format";
 
 const TABS: { key: string; label: string; filter: (a: StudentAssignment) => boolean }[] = [
   { key: "todo", label: "Topshirilmagan", filter: (a) => !a.submission_id },
@@ -17,6 +19,17 @@ export default function AssignmentsPage() {
   const [tab, setTab] = useState("todo");
   const current = TABS.find((t) => t.key === tab)!;
   const items = (data ?? []).filter(current.filter);
+
+  useVoiceRead(
+    data
+      ? items.length
+        ? `${current.label}: ${items.length} ta. ` +
+            items
+              .map((a, i) => `${i + 1}. ${a.title}${a.due_date ? `, muddati ${formatDate(a.due_date)}` : ""}${a.score !== null ? `, baho ${a.score}` : ""}.`)
+              .join(" ")
+        : `${current.label} vazifalar yo'q`
+      : null
+  );
 
   return (
     <section>

@@ -9,6 +9,7 @@ import { useStudentAssignments, useStudentProfile, useStudentSchedule, useStuden
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { SlotCard, WEEKDAYS, todayWeekday } from "@/components/ui/WeeklySchedule";
 import AssignmentCard from "@/components/student/AssignmentCard";
+import useVoiceRead from "@/components/student/useVoiceRead";
 
 function StatCard({ icon: Icon, label, value, href, tone }: { icon: LucideIcon; label: string; value: string; href: string; tone: string }) {
   return (
@@ -31,11 +32,25 @@ export default function StudentHome() {
   const schedule = useStudentSchedule();
   const assignments = useStudentAssignments();
 
+  const todaySlots = (schedule.data ?? []).filter((x) => x.day_of_week === todayWeekday());
+  useVoiceRead(
+    stats.data
+      ? [
+          `Topshirilmagan vazifalar: ${stats.data.pending_assignments} ta.`,
+          todaySlots.length
+            ? `Bugun ${todaySlots.length} ta dars: ` +
+              todaySlots.map((x) => `soat ${x.start_time} da ${x.subject ?? "dars"}`).join(", ") + "."
+            : "Bugun dars yo'q.",
+          stats.data.avg_score != null ? `O'rtacha bahoingiz ${stats.data.avg_score}.` : "",
+        ].join(" ")
+      : null
+  );
+
   if (stats.isLoading) return <LoadingState />;
   if (stats.error || !stats.data) return <ErrorState message={getErrorMessage(stats.error)} />;
 
   const s = stats.data;
-  const today = (schedule.data ?? []).filter((x) => x.day_of_week === todayWeekday());
+  const today = todaySlots;
   const pending = (assignments.data ?? []).filter((a) => !a.submission_id).slice(0, 3);
 
   return (
@@ -51,8 +66,8 @@ export default function StudentHome() {
       <div className="flex items-start gap-3 rounded-xl bg-indigo-50 px-4 py-3 text-indigo-900 ring-1 ring-indigo-200">
         <Mic className="mt-0.5 size-5 shrink-0" aria-hidden />
         <p>
-          Pastdagi <b>Ovozli boshqaruv</b> tugmasini bosib, <b>“Darslar”</b>, <b>“Vazifalar”</b>, <b>“Jadval”</b>,{" "}
-          <b>“O&apos;qib ber”</b> yoki <b>“Tushuntir”</b> deb ayting.
+          Pastdagi <b>Ovoz rejimi</b> tugmasini bosing (<b>Alt + O</b>) va <b>“Darslar”</b>, <b>“Vazifalar”</b>,{" "}
+          <b>“Jadval”</b>, <b>“O&apos;qib ber”</b>, <b>“Birinchi darsni och”</b> yoki <b>“Yordam”</b> deb ayting.
         </p>
       </div>
 

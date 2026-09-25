@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { Bot, Loader2, Mic, Send, Sparkles } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
 import { explainLesson, type ChatMessage } from "@/lib/student";
-import { listenOnce, speak, VOICE_EVENT, type VoiceAction } from "@/lib/speech";
+import { listenOnce, onVoiceAction, speak } from "@/lib/speech";
 import SpeakButton from "./SpeakButton";
 
 const QUICK_QUESTIONS = ["Oddiyroq tushuntir", "Misol keltir", "Asosiy fikrlarni qisqacha ayt", "Menga savol ber"];
@@ -58,13 +58,7 @@ export default function AiTutor({ lessonId, autoSpeak }: { lessonId: number; aut
   useEffect(() => {
     askRef.current = ask;
   });
-  useEffect(() => {
-    const onVoice = (e: Event) => {
-      if ((e as CustomEvent<VoiceAction>).detail === "explain") askRef.current();
-    };
-    window.addEventListener(VOICE_EVENT, onVoice);
-    return () => window.removeEventListener(VOICE_EVENT, onVoice);
-  }, []);
+  useEffect(() => onVoiceAction((action) => action === "explain" && askRef.current()), []);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
