@@ -58,7 +58,8 @@ export default function DashboardShell({
 
         <nav className="flex gap-1 overflow-x-auto px-3 pb-3 md:flex-1 md:flex-col md:overflow-visible">
           {nav.map(({ href, label, icon: Icon }) => {
-            const active = pathname === href;
+            // Bosh sahifa faqat o'zida, qolganlari ichki sahifalarda ham faol ko'rinadi
+            const active = href === ROLE_HOME[role] ? pathname === href : pathname.startsWith(href);
             return (
               <Link
                 key={href}

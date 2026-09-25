@@ -22,6 +22,11 @@ api.interceptors.response.use(undefined, (error: AxiosError) => {
   return Promise.reject(error);
 });
 
+// "/uploads/..." -> backend serveridagi to'liq manzil
+export function fileUrl(path: string) {
+  return (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/api\/?$/, "") + path;
+}
+
 // Backend qaytargan xabarni olish (toast uchun)
 export function getErrorMessage(error: unknown) {
   if (error instanceof AxiosError) {
