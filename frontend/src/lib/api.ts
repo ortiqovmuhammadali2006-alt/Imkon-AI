@@ -12,6 +12,16 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Token muddati tugagan bo'lsa — tizimdan chiqarib, login sahifasiga qaytarish
+api.interceptors.response.use(undefined, (error: AxiosError) => {
+  const isLogin = error.config?.url?.startsWith("/auth/login");
+  if (error.response?.status === 401 && !isLogin && typeof window !== "undefined") {
+    localStorage.removeItem(TOKEN_KEY);
+    if (window.location.pathname !== "/login") window.location.href = "/login";
+  }
+  return Promise.reject(error);
+});
+
 // Backend qaytargan xabarni olish (toast uchun)
 export function getErrorMessage(error: unknown) {
   if (error instanceof AxiosError) {

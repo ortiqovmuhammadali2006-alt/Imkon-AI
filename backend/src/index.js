@@ -19,9 +19,14 @@ app.get("/api/health", async (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/admin", require("./routes/admin"));
 
 // Express 5 async xatolarni shu yerga yuboradi
 app.use((err, req, res, next) => {
+  if (err.status) return res.status(err.status).json({ message: err.message });
+  if (err.code === "23505" && err.constraint === "users_username_key") {
+    return res.status(409).json({ message: "Bu login band, boshqasini tanlang" });
+  }
   console.error(err);
   res.status(500).json({ message: "Serverda xatolik yuz berdi" });
 });
