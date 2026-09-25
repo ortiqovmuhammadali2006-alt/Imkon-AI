@@ -156,3 +156,5 @@ export const voiceMode = new VoiceMode();
 
 // Login'dan keyin o'quvchi panelida bir marta: ovoz rejimini yoqib, qayerdaligini aytish (sessionStorage)
 export const LOGIN_WELCOME_KEY = "imkon_login_welcome";
+// Shu brauzer seansida o'quvchi paneli allaqachon ochilganmi (yangi seans = "tizimga kirish")
+export const SESSION_STARTED_KEY = "imkon_voice_session";

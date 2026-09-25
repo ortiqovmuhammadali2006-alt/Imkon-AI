@@ -27,7 +27,7 @@ import {
   stopSpeaking,
   VOICE_COMMAND_EVENT,
 } from "@/lib/speech";
-import { LOGIN_WELCOME_KEY, voiceMode } from "@/lib/voiceMode";
+import { LOGIN_WELCOME_KEY, SESSION_STARTED_KEY, voiceMode } from "@/lib/voiceMode";
 import { OPEN_PROFILE_EVENT } from "@/components/DashboardShell";
 import { setTheme } from "@/lib/theme";
 import MicPermissionDialog from "./MicPermissionDialog";
@@ -179,6 +179,7 @@ export default function VoiceControl() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const welcomeRef = useRef<"login" | "reload" | "unsupported" | null>(null);
+  const autoStartRef = useRef(false); // ovoz rejimi sahifa ochilganda o'zi yoqildi (foydalanuvchi bosmagan)
 
   const [mode, setModeState] = useState(false); // doimiy tinglash rejimi
   const [listening, setListening] = useState(false); // bir martalik tinglash
@@ -299,6 +300,23 @@ export default function VoiceControl() {
         if (kind === "command") handleRef.current(text, true);
       },
       onFatal: (message, code) => {
+        // Avtomatik yoqishda (sahifa bosishsiz ochilgan) Chrome mikrofonni rad etishi mumkin — rejimni o'chirmaymiz:
+        // birinchi bosishda qayta urinamiz. Bosishdan keyin ham rad etilsa — haqiqatan ruxsat yo'q, yo'riqnoma chiqadi
+        if (autoStartRef.current && (code === "not-allowed" || code === "service-not-allowed")) {
+          autoStartRef.current = false;
+          toast("Ovoz rejimini boshlash uchun sahifaning istalgan joyini bosing", {
+            icon: <Mic className="size-5 text-indigo-600" aria-hidden />,
+            duration: 10000,
+          });
+          const retry = () => {
+            window.removeEventListener("pointerdown", retry, true);
+            window.removeEventListener("keydown", retry, true);
+            if (modeRef.current) voiceMode.enable();
+          };
+          window.addEventListener("pointerdown", retry, true);
+          window.addEventListener("keydown", retry, true);
+          return;
+        }
         modeRef.current = false;
         setModeState(false);
         writeStorage(MODE_KEY, "0");
@@ -312,6 +330,7 @@ export default function VoiceControl() {
       setMicError("unsupported");
       return;
     }
+    autoStartRef.current = false; // foydalanuvchi o'zi bosdi — xato bo'lsa darhol yo'riqnoma ko'rsatiladi
     modeRef.current = on;
     setModeState(on);
     setLastHeard("");
@@ -335,10 +354,16 @@ export default function VoiceControl() {
     const savedFont = Number(readStorage(FONT_KEY)) || 0;
     document.documentElement.style.fontSize = `${FONT_SCALES[savedFont] ?? 100}%`;
     // Login'dan so'ng birinchi ochilish: ovoz rejimi o'zi yoqiladi (o'quvchi "ovoz rejimini o'chir" deb o'chira oladi)
+    // Tizimga kirish = login formasi YOKI saytni yangi seansda ochish (token saqlangan bo'lsa, forma ko'rinmaydi).
+    // Ikkala holda ham ovoz rejimi o'zi yoqiladi va qayerdaligi aytiladi. Seans davomida o'quvchi o'zi o'chirsa — o'chiq qoladi.
     // Belgi modul darajasida saqlanadi: dasturlash rejimida React komponentni ikki marta yuklaganda ham yo'qolmasin
     try {
       if (sessionStorage.getItem(LOGIN_WELCOME_KEY) === "1") pendingLoginWelcome = true;
       sessionStorage.removeItem(LOGIN_WELCOME_KEY);
+      if (!sessionStorage.getItem(SESSION_STARTED_KEY)) {
+        pendingLoginWelcome = true;
+        sessionStorage.setItem(SESSION_STARTED_KEY, "1");
+      }
     } catch {}
     const justLoggedIn = pendingLoginWelcome;
     const supported = isRecognitionSupported();
@@ -346,6 +371,7 @@ export default function VoiceControl() {
     if (justLoggedIn && supported) writeStorage(MODE_KEY, "1");
     welcomeRef.current = justLoggedIn ? (supported ? "login" : "unsupported") : savedMode ? "reload" : null;
     modeRef.current = savedMode;
+    autoStartRef.current = savedMode;
     if (savedMode) voiceMode.enable();
     const id = requestAnimationFrame(() => {
       setFontIndex(savedFont);
