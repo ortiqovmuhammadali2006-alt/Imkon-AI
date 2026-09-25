@@ -31,6 +31,7 @@ backend/    Express API (http://localhost:5000/api)
    npm run dev
    ```
 4. http://localhost:3000 — `.env` dagi `ADMIN_USERNAME` / `ADMIN_PASSWORD` bilan kiring.
+5. AI uchun `backend/.env` ga `OPENAI_API_KEY` yozing (bo'sh bo'lsa, AI tugmalari "sozlanmagan" xabarini ko'rsatadi).
 
 ## Holat
 
@@ -38,4 +39,4 @@ backend/    Express API (http://localhost:5000/api)
 - [x] Admin paneli: o'qituvchilar, o'quvchilar, oyliklar, nazorat, dars jadvali
 - [x] O'qituvchi API: darslar va fayllar, uy vazifalari, davomat, baholar
 - [x] O'qituvchi paneli: darslar, vazifalarni tekshirish, davomat, baholar
-- [ ] O'quvchi paneli: darslar, AI tushuntirish, vazifa topshirish, ovozli boshqaruv
+- [x] O'quvchi paneli: jadval, darslar, AI tushuntirish (OpenAI), ovoz bilan o'qish, vazifa topshirish, baholar, ovozli boshqaruv

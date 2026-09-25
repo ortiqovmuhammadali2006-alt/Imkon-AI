@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const pool = require("../../config/db");
 const { withTransaction } = require("../../config/db");
 const { HttpError, validateUserFields, parseId } = require("../../utils/validation");
+const { removeFile } = require("../../middleware/upload");
 
 const router = Router();
 
@@ -89,7 +90,17 @@ router.patch("/:id/status", async (req, res) => {
 router.delete("/:id", async (req, res) => {
   const id = parseId(req.params.id);
   await findTeacher(id);
+  // Dars materiallari va ularga topshirilgan ishlar fayllari ham o'chadi
+  const { rows: files } = await pool.query(
+    `SELECT file_url FROM lessons WHERE teacher_id = $1 AND file_url IS NOT NULL
+     UNION ALL
+     SELECT s.file_url FROM submissions s JOIN assignments a ON a.id = s.assignment_id
+       JOIN lessons l ON l.id = a.lesson_id
+     WHERE l.teacher_id = $1 AND s.file_url IS NOT NULL`,
+    [id]
+  );
   await pool.query("DELETE FROM users WHERE id = $1", [id]);
+  files.forEach((f) => removeFile(f.file_url));
   res.status(204).end();
 });
 

@@ -23,6 +23,7 @@ app.get("/api/health", async (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/teacher", require("./routes/teacher"));
+app.use("/api/student", require("./routes/student"));
 
 // Yuklangan dars materiallari va vazifa fayllari
 app.use("/uploads", express.static(UPLOAD_DIR));

@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const pool = require("../../config/db");
 const { withTransaction } = require("../../config/db");
 const { CATEGORIES, HttpError, validateUserFields, parseId } = require("../../utils/validation");
+const { removeFile } = require("../../middleware/upload");
 
 const router = Router();
 
@@ -120,7 +121,12 @@ router.patch("/:id/status", async (req, res) => {
 router.delete("/:id", async (req, res) => {
   const id = parseId(req.params.id);
   await findStudent(id);
+  const { rows: files } = await pool.query(
+    "SELECT file_url FROM submissions WHERE student_id = $1 AND file_url IS NOT NULL",
+    [id]
+  );
   await pool.query("DELETE FROM users WHERE id = $1", [id]);
+  files.forEach((f) => removeFile(f.file_url));
   res.status(204).end();
 });
 
