@@ -126,10 +126,16 @@
   --color-indigo-800: oklch(42.4% 0.199 265.638);
   --color-indigo-900: oklch(37.9% 0.146 265.522);
   --color-indigo-950: oklch(28.2% 0.091 267.935);
+  --color-brand-100: #dbeafe;
+  --color-brand-200: #bfdbfe;
   --color-brand-700: #1e40af;
 }
 .brand-blue :focus-visible {
   outline-color: rgb(37 99 235 / 0.55);
+}
+/* Ko'k karta ustida fokus chizig'i oq bo'lsin (ko'k ustida ko'k ko'rinmaydi) */
+.login-card :focus-visible {
+  outline-color: rgb(255 255 255 / 0.85);
 }
 /* Login oynasi har doim oq fonda — tungi rejimdagi "och matn" qoidasi bu yerga tegishli emas */
 .dark .brand-blue :is(.text-indigo-500, .text-indigo-600) {

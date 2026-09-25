@@ -41,15 +41,15 @@ export default function LoginPage() {
 
   return (
     // Login oynasi: fon to'liq oq (tungi rejim yoniq bo'lsa ham — .theme-light), forma o'rtada qalqib chiqqan karta,
-    // asosiy rang ko'k (.brand-blue)
+    // karta ko'k (.brand-blue — indigo o'rniga ko'k qiymatlar)
     <main className="theme-light brand-blue flex flex-1 flex-col items-center justify-center bg-white px-4 py-12">
-      <div className="relative w-full max-w-md animate-pop rounded-3xl bg-white p-8 ring-1 ring-slate-200/60 -translate-y-1 shadow-[0_2px_4px_rgb(15_23_42/0.04),0_12px_24px_-6px_rgb(15_23_42/0.10),0_40px_80px_-24px_rgb(37_99_235/0.40)] sm:p-10">
+      <div className="login-card relative w-full max-w-md animate-pop rounded-3xl bg-indigo-600 p-8 text-white ring-1 ring-white/10 -translate-y-1 shadow-[0_2px_4px_rgb(15_23_42/0.06),0_16px_32px_-8px_rgb(15_23_42/0.18),0_48px_96px_-24px_rgb(37_99_235/0.55)] sm:p-10">
         <div className="mb-8 flex justify-center">
-          <Logo size="lg" />
+          <Logo size="lg" light />
         </div>
 
-        <h1 className="text-center text-3xl font-bold tracking-tight text-slate-900">Tizimga kirish</h1>
-        <p className="mt-2 text-center text-slate-500">Administrator bergan login va parolingizni kiriting</p>
+        <h1 className="text-center text-3xl font-bold tracking-tight text-white">Tizimga kirish</h1>
+        <p className="mt-2 text-center text-brand-100">Administrator bergan login va parolingizni kiriting</p>
 
         <form
           onSubmit={(e) => {
@@ -59,7 +59,7 @@ export default function LoginPage() {
           className="mt-8 space-y-5"
         >
           <div>
-            <label htmlFor="username" className="label">
+            <label htmlFor="username" className="label text-white">
               Login
             </label>
             <div className="relative">
@@ -71,14 +71,14 @@ export default function LoginPage() {
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="input py-3 pl-11 text-lg"
+                className="input py-3 pl-11 text-lg text-slate-900 focus:border-white focus:ring-white/40"
                 placeholder="login"
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor="password" className="label">
+            <label htmlFor="password" className="label text-white">
               Parol
             </label>
             <div className="relative">
@@ -90,7 +90,7 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="input py-3 pr-12 pl-11 text-lg"
+                className="input py-3 pr-12 pl-11 text-lg text-slate-900 focus:border-white focus:ring-white/40"
                 placeholder="••••••••"
               />
               <button
@@ -104,13 +104,17 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <button type="submit" disabled={mutation.isPending} className="btn-primary w-full py-3.5 text-lg">
+          <button
+            type="submit"
+            disabled={mutation.isPending}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white py-3.5 text-lg font-semibold text-indigo-700 shadow-lg shadow-black/15 transition-all duration-150 hover:bg-indigo-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+          >
             {mutation.isPending ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <LogIn className="size-5" aria-hidden />}
             Kirish
           </button>
         </form>
 
-        <p className="mt-8 rounded-xl bg-slate-100/80 px-4 py-3 text-center text-sm text-slate-600">
+        <p className="mt-8 rounded-xl bg-white/10 px-4 py-3 text-center text-sm text-brand-100 ring-1 ring-white/15">
           Login yoki parolingizni unutdingizmi? Maktab administratoriga murojaat qiling.
         </p>
       </div>
