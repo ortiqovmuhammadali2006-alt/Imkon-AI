@@ -57,17 +57,27 @@ export function onSpeakingChange(fn: (speaking: boolean) => void) {
   };
 }
 
+let serverUzbek = false; // server Azure orqali haqiqiy o'zbekcha ovoz beradimi
+
 // Sahifa ochilganda oldindan tekshirib qo'yamiz — tugma bosilganda kutish bo'lmasin
 export async function checkServerTts() {
   if (Date.now() - serverCheckedAt < 10 * 60 * 1000 && serverTtsOk !== null) return serverTtsOk;
   serverCheckedAt = Date.now();
   try {
-    const { data } = await api.get<{ available: boolean }>("/student/tts/status");
+    const { data } = await api.get<{ available: boolean; uzbek_voice?: boolean }>("/student/tts/status");
     serverTtsOk = data.available;
+    serverUzbek = Boolean(data.uzbek_voice);
   } catch {
     serverTtsOk = false;
+    serverUzbek = false;
   }
   return serverTtsOk;
+}
+
+// O'quvchi aniq o'zbekcha talaffuzni eshitadimi: server (Azure) yoki brauzerdagi o'zbekcha ovoz orqali
+export async function hasClearUzbekVoice() {
+  await checkServerTts();
+  return (serverTtsOk && serverUzbek) || (await hasUzbekVoice());
 }
 
 // Markdown belgilarini olib tashlash — ovozda "yulduzcha" deb o'qilmasin

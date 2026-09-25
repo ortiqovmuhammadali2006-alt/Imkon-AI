@@ -32,6 +32,7 @@ backend/    Express API (http://localhost:5000/api)
    ```
 4. http://localhost:3000 — `.env` dagi `ADMIN_USERNAME` / `ADMIN_PASSWORD` bilan kiring.
 5. AI uchun `backend/.env` ga `OPENAI_API_KEY` yozing (bo'sh bo'lsa, AI tugmalari "sozlanmagan" xabarini ko'rsatadi).
+6. Aniq o'zbekcha ovoz uchun (ixtiyoriy) `backend/.env` ga Microsoft Azure Speech kalitini yozing: `AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION` (oyiga 500 000 belgigacha bepul, ovozlar: Madina, Sardor).
 
 ## Holat
 

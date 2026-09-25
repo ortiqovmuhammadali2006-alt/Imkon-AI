@@ -3,6 +3,7 @@
 import { LayoutDashboard, BookOpen, CalendarDays, ClipboardList, Star } from "lucide-react";
 import DashboardShell, { type NavItem } from "@/components/DashboardShell";
 import VoiceControl from "@/components/student/VoiceControl";
+import VoiceQualityHint from "@/components/student/VoiceQualityHint";
 
 const nav: NavItem[] = [
   { href: "/student", label: "Bosh sahifa", icon: LayoutDashboard },
@@ -15,6 +16,7 @@ const nav: NavItem[] = [
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   return (
     <DashboardShell role="student" nav={nav} toolbar={<VoiceControl />}>
+      <VoiceQualityHint />
       {children}
     </DashboardShell>
   );
