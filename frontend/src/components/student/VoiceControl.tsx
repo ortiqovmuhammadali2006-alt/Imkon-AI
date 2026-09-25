@@ -28,6 +28,7 @@ import {
   VOICE_COMMAND_EVENT,
 } from "@/lib/speech";
 import { LOGIN_WELCOME_KEY, voiceMode } from "@/lib/voiceMode";
+import { OPEN_PROFILE_EVENT } from "@/components/DashboardShell";
 import { setTheme } from "@/lib/theme";
 import MicPermissionDialog from "./MicPermissionDialog";
 import Modal from "@/components/ui/Modal";
@@ -104,6 +105,14 @@ const COMMANDS: Command[] = [
   },
   { label: "“O'qib ber” — sahifadagi ma'lumotni o'qiydi", match: (t) => has(t, "oqi", "tingla"), run: () => dispatchVoiceAction("read") },
   { label: "“Suhbat” — AI bilan suhbat", match: (t) => has(t, "suhbat", "chat", "чат"), run: ({ go }) => go("/student/chat"), reply: "AI suhbat ochildi. Savolingizni ayting" },
+  {
+    label: "“Profil” — ma'lumotlarim",
+    match: (t) => has(t, "profil", "malumotlarim"),
+    run: () => {
+      window.dispatchEvent(new Event(OPEN_PROFILE_EVENT));
+    },
+    reply: "Profil ochildi",
+  },
   { label: "“Jadval” — dars jadvali", match: (t) => has(t, "jadval"), run: ({ go }) => go("/student/schedule"), reply: "Dars jadvali ochildi" },
   { label: "“Vazifalar” — uy vazifalari", match: (t) => has(t, "vazifa", "uy ishi"), run: ({ go }) => go("/student/assignments"), reply: "Vazifalar ochildi" },
   { label: "“Baholar” — baholarim", match: (t) => has(t, "baho"), run: ({ go }) => go("/student/grades"), reply: "Baholar ochildi" },
@@ -115,7 +124,7 @@ const COMMANDS: Command[] = [
     label: "“Yordam” — buyruqlarni aytib beradi",
     match: (t) => has(t, "yordam"),
     run: () =>
-      "Buyruqlar: darslar, vazifalar, jadval, suhbat, yangi suhbat, baholar, bosh sahifa, ikkinchi darsni och, o'qib ber, tushuntir, keyingi, qayta, " +
+      "Buyruqlar: darslar, vazifalar, jadval, suhbat, yangi suhbat, profil, baholar, bosh sahifa, ikkinchi darsni och, o'qib ber, tushuntir, keyingi, qayta, " +
       "sekinroq, kattalashtir, kichraytir, tungi rejim, to'xta, orqaga, ovoz rejimini o'chir, chiqish.",
   },
   {

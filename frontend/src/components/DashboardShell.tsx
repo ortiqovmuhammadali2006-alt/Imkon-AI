@@ -9,6 +9,10 @@ import { ROLE_HOME, useAuth, type Role, type User } from "@/lib/auth";
 import Logo from "@/components/ui/Logo";
 import Avatar from "@/components/ui/Avatar";
 import ThemeToggle from "@/components/ui/ThemeToggle";
+import ProfileModal from "@/components/ProfileModal";
+
+// Profil oynasini boshqa joydan ochish (masalan, ovozli buyruq "profil")
+export const OPEN_PROFILE_EVENT = "imkon:open-profile";
 
 export type NavItem = { href: string; label: string; icon: LucideIcon };
 
@@ -52,17 +56,25 @@ function NavLinks({ nav, role, pathname, onNavigate }: { nav: NavItem[]; role: R
   );
 }
 
-function UserCard({ user, role, onLogout }: { user: User; role: Role; onLogout: () => void }) {
+// Foydalanuvchi kartasi: avatar va ism bosilsa — profil oynasi, o'ngdagi tugma — chiqish
+function UserCard({ user, role, onOpen, onLogout }: { user: User; role: Role; onOpen: () => void; onLogout: () => void }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-100">
-      <Avatar name={user.full_name} />
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-semibold text-slate-900">{user.full_name}</p>
-        <p className="truncate text-xs text-slate-500">
-          {ROLE_LABEL[role]}
-          {user.subject && ` · ${user.subject}`}
-        </p>
-      </div>
+    <div className="flex items-center gap-1 rounded-2xl bg-slate-50 p-1.5 ring-1 ring-slate-100">
+      <button
+        onClick={onOpen}
+        aria-haspopup="dialog"
+        title="Profilni ko'rish"
+        className="flex min-w-0 flex-1 items-center gap-3 rounded-xl p-1.5 text-left transition-colors hover:bg-indigo-50"
+      >
+        <Avatar name={user.full_name} />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate font-semibold text-slate-900">{user.full_name}</span>
+          <span className="block truncate text-xs text-slate-500">
+            {ROLE_LABEL[role]}
+            {user.subject && ` · ${user.subject}`}
+          </span>
+        </span>
+      </button>
       <button onClick={onLogout} className="icon-btn hover:bg-red-50 hover:text-red-600" aria-label="Tizimdan chiqish" title="Chiqish">
         <LogOut className="size-5" />
       </button>
@@ -86,6 +98,14 @@ export default function DashboardShell({
   const router = useRouter();
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  // Ovozli buyruq ("profil") ham profil oynasini ochadi
+  useEffect(() => {
+    const open = () => setProfileOpen(true);
+    window.addEventListener(OPEN_PROFILE_EVENT, open);
+    return () => window.removeEventListener(OPEN_PROFILE_EVENT, open);
+  }, []);
 
   useEffect(() => {
     if (loading) return;
@@ -133,7 +153,7 @@ export default function DashboardShell({
           <NavLinks nav={nav} role={role} pathname={pathname} />
         </div>
         <div className="p-4">
-          <UserCard user={user} role={role} onLogout={handleLogout} />
+          <UserCard user={user} role={role} onOpen={() => setProfileOpen(true)} onLogout={handleLogout} />
         </div>
       </aside>
 
@@ -167,11 +187,28 @@ export default function DashboardShell({
                 <NavLinks nav={nav} role={role} pathname={pathname} onNavigate={() => setDrawerOpen(false)} />
               </div>
               <div className="p-4">
-                <UserCard user={user} role={role} onLogout={handleLogout} />
+                <UserCard
+                  user={user}
+                  role={role}
+                  onOpen={() => {
+                    setDrawerOpen(false);
+                    setProfileOpen(true);
+                  }}
+                  onLogout={handleLogout}
+                />
               </div>
             </div>
           </div>
         )}
+
+        <ProfileModal
+          open={profileOpen}
+          onClose={() => setProfileOpen(false)}
+          onLogout={() => {
+            setProfileOpen(false);
+            handleLogout();
+          }}
+        />
 
         <main id="main" className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
           {children}

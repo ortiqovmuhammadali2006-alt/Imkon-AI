@@ -57,4 +57,40 @@ router.get("/me", authenticate, async (req, res) => {
   res.json({ user });
 });
 
+// Profil oynasi (yon menyudagi foydalanuvchi kartasi bosilganda): umumiy ma'lumot + rolga xos qism
+router.get("/profile", authenticate, async (req, res) => {
+  const { rows } = await pool.query(
+    "SELECT id, full_name, username, role, phone, created_at FROM users WHERE id = $1",
+    [req.user.id]
+  );
+  const profile = rows[0];
+  if (!profile) return res.status(404).json({ message: "Foydalanuvchi topilmadi" });
+
+  if (profile.role === "student") {
+    const { rows: st } = await pool.query(
+      `SELECT st.category, st.grade, st.birth_date,
+              COALESCE(json_agg(json_build_object('full_name', tu.full_name, 'subject', t.subject) ORDER BY tu.full_name)
+                FILTER (WHERE tu.id IS NOT NULL), '[]') AS teachers
+       FROM students st
+       LEFT JOIN teacher_students ts ON ts.student_id = st.user_id
+       LEFT JOIN users tu ON tu.id = ts.teacher_id
+       LEFT JOIN teachers t ON t.user_id = ts.teacher_id
+       WHERE st.user_id = $1
+       GROUP BY st.user_id`,
+      [profile.id]
+    );
+    Object.assign(profile, st[0] || { teachers: [] });
+  } else if (profile.role === "teacher") {
+    const { rows: tr } = await pool.query(
+      `SELECT t.subject,
+              (SELECT COUNT(*)::int FROM teacher_students WHERE teacher_id = t.user_id) AS students_count,
+              (SELECT COUNT(*)::int FROM lessons WHERE teacher_id = t.user_id) AS lessons_count
+       FROM teachers t WHERE t.user_id = $1`,
+      [profile.id]
+    );
+    Object.assign(profile, tr[0] || {});
+  }
+  res.json(profile);
+});
+
 module.exports = router;
