@@ -25,12 +25,17 @@ const PHASE_TEXT: Record<Phase, string> = {
 
 // Ovozli suhbat: tinglash -> AI javobi -> ovoz bilan aytish -> yana tinglash (qo'l tegizmasdan).
 // onSend — xabarni yuboradi va javob matnini qaytaradi (chat oynasida ham ko'rinadi)
+// title — sarlavha; intro — ochilganda birinchi aytiladigan gap (masalan, AI Tutorning oxirgi savoli)
 export default function VoiceChat({
   onSend,
   onClose,
+  title = "Ovozli suhbat",
+  intro,
 }: {
   onSend: (text: string, onDelta: (answer: string) => void, signal: AbortSignal) => Promise<string>;
   onClose: () => void;
+  title?: string;
+  intro?: string;
 }) {
   const [phase, setPhase] = useState<Phase>("listening");
   const [heard, setHeard] = useState("");
@@ -40,6 +45,7 @@ export default function VoiceChat({
   const abortRef = useRef<AbortController | null>(null);
   const answerRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
+  const introRef = useRef(intro);
   useEffect(() => {
     onCloseRef.current = onClose;
   });
@@ -58,6 +64,16 @@ export default function VoiceChat({
     activeRef.current = true;
     setError(null);
     let silentRounds = 0;
+    // Avval kirish gapi (bir marta): o'quvchi nimaga javob berishini eshitsin
+    const introText = introRef.current;
+    introRef.current = undefined;
+    if (introText) {
+      setPhase("speaking");
+      setAnswer(introText);
+      await createSpeechStream().end(introText);
+      if (!activeRef.current) return;
+      await new Promise((r) => setTimeout(r, 600));
+    }
     while (activeRef.current) {
       const ctrl = new AbortController();
       abortRef.current = ctrl;
@@ -171,9 +187,9 @@ export default function VoiceChat({
           : "from-indigo-500 to-indigo-600 shadow-indigo-500/40";
 
   return createPortal(
-    <div role="dialog" aria-modal="true" aria-label="Ovozli suhbat" className="fixed inset-0 z-50 flex animate-fade-in flex-col bg-gray-950/95 text-white backdrop-blur-xl">
+    <div role="dialog" aria-modal="true" aria-label={title} className="fixed inset-0 z-50 flex animate-fade-in flex-col bg-gray-950/95 text-white backdrop-blur-xl">
       <div className="flex items-center justify-between px-5 py-4">
-        <p className="font-semibold">Ovozli suhbat</p>
+        <p className="font-semibold">{title}</p>
         <button onClick={onClose} className="rounded-full p-2 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Yopish">
           <X className="size-6" />
         </button>

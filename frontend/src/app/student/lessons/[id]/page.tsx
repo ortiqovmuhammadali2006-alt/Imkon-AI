@@ -2,7 +2,7 @@
 
 import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Loader2, UserRound } from "lucide-react";
+import { ArrowLeft, Bot, Loader2, UserRound } from "lucide-react";
 import LessonTextTabs from "@/components/student/LessonTextTabs";
 import StepByStep from "@/components/student/StepByStep";
 import { getErrorMessage } from "@/lib/api";
@@ -62,7 +62,15 @@ export default function StudentLessonPage({ params }: { params: Promise<{ id: st
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{lesson.title}</h1>
           {lesson.description && <p className="mt-2 max-w-2xl text-lg text-white/90">{lesson.description}</p>}
           <div className="mt-6">
-            <SpeakButton text={lessonText} label="Darsni ovoz bilan tinglash" variant="hero" />
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href={`/student/lessons/${lesson.id}/tutor`}
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 font-semibold text-indigo-700 shadow-lg shadow-black/10 transition-all hover:bg-indigo-50 active:scale-[0.98]"
+              >
+                <Bot className="size-5" aria-hidden /> AI Tutor bilan o&apos;rganish
+              </Link>
+              <SpeakButton text={lessonText} label="Darsni ovoz bilan tinglash" variant="hero" />
+            </div>
           </div>
         </div>
 

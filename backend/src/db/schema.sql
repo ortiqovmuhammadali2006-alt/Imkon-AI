@@ -138,3 +138,33 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS chat_messages_conversation_idx ON chat_messages (conversation_id, id);
+-- ---------- AI Tutor ----------
+-- Dars rejasi (maqsad + 3-6 qism/tushuncha). Material bo'yicha bir marta tuziladi va barcha o'quvchilar uchun ishlatiladi;
+-- keyinchalik bilim xaritasi shu tushunchalar asosida quriladi
+ALTER TABLE lessons ADD COLUMN IF NOT EXISTS ai_plan JSONB;
+
+-- O'quvchining dars bo'yicha AI Tutor seansi: qaysi qismda turibdi, tugaganmi
+CREATE TABLE IF NOT EXISTS tutor_sessions (
+  id           SERIAL PRIMARY KEY,
+  student_id   INTEGER NOT NULL REFERENCES students(user_id) ON DELETE CASCADE,
+  lesson_id    INTEGER NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
+  current_part INTEGER NOT NULL DEFAULT 1,
+  finished     BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS tutor_sessions_student_lesson_idx ON tutor_sessions (student_id, lesson_id, updated_at DESC);
+
+-- Seansdagi navbatlar. evaluation — AI o'quvchining oldingi javobini qanday baholagani (part — qaysi qism bo'yicha);
+-- kind: message (oddiy), mode ("Tushunmadim" usuli), start (seans boshi)
+CREATE TABLE IF NOT EXISTS tutor_turns (
+  id         SERIAL PRIMARY KEY,
+  session_id INTEGER NOT NULL REFERENCES tutor_sessions(id) ON DELETE CASCADE,
+  role       VARCHAR(10) NOT NULL CHECK (role IN ('user', 'assistant')),
+  content    TEXT NOT NULL,
+  kind       VARCHAR(12) NOT NULL DEFAULT 'message' CHECK (kind IN ('message', 'mode', 'start')),
+  evaluation VARCHAR(10) CHECK (evaluation IN ('correct', 'partial', 'wrong')),
+  part       INTEGER,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS tutor_turns_session_idx ON tutor_turns (session_id, id);

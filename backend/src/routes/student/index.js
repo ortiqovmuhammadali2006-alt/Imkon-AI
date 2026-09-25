@@ -4,7 +4,8 @@ const { authenticate, requireRole } = require("../../middleware/auth");
 const { upload, fileInfo, removeFile } = require("../../middleware/upload");
 const { HttpError, parseId } = require("../../utils/validation");
 const { SELECT_SQL, ORDER_SQL } = require("../schedule");
-const { explainLesson, toHttpError } = require("../../services/ai");
+const { explainLesson, getClient, chatParams, toHttpError } = require("../../services/ai");
+const tutor = require("../../services/tutor");
 
 const router = Router();
 router.use(authenticate, requireRole("student"));
@@ -28,7 +29,7 @@ async function getProfile(studentId) {
 async function getLesson(studentId, lessonId) {
   const { rows } = await pool.query(
     `SELECT l.id, l.title, l.description, l.content, l.category, l.file_url, l.file_name, l.created_at,
-            l.a11y, tu.full_name AS teacher_name, t.subject
+            l.a11y, l.ai_plan, tu.full_name AS teacher_name, t.subject
      ${ACCESSIBLE_LESSONS} AND l.id = $2`,
     [studentId, lessonId]
   );
@@ -181,6 +182,173 @@ router.post("/lessons/:id/explain", async (req, res) => {
     res.json({ answer: await explainLesson(lesson, category, messages) });
   } catch (err) {
     throw toHttpError(err);
+  }
+});
+
+// ---------- AI Tutor: dars bo'yicha interaktiv seans ----------
+
+const tutorUsage = new Map();
+function checkTutorLimit(userId) {
+  const now = Date.now();
+  const recent = (tutorUsage.get(userId) || []).filter((t) => now - t < 10 * 60 * 1000);
+  if (recent.length >= 60) throw new HttpError(429, "Juda ko'p so'rov. Birozdan so'ng davom eting");
+  recent.push(now);
+  tutorUsage.set(userId, recent);
+}
+
+async function activeSession(studentId, lessonId) {
+  const { rows } = await pool.query(
+    "SELECT * FROM tutor_sessions WHERE student_id = $1 AND lesson_id = $2 ORDER BY updated_at DESC LIMIT 1",
+    [studentId, lessonId]
+  );
+  return rows[0] || null;
+}
+
+async function sessionTurns(sessionId) {
+  const { rows } = await pool.query(
+    "SELECT id, role, content, kind, evaluation, part, created_at FROM tutor_turns WHERE session_id = $1 ORDER BY id",
+    [sessionId]
+  );
+  return rows;
+}
+
+// Seans holati: reja, joriy qism va barcha navbatlar
+router.get("/lessons/:id/tutor", async (req, res) => {
+  const lesson = await getLesson(req.user.id, parseId(req.params.id));
+  const session = await activeSession(req.user.id, lesson.id);
+  res.json({
+    lesson: { id: lesson.id, title: lesson.title, subject: lesson.subject, teacher_name: lesson.teacher_name },
+    plan: lesson.ai_plan?.parts?.length ? lesson.ai_plan : null,
+    session: session && { id: session.id, current_part: session.current_part, finished: session.finished },
+    turns: session ? await sessionTurns(session.id) : [],
+    modes: Object.entries(tutor.MODES).map(([key, m]) => ({ key, label: m.label })),
+  });
+});
+
+// Navbat: body { message?, mode?, restart?, voice? }. Javob SSE: {plan}, {delta}, {error}, {done, evaluation, part, finished}
+router.post("/lessons/:id/tutor", async (req, res) => {
+  const lesson = await getLesson(req.user.id, parseId(req.params.id));
+  const profile = await getProfile(req.user.id);
+  const message = typeof req.body?.message === "string" ? req.body.message.trim().slice(0, 2000) : "";
+  const mode = typeof req.body?.mode === "string" && tutor.MODES[req.body.mode] ? req.body.mode : null;
+  const voice = Boolean(req.body?.voice);
+  checkTutorLimit(req.user.id);
+
+  let plan;
+  try {
+    plan = await tutor.getPlan(lesson);
+  } catch (err) {
+    throw toHttpError(err);
+  }
+
+  // Seans: yo'q bo'lsa, tugagan bo'lsa yoki "qaytadan" so'ralsa — yangisi
+  let session = await activeSession(req.user.id, lesson.id);
+  if (!session || session.finished || req.body?.restart) {
+    const { rows } = await pool.query("INSERT INTO tutor_sessions (student_id, lesson_id) VALUES ($1, $2) RETURNING *", [req.user.id, lesson.id]);
+    session = rows[0];
+  }
+  const history = await sessionTurns(session.id);
+  const starting = history.length === 0;
+  if (!starting && !message && !mode) throw new HttpError(400, "Javobingizni yozing yoki ayting");
+
+  // O'quvchi navbati (seans boshida — AI o'zi boshlaydi)
+  if (!starting) {
+    const content = mode ? `Tushunmadim. ${tutor.MODES[mode].label} tushuntiring.` : message;
+    const kind = mode ? "mode" : "message";
+    await pool.query("INSERT INTO tutor_turns (session_id, role, content, kind) VALUES ($1, 'user', $2, $3)", [session.id, content, kind]);
+    history.push({ role: "user", content, kind });
+  }
+
+  // Moslashuv uchun: shu seansdagi ketma-ket to'g'ri/noto'g'ri javoblar
+  const evals = history.filter((t) => t.evaluation).map((t) => t.evaluation);
+  const streak = (value) => {
+    let n = 0;
+    for (let i = evals.length - 1; i >= 0 && evals[i] === value; i--) n++;
+    return n;
+  };
+  const stats = { wrongStreak: streak("wrong"), correctStreak: streak("correct") };
+
+  const messages = [
+    { role: "system", content: tutor.systemPrompt({ lesson, plan, profile, session, stats, voice }) },
+    ...history.slice(-24).map((t) => ({ role: t.role, content: t.content })),
+  ];
+  if (starting) messages.push({ role: "user", content: "(Seans boshlandi. Salomlash va 1-qismni boshla.)" });
+  // Usul tanlangan — bu umumiy "tushunmadim" emas: "qaysi qismi qiyin?" deb so'ramasin, tushuntirib, tekshiruvchi savol bersin
+  if (mode) {
+    messages.push({
+      role: "system",
+      content: `USUL: ${tutor.MODES[mode].instruction} O'quvchi usulni o'zi tanladi — "qaysi qismi qiyin" deb so'rama. Tushuntirgach, shu qism bo'yicha bitta oson tekshiruvchi savol ber. Baho: yoq.`,
+    });
+  }
+
+  res.set({
+    "Content-Type": "text/event-stream; charset=utf-8",
+    "Cache-Control": "no-cache, no-transform",
+    Connection: "keep-alive",
+    "X-Accel-Buffering": "no",
+  });
+  res.flushHeaders();
+  const send = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
+  send({ plan, session_id: session.id });
+
+  const controller = new AbortController();
+  res.on("close", () => controller.abort());
+
+  let raw = "";
+  let tag = null;
+  let answer = "";
+  try {
+    const stream = await getClient().chat.completions.create(
+      { ...chatParams(voice ? 500 : 700), messages, stream: true },
+      { signal: controller.signal }
+    );
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0]?.delta?.content || chunk.choices[0]?.delta?.refusal;
+      if (!delta) continue;
+      if (tag) {
+        answer += delta;
+        send({ delta });
+        continue;
+      }
+      // Birinchi qatordagi xizmat belgisi to'liq kelguncha matnni ushlab turamiz
+      raw += delta;
+      tag = tutor.parseTag(raw);
+      if (tag && tag.rest) {
+        answer = tag.rest;
+        send({ delta: tag.rest });
+      }
+    }
+    if (!tag && raw) {
+      tag = tutor.parseTag(raw + "\n") || { evaluation: null, part: undefined, finished: false, rest: raw };
+      answer = tag.rest;
+      if (answer) send({ delta: answer });
+    }
+    if (!answer.trim() && !controller.signal.aborted) send({ error: "AI javob bermadi. Qayta urinib ko'ring." });
+  } catch (err) {
+    if (!controller.signal.aborted) {
+      console.error(`[tutor] OpenAI xatosi (session ${session.id}):`, err.status ?? "", err.message);
+      send({ error: toHttpError(err).message });
+    }
+  }
+
+  const evaluation = tag?.evaluation || null;
+  const finished = Boolean(tag?.finished);
+  const nextPart = finished ? session.current_part : Math.min(Math.max(Number(tag?.part) || session.current_part, 1), plan.parts.length);
+  if (answer.trim()) {
+    // Baho — o'quvchi javob bergan paytdagi qism bo'yicha (bilim xaritasi uchun)
+    await pool.query(
+      "INSERT INTO tutor_turns (session_id, role, content, kind, evaluation, part) VALUES ($1, 'assistant', $2, $3, $4, $5)",
+      [session.id, answer.trim(), starting ? "start" : "message", evaluation, session.current_part]
+    );
+    await pool.query("UPDATE tutor_sessions SET current_part = $1, finished = $2, updated_at = NOW() WHERE id = $3", [
+      nextPart,
+      finished,
+      session.id,
+    ]);
+  }
+  if (!res.writableEnded) {
+    send({ done: true, evaluation, part: nextPart, finished, parts_total: plan.parts.length });
+    res.end();
   }
 });
 

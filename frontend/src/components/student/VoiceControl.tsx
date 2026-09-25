@@ -51,11 +51,22 @@ type Command = {
 
 const has = (t: string, ...words: string[]) => words.some((w) => t.includes(w));
 
+const TUTOR_PATH = /^\/student\/lessons\/\d+\/tutor$/;
+const TUTOR_HREF = /^\/student\/lessons\/(\d+)$/;
+
+// Tutor darsida buyruq deb qabul qilinadiganlari: boshqaruv so'zlari yoki "…ga o't / …ni och"
+function isExplicitCommand(t: string) {
+  const words = t.split(" ");
+  if (has(t, "toxta", "orqaga", "bosh sahifa", "chiqish", "yordam", "ovoz rejim", "sekinroq", "tezroq", "kattalashtir", "kichraytir", "tungi rejim", "kunduzgi rejim")) return true;
+  return (words.includes("och") || words.includes("ot") || words.includes("oting")) && has(t, "dars", "vazifa", "jadval", "baho", "suhbat", "profil");
+}
+
 function pageName(pathname: string) {
   if (pathname === "/student") return "Bosh sahifa";
   if (pathname === "/student/schedule") return "Dars jadvali";
   if (pathname === "/student/lessons") return "Darslarim. Ro'yxatni eshitish uchun o'qib ber deb ayting";
-  if (pathname.startsWith("/student/lessons/")) return "Dars sahifasi. O'qib ber yoki tushuntir deb ayting";
+  if (TUTOR_PATH.test(pathname)) return "AI Tutor darsi. Savolga javob bering yoki tushunmadim deng";
+  if (pathname.startsWith("/student/lessons/")) return "Dars sahifasi. O'rgat deb aytsangiz, AI Tutor dars o'tadi. O'qib ber yoki tushuntir ham deyishingiz mumkin";
   if (pathname === "/student/assignments") return "Vazifalar";
   if (pathname === "/student/grades") return "Baholarim";
   if (pathname === "/student/chat") return "AI suhbat. Savolingizni ayting, men javob beraman";
@@ -75,6 +86,16 @@ const COMMANDS: Command[] = [
       if (pathname === "/student/lessons") window.dispatchEvent(new CustomEvent(OPEN_LESSON_EVENT, { detail: n }));
       else go(`/student/lessons?open=${n}`);
       return `${n}-dars ochilmoqda`;
+    },
+  },
+  {
+    label: "“O'rgat” — ochiq darsni AI Tutor bilan o'rganish",
+    match: (t) => has(t, "orgat", "tutor", "organamiz"),
+    run: ({ go, pathname }) => {
+      const m = pathname.match(TUTOR_HREF);
+      if (!m) return "Avval darsni oching, keyin o'rgat deb ayting";
+      go(`/student/lessons/${m[1]}/tutor`);
+      return "AI Tutor ochildi. Darsni boshlash tugmasini bosing yoki boshla deb ayting";
     },
   },
   { label: "“Tushuntir” — ochiq darsni AI tushuntiradi", match: (t) => has(t, "tushuntir"), run: () => dispatchVoiceAction("explain") },
@@ -249,6 +270,13 @@ export default function VoiceControl() {
           askChat(heard.trim());
           return;
         }
+      }
+
+      // AI Tutor darsida: aytilgan gap — savolga javob. Faqat aniq buyruqlar ("to'xta", "darslarga o't") buyruq bo'ladi,
+      // aks holda "darsni tushunmadim" darslar sahifasini ochib yuborardi
+      if (TUTOR_PATH.test(pathname) && !asCommand && !isExplicitCommand(text)) {
+        askChat(heard.trim());
+        return;
       }
 
       const command = COMMANDS.find((c) => c.match(text));
