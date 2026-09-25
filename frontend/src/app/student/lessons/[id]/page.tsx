@@ -4,6 +4,7 @@ import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Loader2, UserRound } from "lucide-react";
 import LessonTextTabs from "@/components/student/LessonTextTabs";
+import StepByStep from "@/components/student/StepByStep";
 import { getErrorMessage } from "@/lib/api";
 import { formatDate, subjectTone } from "@/lib/format";
 import { onVoiceAction, speak, stopSpeaking } from "@/lib/speech";
@@ -91,6 +92,8 @@ export default function StudentLessonPage({ params }: { params: Promise<{ id: st
           )}
         </div>
       </article>
+      <StepByStep lessonId={lessonId} text={activeText} />
+
       <AiTutor lessonId={lessonId} autoSpeak={profile?.category === "visual"} fallbackText={lessonText} />
 
       {lesson.assignments.length > 0 && (

@@ -170,8 +170,9 @@ export function useSubmitAssignment(assignmentId: number, onDone?: () => void) {
   });
 }
 
-export async function explainLesson(lessonId: number, messages: ChatMessage[]) {
-  const { data } = await api.post<{ answer: string }>(`/student/lessons/${lessonId}/explain`, { messages });
+// focus — darsning bitta qismi: AI aynan shuni batafsil tushuntiradi (bosqichma-bosqich rejim)
+export async function explainLesson(lessonId: number, messages: ChatMessage[], focus?: string) {
+  const { data } = await api.post<{ answer: string }>(`/student/lessons/${lessonId}/explain`, { messages, focus });
   return data.answer;
 }
 

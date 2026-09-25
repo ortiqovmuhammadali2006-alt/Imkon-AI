@@ -11,6 +11,36 @@ let audioUrl: string | null = null;
 let session = 0; // har bir yangi speak() oldingisini bekor qiladi
 const listeners = new Set<(speaking: boolean) => void>();
 
+// ---------- O'qish tezligi (foydalanuvchi tanlaydi, saqlanadi) ----------
+
+export const SPEECH_RATES = [
+  { key: "slow", label: "Sekin", browser: 0.7, server: 0.7, pauseMs: 700 },
+  { key: "medium", label: "O'rta", browser: 0.82, server: 0.85, pauseMs: 400 },
+  { key: "fast", label: "Tez", browser: 1.0, server: 1.0, pauseMs: 150 },
+] as const;
+export type SpeechRateKey = (typeof SPEECH_RATES)[number]["key"];
+const RATE_KEY = "imkon_speech_rate";
+
+export function getSpeechRate(): SpeechRateKey {
+  try {
+    const saved = localStorage.getItem(RATE_KEY);
+    if (SPEECH_RATES.some((r) => r.key === saved)) return saved as SpeechRateKey;
+  } catch {}
+  return "medium";
+}
+
+// Tezlik o'zgarganda tugmalar yangilanishi uchun
+export const RATE_EVENT = "imkon:rate";
+
+export function setSpeechRate(key: SpeechRateKey) {
+  try {
+    localStorage.setItem(RATE_KEY, key);
+  } catch {}
+  window.dispatchEvent(new Event(RATE_EVENT));
+}
+
+const currentRate = () => SPEECH_RATES.find((r) => r.key === getSpeechRate()) ?? SPEECH_RATES[1];
+
 // Server ovozi holati: null — hali tekshirilmagan. Mavjud bo'lmasa, 10 daqiqa qayta so'ramaymiz
 let serverTtsOk: boolean | null = null;
 let serverCheckedAt = 0;
@@ -118,23 +148,32 @@ export async function hasUzbekVoice() {
   return (await loadVoices()).some((v) => v.lang.toLowerCase().startsWith("uz"));
 }
 
-// Chrome uzun matnni ~15 soniyadan keyin uzib qo'yadi — gaplarga bo'lib o'qiymiz
+// Har bir gap alohida o'qiladi — gaplar orasida pauza bo'lsin (shoshilmasdan) va
+// Chrome uzun matnni ~15 soniyadan keyin uzib qo'ymasin. Juda uzun gap vergullar bo'yicha bo'linadi
 function chunks(text: string, max = 180) {
   const sentences = text.match(/[^.!?;:\n]+[.!?;:\n]*/g) ?? [text];
   const result: string[] = [];
-  let current = "";
-  for (const s of sentences) {
-    if ((current + s).length > max && current) {
-      result.push(current.trim());
-      current = "";
+  for (const raw of sentences) {
+    const s = raw.trim();
+    if (!s) continue;
+    if (s.length <= max) {
+      result.push(s);
+      continue;
     }
-    if (s.length > max) {
-      for (let i = 0; i < s.length; i += max) result.push(s.slice(i, i + max).trim());
-    } else current += s;
+    let current = "";
+    for (const part of s.split(/(?<=,)\s+/)) {
+      if ((current + " " + part).length > max && current) {
+        result.push(current.trim());
+        current = "";
+      }
+      current += " " + part;
+    }
+    if (current.trim()) result.push(current.trim());
   }
-  if (current.trim()) result.push(current.trim());
-  return result.filter(Boolean);
+  return result.flatMap((c) => (c.length > max * 1.5 ? c.match(new RegExp(`.{1,${max}}(\\s|$)`, "g")) ?? [c] : [c])).map((c) => c.trim()).filter(Boolean);
 }
+
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function speakWithBrowser(text: string, mySession: number): Promise<SpeakResult> {
   const synth = window.speechSynthesis;
@@ -144,13 +183,20 @@ async function speakWithBrowser(text: string, mySession: number): Promise<SpeakR
     return { ok: false, error: "Kompyuterda birorta ham ovoz o'rnatilmagan. Microsoft Edge'dan foydalanib ko'ring" };
   }
   let spoke = false;
-  for (const part of chunks(choice.transform(text))) {
+  const rate = currentRate();
+  const parts = chunks(choice.transform(text));
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
     if (mySession !== session) return { ok: true };
+    if (i > 0) {
+      await wait(rate.pauseMs); // gaplar orasida pauza — tinglovchi fikrni hazm qilsin
+      if (mySession !== session) return { ok: true };
+    }
     const error = await new Promise<string | null>((resolve) => {
       const u = new SpeechSynthesisUtterance(part);
       u.voice = choice.voice;
       u.lang = choice.lang;
-      u.rate = 0.95;
+      u.rate = rate.browser;
       u.onstart = () => (spoke = true);
       u.onend = () => resolve(null);
       u.onerror = (e) => resolve(e.error === "interrupted" || e.error === "canceled" ? null : e.error);
@@ -168,7 +214,11 @@ async function speakWithBrowser(text: string, mySession: number): Promise<SpeakR
 }
 
 async function speakWithServer(text: string, mySession: number) {
-  const { data } = await api.post<Blob>("/student/tts", { text: text.slice(0, 4000) }, { responseType: "blob" });
+  const { data } = await api.post<Blob>(
+    "/student/tts",
+    { text: text.slice(0, 4000), speed: currentRate().server },
+    { responseType: "blob" }
+  );
   if (mySession !== session) return;
   audioUrl = URL.createObjectURL(data);
   audio = new Audio(audioUrl);
@@ -366,7 +416,8 @@ export function extractNumber(normalized: string): number | null {
 // Darslar sahifasida turganda "N-darsni och" (detail — tartib raqami)
 export const OPEN_LESSON_EVENT = "imkon:open-lesson";
 
-export type VoiceAction = { action: "read" | "explain" | "stop" };
+// next / prev / repeat — bosqichma-bosqich o'rganish rejimi uchun
+export type VoiceAction = { action: "read" | "explain" | "stop" | "next" | "prev" | "repeat" };
 export const VOICE_EVENT = "imkon:voice";
 
 export function dispatchVoiceAction(action: VoiceAction["action"]) {

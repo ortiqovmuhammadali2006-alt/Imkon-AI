@@ -167,6 +167,15 @@ router.post("/lessons/:id/explain", async (req, res) => {
     return { role: m.role, content: m.content.slice(0, 4000) };
   });
 
+  // focus — bosqichma-bosqich rejimda darsning bitta qismi: AI aynan shuni batafsil tushuntiradi
+  const focus = typeof req.body?.focus === "string" ? req.body.focus.trim().slice(0, 2000) : "";
+  if (focus) {
+    messages.push({
+      role: "user",
+      content: `Darsning quyidagi qismini shoshilmasdan, batafsil va oddiy misollar bilan tushuntirib ber:\n«${focus}»`,
+    });
+  }
+
   checkAiLimit(req.user.id);
   try {
     res.json({ answer: await explainLesson(lesson, category, messages) });
@@ -189,7 +198,8 @@ router.post("/tts", async (req, res) => {
   if (!text) throw new HttpError(400, "O'qiladigan matn bo'sh");
   checkAiLimit(req.user.id);
   try {
-    const audio = await textToSpeech(text.slice(0, 4000));
+    const speed = Math.min(Math.max(Number(req.body?.speed) || 0.85, 0.6), 1.1);
+    const audio = await textToSpeech(text.slice(0, 4000), speed);
     ttsBlockedUntil = 0;
     res.set("Content-Type", "audio/mpeg").send(audio);
   } catch (err) {

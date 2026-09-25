@@ -3,10 +3,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Headphones, HelpCircle, Loader2, Mic, Type } from "lucide-react";
+import { Headphones, HelpCircle, Loader2, Mic, Turtle, Type } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import {
   checkServerTts,
+  getSpeechRate,
+  RATE_EVENT,
+  setSpeechRate,
+  SPEECH_RATES,
+  type SpeechRateKey,
   dispatchVoiceAction,
   extractNumber,
   isRecognitionSupported,
@@ -48,6 +53,20 @@ const COMMANDS: Command[] = [
     },
   },
   { label: "“Tushuntir” — ochiq darsni AI tushuntiradi", match: (t) => has(t, "tushuntir"), run: () => dispatchVoiceAction("explain") },
+  {
+    label: "“Keyingi” / “Oldingi” / “Qayta” — bosqichma-bosqich o'rganishda",
+    match: (t) => has(t, "keyingi", "oldingi", "qayta"),
+    run: (_, t) => dispatchVoiceAction(has(t, "keyingi") ? "next" : has(t, "oldingi") ? "prev" : "repeat"),
+  },
+  {
+    label: "“Sekinroq” / “Tezroq” — o'qish tezligi",
+    match: (t) => has(t, "sekin", "tezroq"),
+    run: (_, t) => {
+      const next = has(t, "sekin") ? (getSpeechRate() === "fast" ? "medium" : "slow") : getSpeechRate() === "slow" ? "medium" : "fast";
+      setSpeechRate(next);
+      speak(`Tezlik: ${SPEECH_RATES.find((r) => r.key === next)?.label}`, { quick: true });
+    },
+  },
   { label: "“O'qib ber” — sahifadagi ma'lumotni o'qiydi", match: (t) => has(t, "oqi", "tingla"), run: () => dispatchVoiceAction("read") },
   { label: "“Jadval” — dars jadvali", match: (t) => has(t, "jadval"), run: ({ go }) => go("/student/schedule") },
   { label: "“Vazifalar” — uy vazifalari", match: (t) => has(t, "vazifa", "uy ishi"), run: ({ go }) => go("/student/assignments") },
@@ -97,6 +116,23 @@ export default function VoiceControl() {
   const [lastHeard, setLastHeard] = useState("");
   const [helpOpen, setHelpOpen] = useState(false);
   const [fontIndex, setFontIndex] = useState(0);
+  const [rateKey, setRateKey] = useState<SpeechRateKey>("medium");
+
+  // O'qish tezligi: saqlangan qiymat + ovozli buyruq ("Sekinroq") bilan o'zgarsa ham yangilanadi
+  useEffect(() => {
+    const sync = () => setRateKey(getSpeechRate());
+    sync();
+    window.addEventListener(RATE_EVENT, sync);
+    return () => window.removeEventListener(RATE_EVENT, sync);
+  }, []);
+
+  const cycleRate = () => {
+    const i = SPEECH_RATES.findIndex((r) => r.key === rateKey);
+    const next = SPEECH_RATES[(i + 1) % SPEECH_RATES.length];
+    setSpeechRate(next.key);
+    speak(`Tezlik: ${next.label}`, { quick: true });
+  };
+  const rateLabel = SPEECH_RATES.find((r) => r.key === rateKey)?.label;
 
   const modeRef = useRef(false);
 
@@ -259,6 +295,15 @@ export default function VoiceControl() {
           title="Ovozli buyruqlar"
         >
           <HelpCircle className="size-5" />
+        </button>
+        <button
+          onClick={cycleRate}
+          className={`${ROUND_BTN} w-auto gap-1.5 px-3 text-sm font-medium`}
+          aria-label={`O'qish tezligi: ${rateLabel}. O'zgartirish`}
+          title="O'qish tezligi"
+        >
+          <Turtle className="size-5" aria-hidden />
+          <span className="max-sm:hidden">{rateLabel}</span>
         </button>
         <button
           onClick={cycleFont}

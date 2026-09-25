@@ -25,6 +25,10 @@ function systemPrompt(lesson, category) {
     "Sen Imkon AI platformasidagi mehribon va sabrli o'qituvchi yordamchisan.",
     "Faqat o'zbek tilida (lotin yozuvida) javob ber.",
     STYLE[category] || STYLE.general,
+    // Shoshilmasdan, batafsil: o'quvchi tinglab tushunishi uchun
+    "Shoshilmasdan va batafsil tushuntir: avval asosiy fikrni bir-ikki gapda ayt, keyin mavzuni kichik qadamlarga bo'lib, " +
+      "har bir qadamni hayotiy misol bilan tushuntir. Qiyin so'z ishlatsang, darhol oddiy so'z bilan izohla. " +
+      "Oxirida 2-3 gaplik qisqa xulosa qil va o'quvchiga tushunganini tekshiruvchi bitta oddiy savol ber.",
     "Javoblaringni dars mavzusiga bog'la. Dars mavzusidan tashqari savollarga qisqa javob berib, darsga qaytar.",
     "Uy vazifasini o'quvchi o'rniga to'liq yechib berma — yo'l-yo'riq va maslahat ber.",
     "",
@@ -58,13 +62,17 @@ async function explainLesson(lesson, category, messages) {
   return completion.choices[0]?.message?.content?.trim() || "Kechirasiz, javob tayyorlab bo'lmadi.";
 }
 
-// Matnni ovozga aylantirish (mp3 Buffer)
-async function textToSpeech(text) {
+// Matnni ovozga aylantirish (mp3 Buffer). speed: 0.6 (sekin) ... 1.1 (tez)
+async function textToSpeech(text, speed = 0.85) {
   const response = await getClient().audio.speech.create({
     model: process.env.OPENAI_TTS_MODEL || "gpt-4o-mini-tts",
     voice: process.env.OPENAI_TTS_VOICE || "alloy",
     input: text,
-    instructions: "O'zbek tilida, sekin va aniq, iliq ohangda o'qi.",
+    speed,
+    instructions:
+      speed < 0.9
+        ? "O'zbek tilida, shoshilmasdan, sekin va aniq o'qi. Har bir gapdan keyin qisqa pauza qil. Iliq, o'qituvchidek ohangda."
+        : "O'zbek tilida, aniq va iliq ohangda o'qi.",
     response_format: "mp3",
   });
   return Buffer.from(await response.arrayBuffer());
