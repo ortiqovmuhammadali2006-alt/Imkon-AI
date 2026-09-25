@@ -51,7 +51,7 @@ export default function StudentHome() {
           <p className="flex items-center gap-2 font-semibold">
             <Headphones className="size-5" aria-hidden /> Ovoz bilan boshqaring
           </p>
-          <p className="mt-1 text-sm text-indigo-100">
+          <p className="mt-1 text-sm text-brand-100">
             <b>Ovoz rejimi</b> tugmasini bosing (<b>Alt + O</b>) va “Darslar”, “O&apos;qib ber”, “Birinchi darsni och” yoki
             “Yordam” deb ayting.
           </p>

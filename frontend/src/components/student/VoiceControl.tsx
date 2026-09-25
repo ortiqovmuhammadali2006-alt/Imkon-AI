@@ -280,7 +280,7 @@ export default function VoiceControl() {
           aria-pressed={mode}
           aria-label={mode ? "Ovoz rejimini o'chirish (Alt + O)" : "Ovoz rejimini yoqish (Alt + O)"}
           className={`flex h-11 items-center gap-2 rounded-full px-3 font-semibold text-white shadow-md transition-colors sm:px-5 ${
-            mode ? "bg-red-600 shadow-red-600/25 hover:bg-red-700" : "bg-gradient-to-b from-indigo-500 to-indigo-600 shadow-indigo-600/25 hover:to-indigo-700"
+            mode ? "bg-red-600 shadow-red-600/25 hover:bg-red-700" : "bg-gradient-to-b from-indigo-500 to-indigo-600 shadow-indigo-600/25 hover:to-brand-700"
           }`}
           title="Ovoz rejimi (Alt + O)"
         >

@@ -58,7 +58,7 @@ export default function TeacherHome() {
       >
         <div className="flex flex-col gap-2">
           {s.students.total > 0 && s.attendance_marked_today === 0 && (
-            <Link href="/teacher/attendance" className="flex items-center gap-2.5 rounded-xl bg-amber-400/90 px-4 py-2.5 text-sm font-semibold text-amber-950 shadow-lg shadow-amber-900/20 hover:bg-amber-300">
+            <Link href="/teacher/attendance" className="flex items-center gap-2.5 rounded-xl bg-amber-400/90 px-4 py-2.5 text-sm font-semibold text-[#451a03] shadow-lg shadow-black/20 hover:bg-[#fcd34d]">
               <AlertTriangle className="size-4 shrink-0" aria-hidden />
               Bugungi davomat belgilanmagan
             </Link>

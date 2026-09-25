@@ -42,7 +42,7 @@ export default function LoginPage() {
   return (
     <main className="grid flex-1 lg:grid-cols-[1.1fr_1fr]">
       {/* Chap tomon: platforma haqida */}
-      <section className="relative hidden overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 p-12 text-white lg:flex lg:flex-col">
+      <section className="relative hidden overflow-hidden bg-gradient-to-br from-indigo-600 via-brand-700 to-grape-800 p-12 text-white lg:flex lg:flex-col">
         <div className="absolute -top-24 -right-24 size-96 rounded-full bg-white/10 blur-3xl" aria-hidden />
         <div className="absolute -bottom-32 -left-20 size-[28rem] rounded-full bg-violet-400/20 blur-3xl" aria-hidden />
         <div
@@ -56,9 +56,9 @@ export default function LoginPage() {
 
         <div className="relative my-auto max-w-lg animate-slide-up">
           <h1 className="text-4xl leading-tight font-bold tracking-tight xl:text-5xl">
-            Ta&apos;lim — <span className="text-indigo-200">har bir bola</span> uchun ochiq
+            Ta&apos;lim — <span className="text-brand-200">har bir bola</span> uchun ochiq
           </h1>
-          <p className="mt-4 text-lg text-indigo-100/90">
+          <p className="mt-4 text-lg text-brand-100/90">
             Imkoniyati cheklangan o&apos;quvchilar uchun sun&apos;iy intellektga asoslangan ta&apos;lim platformasi.
           </p>
 
@@ -70,14 +70,14 @@ export default function LoginPage() {
                 </div>
                 <div>
                   <p className="font-semibold">{title}</p>
-                  <p className="text-sm text-indigo-100/80">{text}</p>
+                  <p className="text-sm text-brand-100/80">{text}</p>
                 </div>
               </li>
             ))}
           </ul>
         </div>
 
-        <p className="relative text-sm text-indigo-200/70">© {new Date().getFullYear()} Imkon AI</p>
+        <p className="relative text-sm text-brand-200/70">© {new Date().getFullYear()} Imkon AI</p>
       </section>
 
       {/* O'ng tomon: kirish formasi */}

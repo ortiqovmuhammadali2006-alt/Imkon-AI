@@ -117,6 +117,14 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
+
+  /* Rangli (gradient) fonlar ustida ishlatiladigan doimiy ranglar — tungi rejimda almashtirilmaydi */
+  --color-brand-100: #e0e7ff;
+  --color-brand-200: #c7d2fe;
+  --color-brand-700: #4338ca;
+  --color-grape-700: #6d28d9;
+  --color-grape-800: #5b21b6;
+  --color-crimson-700: #b91c1c;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
@@ -168,16 +176,77 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Yumshoq rangli fon — alohida qatlamda (background-attachment: fixed scroll paytida chizishni buzadi) */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(1200px 500px at 100% -10%, rgb(99 102 241 / 0.07), transparent 60%),
-    radial-gradient(900px 400px at -10% 0%, rgb(139 92 246 / 0.06), transparent 60%);
+/* ---------- Animatsiyali fon (components/ui/AnimatedBackground.tsx) ---------- */
+
+/* Rangli "bulutlar": katta, xira, sekin suzadi va shaklini o'zgartiradi */
+.bg-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(80px);
+  will-change: transform;
+  animation: blob-drift 28s ease-in-out infinite;
+}
+.dark .bg-blob {
+  opacity: 0.55;
+}
+
+/* Suzib yuruvchi belgilar: pastdan yuqoriga sekin ko'tariladi, biroz chayqaladi va aylanadi */
+.bg-floater {
+  position: absolute;
+  bottom: 0;
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: float-up 36s linear infinite;
+  --floater-opacity: 0.16;
+}
+.dark .bg-floater {
+  --floater-opacity: 0.22;
+}
+
+@keyframes blob-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(6%, 8%) scale(1.12);
+  }
+  66% {
+    transform: translate(-5%, 4%) scale(0.94);
+  }
+}
+
+@keyframes float-up {
+  0% {
+    transform: translate(0, 10vh) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: var(--floater-opacity);
+  }
+  25% {
+    transform: translate(18px, -18vh) rotate(8deg);
+  }
+  50% {
+    transform: translate(-14px, -48vh) rotate(-6deg);
+  }
+  75% {
+    transform: translate(16px, -78vh) rotate(10deg);
+  }
+  90% {
+    opacity: var(--floater-opacity);
+  }
+  100% {
+    transform: translate(0, -110vh) rotate(0deg);
+    opacity: 0;
+  }
+}
+
+/* Harakatni kamaytirish yoqilgan bo'lsa: belgilar yashiriladi, bulutlar joyida turadi */
+@media (prefers-reduced-motion: reduce) {
+  .bg-floater {
+    display: none;
+  }
 }
 
 /* Klaviatura bilan ishlaganda fokus aniq ko'rinsin (ekran o'qigich va klaviatura foydalanuvchilari uchun) */
@@ -212,13 +281,13 @@ body::before {
     @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 font-medium transition-all duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 disabled:active:scale-100;
   }
   .btn-primary {
-    @apply bg-gradient-to-b from-indigo-500 to-indigo-600 text-white shadow-sm shadow-indigo-600/25 hover:from-indigo-600 hover:to-indigo-700 hover:shadow-md hover:shadow-indigo-600/25;
+    @apply bg-gradient-to-b from-indigo-500 to-indigo-600 text-white shadow-sm shadow-indigo-600/25 hover:from-indigo-600 hover:to-brand-700 hover:shadow-md hover:shadow-indigo-600/25;
   }
   .btn-secondary {
     @apply border border-slate-200 bg-surface text-slate-700 shadow-sm shadow-slate-900/[0.03] hover:border-slate-300 hover:bg-slate-50;
   }
   .btn-danger {
-    @apply bg-gradient-to-b from-red-500 to-red-600 text-white shadow-sm shadow-red-600/25 hover:from-red-600 hover:to-red-700;
+    @apply bg-gradient-to-b from-red-500 to-red-600 text-white shadow-sm shadow-red-600/25 hover:from-red-600 hover:to-crimson-700;
   }
   .icon-btn {
     @apply rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800;

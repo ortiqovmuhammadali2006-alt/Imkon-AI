@@ -13,9 +13,9 @@ export default function Logo({ size = "md", light = false }: { size?: "md" | "lg
       </div>
       <div className="leading-tight">
         <p className={`font-bold tracking-tight ${lg ? "text-2xl" : "text-lg"} ${light ? "text-white" : "text-slate-900"}`}>
-          Imkon <span className={light ? "text-indigo-200" : "text-indigo-600"}>AI</span>
+          Imkon <span className={light ? "text-brand-200" : "text-indigo-600"}>AI</span>
         </p>
-        <p className={`text-xs ${light ? "text-indigo-100/80" : "text-slate-500"}`}>Har bir o&apos;quvchiga imkon</p>
+        <p className={`text-xs ${light ? "text-brand-100/80" : "text-slate-500"}`}>Har bir o&apos;quvchiga imkon</p>
       </div>
     </div>
   );
