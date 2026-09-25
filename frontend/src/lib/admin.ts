@@ -5,6 +5,7 @@ import type {
   AdminStats,
   SalaryPayment,
   SalaryRow,
+  ScheduleSlot,
   Student,
   Teacher,
   TeacherActivity,
@@ -48,6 +49,12 @@ export const useTeacherActivity = (id: number | null) =>
     queryKey: ["admin", "monitoring", id],
     queryFn: () => get<TeacherActivityDetail>(`/admin/monitoring/${id}`),
     enabled: id !== null,
+  });
+
+export const useSchedule = (teacherId: string) =>
+  useQuery({
+    queryKey: ["admin", "schedule", teacherId],
+    queryFn: () => get<ScheduleSlot[]>(`/admin/schedule${teacherId ? `?teacher_id=${teacherId}` : ""}`),
   });
 
 // Har qanday admin o'zgarishi: muvaffaqiyatda toast + barcha admin ma'lumotlarini yangilash

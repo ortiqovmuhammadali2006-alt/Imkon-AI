@@ -71,3 +71,15 @@ export type TeacherActivityDetail = {
   attendance: { present: number; absent: number; late: number };
   grades: { id: number; score: number; comment: string | null; created_at: string; student_name: string }[];
 };
+
+export type ScheduleSlot = {
+  id: number;
+  teacher_id: number;
+  teacher_name: string;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  subject: string | null;
+  room: string | null;
+  group_name: string | null;
+};

@@ -2,6 +2,8 @@ const { Pool, types } = require("pg");
 
 // DATE ustunlarini "YYYY-MM-DD" satr ko'rinishida qaytarish (vaqt zonasi siljishining oldini oladi)
 types.setTypeParser(1082, (value) => value);
+// TIME ustunlarini "HH:MM" ko'rinishida qaytarish
+types.setTypeParser(1083, (value) => value.slice(0, 5));
 // NUMERIC (pul summalari) ni son sifatida qaytarish
 types.setTypeParser(1700, (value) => parseFloat(value));
 

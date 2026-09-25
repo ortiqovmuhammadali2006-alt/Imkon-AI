@@ -1,6 +1,7 @@
 const { Router } = require("express");
 const pool = require("../../config/db");
 const { authenticate, requireRole } = require("../../middleware/auth");
+const { SELECT_SQL, ORDER_SQL } = require("../schedule");
 
 const router = Router();
 
@@ -9,6 +10,12 @@ router.use(authenticate, requireRole("teacher"));
 router.use("/", require("./lessons"));
 router.use("/attendance", require("./attendance"));
 router.use("/grades", require("./grades"));
+
+// O'qituvchining haftalik dars jadvali (admin tuzadi)
+router.get("/schedule", async (req, res) => {
+  const { rows } = await pool.query(`${SELECT_SQL} WHERE sc.teacher_id = $1 ${ORDER_SQL}`, [req.user.id]);
+  res.json(rows);
+});
 
 // O'qituvchiga biriktirilgan o'quvchilar: o'rtacha baho va 30 kunlik davomat foizi bilan
 router.get("/students", async (req, res) => {

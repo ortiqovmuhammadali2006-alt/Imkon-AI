@@ -10,6 +10,7 @@ export type User = {
   full_name: string;
   username: string;
   role: Role;
+  subject?: string | null; // faqat o'qituvchi uchun
 };
 
 export const ROLE_HOME: Record<Role, string> = {

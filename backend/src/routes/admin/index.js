@@ -10,6 +10,7 @@ router.use("/teachers", require("./teachers"));
 router.use("/students", require("./students"));
 router.use("/salaries", require("./salaries"));
 router.use("/monitoring", require("./monitoring"));
+router.use("/schedule", require("./schedule"));
 
 // Bosh sahifa statistikasi
 router.get("/stats", async (req, res) => {

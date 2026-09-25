@@ -35,7 +35,7 @@ backend/    Express API (http://localhost:5000/api)
 ## Holat
 
 - [x] Umumiy login va rolga qarab yo'naltirish
-- [x] Admin paneli: o'qituvchilar, o'quvchilar, oyliklar, nazorat
+- [x] Admin paneli: o'qituvchilar, o'quvchilar, oyliklar, nazorat, dars jadvali
 - [x] O'qituvchi API: darslar va fayllar, uy vazifalari, davomat, baholar
 - [x] O'qituvchi paneli: darslar, vazifalarni tekshirish, davomat, baholar
 - [ ] O'quvchi paneli: darslar, AI tushuntirish, vazifa topshirish, ovozli boshqaruv

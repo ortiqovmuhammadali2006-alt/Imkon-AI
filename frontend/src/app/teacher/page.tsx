@@ -5,7 +5,8 @@ import { AlertTriangle, BookOpen, CalendarCheck, ClipboardCheck, ClipboardList, 
 import { getErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { CATEGORIES, formatDate } from "@/lib/format";
-import { useMyStudents, useTeacherStats } from "@/lib/teacher";
+import { useMySchedule, useMyStudents, useTeacherStats } from "@/lib/teacher";
+import { SlotCard, WEEKDAYS, todayWeekday } from "@/components/ui/WeeklySchedule";
 import type { Category } from "@/lib/types";
 import CategoryBadge from "@/components/ui/CategoryBadge";
 import { ErrorState, LoadingState } from "@/components/ui/States";
@@ -22,6 +23,32 @@ function StatCard({ icon: Icon, label, value, href, tone }: { icon: LucideIcon; 
         <p className="text-2xl font-bold">{value}</p>
       </div>
     </Link>
+  );
+}
+
+function TodaySchedule() {
+  const { data } = useMySchedule();
+  if (!data) return null;
+  const today = data.filter((s) => s.day_of_week === todayWeekday());
+
+  return (
+    <div className="card p-5">
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="font-semibold">Bugungi darslar — {WEEKDAYS[todayWeekday() - 1]}</h2>
+        <Link href="/teacher/schedule" className="text-sm text-indigo-700 hover:underline">
+          Haftalik jadval
+        </Link>
+      </div>
+      {today.length === 0 ? (
+        <p className="text-slate-500">Bugun darsingiz yo&apos;q</p>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {today.map((s) => (
+            <SlotCard key={s.id} slot={s} />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -57,6 +84,8 @@ export default function TeacherHome() {
           )}
         </div>
       ) : null}
+
+      <TodaySchedule />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard icon={Users} label="O'quvchilarim" value={s.students.total} href="/teacher/grades" tone="bg-sky-100 text-sky-700" />

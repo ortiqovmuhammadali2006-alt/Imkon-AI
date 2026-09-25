@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { api, getErrorMessage } from "./api";
-import type { Category } from "./types";
+import type { Category, ScheduleSlot } from "./types";
 
 export type AttendanceStatus = "present" | "late" | "absent";
 
@@ -119,6 +119,9 @@ export const useTeacherStats = () =>
 
 export const useMyStudents = () =>
   useQuery({ queryKey: ["teacher", "students"], queryFn: () => get<MyStudent[]>("/teacher/students") });
+
+export const useMySchedule = () =>
+  useQuery({ queryKey: ["teacher", "schedule"], queryFn: () => get<ScheduleSlot[]>("/teacher/schedule") });
 
 export const useLessons = () =>
   useQuery({ queryKey: ["teacher", "lessons"], queryFn: () => get<Lesson[]>("/teacher/lessons") });

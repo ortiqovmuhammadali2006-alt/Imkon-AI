@@ -102,3 +102,17 @@ ALTER TABLE submissions ADD COLUMN IF NOT EXISTS score     SMALLINT CHECK (score
 ALTER TABLE submissions ADD COLUMN IF NOT EXISTS feedback  TEXT;
 ALTER TABLE submissions ADD COLUMN IF NOT EXISTS graded_at TIMESTAMPTZ;ALTER TABLE lessons     ADD COLUMN IF NOT EXISTS file_name TEXT;
 ALTER TABLE submissions ADD COLUMN IF NOT EXISTS file_name TEXT;
+
+-- Dars jadvali (admin tuzadi). day_of_week: 1 — Dushanba ... 7 — Yakshanba
+CREATE TABLE IF NOT EXISTS schedule (
+  id          SERIAL PRIMARY KEY,
+  teacher_id  INTEGER NOT NULL REFERENCES teachers(user_id) ON DELETE CASCADE,
+  day_of_week SMALLINT NOT NULL CHECK (day_of_week BETWEEN 1 AND 7),
+  start_time  TIME NOT NULL,
+  end_time    TIME NOT NULL,
+  subject     VARCHAR(100),
+  room        VARCHAR(50),
+  group_name  VARCHAR(50),
+  CHECK (end_time > start_time)
+);
+CREATE INDEX IF NOT EXISTS schedule_teacher_day_idx ON schedule (teacher_id, day_of_week);

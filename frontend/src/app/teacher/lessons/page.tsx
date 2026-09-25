@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ClipboardList, Paperclip, Plus, Search } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 import { CATEGORIES, formatDate } from "@/lib/format";
 import { useLessons } from "@/lib/teacher";
 import type { Category } from "@/lib/types";
@@ -15,6 +16,7 @@ import LessonForm from "@/components/teacher/LessonForm";
 
 export default function LessonsPage() {
   const { data, isLoading, error } = useLessons();
+  const { user } = useAuth();
   const router = useRouter();
   const [creating, setCreating] = useState(false);
   const [search, setSearch] = useState("");
@@ -39,8 +41,8 @@ export default function LessonsPage() {
   return (
     <section>
       <PageHeader
-        title="Darslar"
-        description="Dars materiallari va uy vazifalari. Darsni ochib, vazifa qo'shing va topshiriqlarni tekshiring."
+        title="Darslar va materiallar"
+        description={`${user?.subject ? `${user.subject} fani bo'yicha dars` : "Dars"} materiallarini yuklang: PDF, taqdimot, audio, video. Darsni ochib, uy vazifasi qo'shing va topshiriqlarni tekshiring.`}
         action={addButton}
       />
 

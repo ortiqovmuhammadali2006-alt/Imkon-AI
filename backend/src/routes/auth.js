@@ -13,7 +13,9 @@ router.post("/login", async (req, res) => {
   }
 
   const { rows } = await pool.query(
-    "SELECT id, full_name, username, password_hash, role, is_active FROM users WHERE username = $1",
+    `SELECT u.id, u.full_name, u.username, u.password_hash, u.role, u.is_active, t.subject
+     FROM users u LEFT JOIN teachers t ON t.user_id = u.id
+     WHERE u.username = $1`,
     [username.trim()]
   );
   const user = rows[0];
@@ -31,13 +33,21 @@ router.post("/login", async (req, res) => {
 
   res.json({
     token,
-    user: { id: user.id, full_name: user.full_name, username: user.username, role: user.role },
+    user: {
+      id: user.id,
+      full_name: user.full_name,
+      username: user.username,
+      role: user.role,
+      subject: user.subject,
+    },
   });
 });
 
 router.get("/me", authenticate, async (req, res) => {
   const { rows } = await pool.query(
-    "SELECT id, full_name, username, role, is_active FROM users WHERE id = $1",
+    `SELECT u.id, u.full_name, u.username, u.role, u.is_active, t.subject
+     FROM users u LEFT JOIN teachers t ON t.user_id = u.id
+     WHERE u.id = $1`,
     [req.user.id]
   );
   const user = rows[0];
