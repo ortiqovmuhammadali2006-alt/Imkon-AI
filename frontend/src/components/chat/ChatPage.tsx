@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
@@ -12,6 +12,7 @@ import {
   MessageSquarePlus,
   Mic,
   PanelLeft,
+  RotateCcw,
   Send,
   Sparkles,
   Square,
@@ -35,7 +36,8 @@ import SpeakButton from "@/components/student/SpeakButton";
 import Markdown from "./Markdown";
 import VoiceChat from "./VoiceChat";
 
-type UiMessage = ChatMessage & { error?: boolean; streaming?: boolean };
+// retryOf — javob olinmagan savol matni ("Qayta yuborish" uchun)
+type UiMessage = ChatMessage & { error?: boolean; streaming?: boolean; retryOf?: string };
 
 const SUGGESTIONS: Record<Role, string[]> = {
   student: [
@@ -77,6 +79,67 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+// Bitta xabar. memo — javob oqib kelayotganda faqat oxirgi xabar qayta chiziladi, eskilarining markdowni qayta hisoblanmaydi
+const MessageItem = memo(function MessageItem({
+  m,
+  userName,
+  canRetry,
+  onRetry,
+}: {
+  m: UiMessage;
+  userName: string;
+  canRetry: boolean;
+  onRetry: (text: string) => void;
+}) {
+  if (m.role === "user") {
+    return (
+      <div className="flex justify-end gap-3">
+        <p className="max-w-[85%] rounded-3xl rounded-br-md bg-gradient-to-br from-indigo-500 to-violet-600 px-4 py-2.5 whitespace-pre-wrap text-white shadow-md shadow-indigo-500/20">
+          {m.content}
+        </p>
+        <Avatar name={userName} size="sm" />
+      </div>
+    );
+  }
+  return (
+    <div className="flex gap-3">
+      <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/25">
+        <Bot className="size-4" aria-hidden />
+      </div>
+      <div className="min-w-0 flex-1 pt-0.5">
+        {m.error ? (
+          <div role="alert" className="flex flex-wrap items-center gap-3 rounded-xl bg-red-50 px-4 py-3 text-red-800 ring-1 ring-red-100">
+            <p className="flex-1">{m.content}</p>
+            {canRetry && (
+              <button onClick={() => onRetry(m.retryOf!)} className="btn-secondary px-3 py-1.5 text-sm">
+                <RotateCcw className="size-4" aria-hidden /> Qayta yuborish
+              </button>
+            )}
+          </div>
+        ) : m.content ? (
+          <div className="text-[1.02rem] text-slate-800">
+            <Markdown>{m.content}</Markdown>
+            {m.streaming && <span className="ml-1 inline-block h-5 w-2 animate-pulse rounded-sm bg-indigo-500 align-middle" aria-hidden />}
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 py-2" role="status">
+            {[0, 150, 300].map((d) => (
+              <span key={d} className="size-2 animate-bounce rounded-full bg-indigo-400" style={{ animationDelay: `${d}ms` }} />
+            ))}
+            <span className="sr-only">AI javob yozmoqda</span>
+          </div>
+        )}
+        {!m.streaming && !m.error && m.content && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            <SpeakButton text={m.content} label="Tinglash" />
+            <CopyButton text={m.content} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
+
 // ChatGPT kabi AI suhbat sahifasi: suhbatlar ro'yxati, oqim bilan javob, ovozli suhbat rejimi
 export default function ChatPage() {
   const { user } = useAuth();
@@ -115,7 +178,13 @@ export default function ChatPage() {
     setActiveId(id);
     setLoadingConv(true);
     try {
-      setMessages((await fetchConversation(id)).messages);
+      const loaded: UiMessage[] = (await fetchConversation(id)).messages;
+      // Oxirgi savolga javob kelmay qolgan bo'lsa — qayta yuborish imkonini beramiz
+      const last = loaded[loaded.length - 1];
+      if (last?.role === "user") {
+        loaded.push({ role: "assistant", content: "Bu savolga javob olinmagan.", error: true, retryOf: last.content });
+      }
+      setMessages(loaded);
     } catch (e) {
       toast.error(getErrorMessage(e));
     } finally {
@@ -133,7 +202,10 @@ export default function ChatPage() {
 
   // Xabar yuborish va javobni oqim bilan ko'rsatish. Javob matnini qaytaradi (ovozli suhbat uchun)
   const send = useCallback(
-    async (text: string, opts: { voice?: boolean; onDelta?: (t: string) => void; signal?: AbortSignal } = {}) => {
+    async (
+      text: string,
+      opts: { voice?: boolean; retry?: boolean; onDelta?: (t: string) => void; signal?: AbortSignal } = {}
+    ) => {
       const content = text.trim();
       if (!content) return "";
       let convId = activeIdRef.current;
@@ -148,7 +220,11 @@ export default function ChatPage() {
         return "";
       }
 
-      setMessages((m) => [...m, { role: "user", content }, { role: "assistant", content: "", streaming: true }]);
+      // Qayta yuborishda savol allaqachon ekranda — faqat xato xabari o'rniga yangi javob kutamiz
+      const pending: UiMessage = { role: "assistant", content: "", streaming: true };
+      setMessages((m) =>
+        opts.retry ? [...m.filter((x, i) => !(i === m.length - 1 && x.error)), pending] : [...m, { role: "user", content }, pending]
+      );
       setStreaming(true);
       const ctrl = new AbortController();
       abortRef.current = ctrl;
@@ -161,18 +237,21 @@ export default function ChatPage() {
           return copy;
         });
 
-      const { text: answer, error } = await streamMessage(convId, content, {
+      const { text: answer, error, aborted } = await streamMessage(convId, content, {
         voice: opts.voice,
+        retry: opts.retry,
         signal: ctrl.signal,
         onDelta: (t) => {
           updateLast({ content: t });
           opts.onDelta?.(t);
         },
       });
-      updateLast(error && !answer ? { content: error, error: true, streaming: false } : { streaming: false });
+      if (answer) updateLast({ streaming: false });
+      else if (aborted) updateLast({ content: "Javob to'xtatildi.", error: true, retryOf: content, streaming: false });
+      else updateLast({ content: error ?? "AI javob bermadi.", error: true, retryOf: content, streaming: false });
       setStreaming(false);
       refreshList();
-      return error && !answer ? "" : answer;
+      return answer;
     },
     [refreshList]
   );
@@ -207,6 +286,7 @@ export default function ChatPage() {
     []
   );
   const closeVoice = useCallback(() => setVoiceOpen(false), []);
+  const retry = useCallback((text: string) => sendRef.current(text, { retry: true }), []);
 
   const removeConversation = async (id: number) => {
     try {
@@ -319,47 +399,15 @@ export default function ChatPage() {
             </div>
           ) : (
             <div className="mx-auto max-w-3xl space-y-6 px-4 py-6">
-              {messages.map((m, i) =>
-                m.role === "user" ? (
-                  <div key={i} className="flex justify-end gap-3">
-                    <p className="max-w-[85%] rounded-3xl rounded-br-md bg-gradient-to-br from-indigo-500 to-violet-600 px-4 py-2.5 whitespace-pre-wrap text-white shadow-md shadow-indigo-500/20">
-                      {m.content}
-                    </p>
-                    <Avatar name={user?.full_name ?? "?"} size="sm" />
-                  </div>
-                ) : (
-                  <div key={i} className="flex gap-3">
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/25">
-                      <Bot className="size-4" aria-hidden />
-                    </div>
-                    <div className="min-w-0 flex-1 pt-0.5">
-                      {m.error ? (
-                        <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-red-800 ring-1 ring-red-100">
-                          {m.content}
-                        </p>
-                      ) : m.content ? (
-                        <div className="text-[1.02rem] text-slate-800">
-                          <Markdown>{m.content}</Markdown>
-                          {m.streaming && <span className="ml-1 inline-block h-5 w-2 animate-pulse rounded-sm bg-indigo-500 align-middle" aria-hidden />}
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5 py-2" role="status">
-                          {[0, 150, 300].map((d) => (
-                            <span key={d} className="size-2 animate-bounce rounded-full bg-indigo-400" style={{ animationDelay: `${d}ms` }} />
-                          ))}
-                          <span className="sr-only">AI javob yozmoqda</span>
-                        </div>
-                      )}
-                      {!m.streaming && !m.error && m.content && (
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          <SpeakButton text={m.content} label="Tinglash" />
-                          <CopyButton text={m.content} />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )
-              )}
+              {messages.map((m, i) => (
+                <MessageItem
+                  key={i}
+                  m={m}
+                  userName={user?.full_name ?? "?"}
+                  canRetry={Boolean(m.retryOf) && i === messages.length - 1 && !streaming}
+                  onRetry={retry}
+                />
+              ))}
             </div>
           )}
         </div>

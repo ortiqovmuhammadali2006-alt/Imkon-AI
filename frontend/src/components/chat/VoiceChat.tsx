@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Keyboard, Loader2, Mic, MicOff, Square, X } from "lucide-react";
-import { listenOnce, RecognitionError, speak, stopSpeaking } from "@/lib/speech";
+import { createSpeechStream, listenOnce, RecognitionError, stopSpeaking } from "@/lib/speech";
 import { voiceMode } from "@/lib/voiceMode";
 
 type Phase = "listening" | "thinking" | "speaking" | "paused" | "error";
@@ -73,25 +73,36 @@ export default function VoiceChat({
       if (!activeRef.current) return;
       setHeard(text);
 
-      // 2. AI javobi (oqim bilan)
+      // 2. AI javobi (oqim bilan) — birinchi gap yozilishi bilan ovoz chiqa boshlaydi, butun javob kutilmaydi
       setPhase("thinking");
       setAnswer("");
+      const voice = createSpeechStream();
       let reply = "";
       try {
-        reply = await onSend(text, setAnswer, ctrl.signal);
+        reply = await onSend(
+          text,
+          (t) => {
+            setAnswer(t);
+            setPhase("speaking");
+            voice.push(t);
+          },
+          ctrl.signal
+        );
       } catch {
         reply = "";
       }
-      if (!activeRef.current) return;
-      if (!reply) {
-        setPhase("paused");
-        activeRef.current = false;
+      if (!activeRef.current || !reply) {
+        voice.stop();
+        if (activeRef.current) {
+          setPhase("paused");
+          activeRef.current = false;
+        }
         return;
       }
 
-      // 3. Ovoz bilan aytish, keyin yana tinglash
+      // 3. Qolgan gaplar aytilib bo'lgach — yana tinglash
       setPhase("speaking");
-      const result = await speak(reply);
+      const result = await voice.end(reply);
       if (!result.ok && result.error) setError(result.error);
     }
   }, [onSend]);

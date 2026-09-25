@@ -123,7 +123,15 @@ router.post("/conversations/:id/messages", async (req, res) => {
   const voice = Boolean(req.body?.voice);
   checkLimit(req.user.id);
 
-  await pool.query("INSERT INTO chat_messages (conversation_id, role, content) VALUES ($1, 'user', $2)", [conversation.id, content]);
+  // "Qayta yuborish": oxirgi xabar shu savolning o'zi bo'lsa (javob olinmay qolgan), uni takror saqlamaymiz
+  const { rows: last } = await pool.query(
+    "SELECT role, content FROM chat_messages WHERE conversation_id = $1 ORDER BY id DESC LIMIT 1",
+    [conversation.id]
+  );
+  const isRetry = req.body?.retry && last[0]?.role === "user" && last[0].content === content;
+  if (!isRetry) {
+    await pool.query("INSERT INTO chat_messages (conversation_id, role, content) VALUES ($1, 'user', $2)", [conversation.id, content]);
+  }
   // Birinchi xabar — suhbat sarlavhasi
   if (conversation.title === DEFAULT_TITLE) {
     const title = content.replace(/\s+/g, " ").slice(0, 60) + (content.length > 60 ? "…" : "");
@@ -165,15 +173,24 @@ router.post("/conversations/:id/messages", async (req, res) => {
       },
       { signal: controller.signal }
     );
+    let finish = null;
     for await (const chunk of stream) {
-      const delta = chunk.choices[0]?.delta?.content;
+      const choice = chunk.choices[0];
+      // Model rad etsa, matn "refusal" maydonida keladi — uni ham oddiy javob sifatida ko'rsatamiz
+      const delta = choice?.delta?.content || choice?.delta?.refusal;
       if (delta) {
         answer += delta;
         send({ delta });
       }
+      if (choice?.finish_reason) finish = choice.finish_reason;
+    }
+    if (!answer.trim() && !controller.signal.aborted) {
+      console.error(`[chat] bo'sh javob (conversation ${conversation.id}, finish_reason: ${finish})`);
+      send({ error: "AI javob bermadi. Qayta yuborib ko'ring." });
     }
   } catch (err) {
     if (!controller.signal.aborted) {
+      console.error(`[chat] OpenAI xatosi (conversation ${conversation.id}):`, err.status ?? "", err.message);
       send({ error: toHttpError(err).message });
     }
   }

@@ -5,7 +5,6 @@ const { upload, fileInfo, removeFile } = require("../../middleware/upload");
 const { HttpError, parseId } = require("../../utils/validation");
 const { SELECT_SQL, ORDER_SQL } = require("../schedule");
 const { explainLesson, toHttpError } = require("../../services/ai");
-const { synthesize, status: ttsStatus } = require("../../services/tts");
 
 const router = Router();
 router.use(authenticate, requireRole("student"));
@@ -185,21 +184,6 @@ router.post("/lessons/:id/explain", async (req, res) => {
   }
 });
 
-// Server ovozi holati: qaysi manba ishlaydi (azure — haqiqiy o'zbekcha ovoz). Brauzer shunga qarab
-// kutib o'tirmasdan darhol o'z ovoziga o'tadi yoki server ovozini ishlatadi
-router.get("/tts/status", (req, res) => {
-  res.json(ttsStatus());
-});
-
-// Matnni ovoz bilan o'qib berish (mp3). speed: 0.6 (sekin) ... 1.1 (tez)
-router.post("/tts", async (req, res) => {
-  const text = typeof req.body?.text === "string" ? req.body.text.trim() : "";
-  if (!text) throw new HttpError(400, "O'qiladigan matn bo'sh");
-  checkAiLimit(req.user.id);
-  const speed = Math.min(Math.max(Number(req.body?.speed) || 0.85, 0.6), 1.1);
-  const { audio, provider } = await synthesize(text.slice(0, 4000), speed);
-  res.set({ "Content-Type": "audio/mpeg", "X-TTS-Provider": provider }).send(audio);
-});
 // ---------- Uy vazifalari ----------
 
 router.get("/assignments", async (req, res) => {

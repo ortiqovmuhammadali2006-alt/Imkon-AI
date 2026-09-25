@@ -60,18 +60,27 @@ export function onSpeakingChange(fn: (speaking: boolean) => void) {
 let serverUzbek = false; // server Azure orqali haqiqiy o'zbekcha ovoz beradimi
 
 // Sahifa ochilganda oldindan tekshirib qo'yamiz — tugma bosilganda kutish bo'lmasin
+let statusRequest: Promise<boolean> | null = null; // bir vaqtda bir nechta tugma so'rasa — bitta so'rov
+
 export async function checkServerTts() {
   if (Date.now() - serverCheckedAt < 10 * 60 * 1000 && serverTtsOk !== null) return serverTtsOk;
-  serverCheckedAt = Date.now();
-  try {
-    const { data } = await api.get<{ available: boolean; uzbek_voice?: boolean }>("/student/tts/status");
-    serverTtsOk = data.available;
-    serverUzbek = Boolean(data.uzbek_voice);
-  } catch {
-    serverTtsOk = false;
-    serverUzbek = false;
-  }
-  return serverTtsOk;
+  statusRequest ??= api
+    .get<{ available: boolean; uzbek_voice?: boolean }>("/tts/status")
+    .then(({ data }) => {
+      serverTtsOk = data.available;
+      serverUzbek = Boolean(data.uzbek_voice);
+      return serverTtsOk;
+    })
+    .catch(() => {
+      serverTtsOk = false;
+      serverUzbek = false;
+      return false;
+    })
+    .finally(() => {
+      serverCheckedAt = Date.now();
+      statusRequest = null;
+    });
+  return statusRequest;
 }
 
 // O'quvchi aniq o'zbekcha talaffuzni eshitadimi: server (Azure) yoki brauzerdagi o'zbekcha ovoz orqali
@@ -90,8 +99,11 @@ function plain(text: string) {
     .trim();
 }
 
+const activeStreams = new Set<() => void>(); // to'xtatilganda kutib turgan oqimlarni uyg'otish uchun
+
 export function stopSpeaking() {
   session++;
+  activeStreams.forEach((wakeUp) => wakeUp());
   audio?.pause();
   audio = null;
   if (audioUrl) URL.revokeObjectURL(audioUrl);
@@ -223,21 +235,67 @@ async function speakWithBrowser(text: string, mySession: number): Promise<SpeakR
   return spoke || mySession !== session ? { ok: true } : { ok: false, error: "Ovoz chiqmadi. Kompyuter ovozi yoqilganini tekshiring" };
 }
 
-async function speakWithServer(text: string, mySession: number) {
-  const { data } = await api.post<Blob>(
-    "/student/tts",
-    { text: text.slice(0, 4000), speed: currentRate().server },
-    { responseType: "blob" }
-  );
-  if (mySession !== session) return;
-  audioUrl = URL.createObjectURL(data);
+// ---------- Ovoz oqimi: bo'laklab, oldindan tayyorlab o'qish ----------
+// Butun matnni bitta mp3 qilish uzun javobda 10+ soniya kuttiradi. Shuning uchun matn gap-gap bo'laklanadi:
+// birinchi (qisqa) bo'lak ~1 soniyada tayyor bo'lib o'qila boshlaydi, keyingisi shu payt serverda tayyorlanadi.
+// AI javobi hali yozilayotgan bo'lsa ham (push), tugagan gaplar darhol o'qiladi.
+
+const SENTENCE_END = /[.!?…;:\n]+["”»)]*(?=\s|$)/g;
+
+// Buferdan o'qishga tayyor bo'lakni ajratish. null — hali to'liq gap yo'q, ko'proq matn kutamiz
+function takeSegment(buf: string, first: boolean, final: boolean): [string, string] | null {
+  const min = first ? 25 : 160;
+  const max = first ? 160 : 420;
+  if (!buf.trim()) return null;
+  if (final && buf.length <= max) return [buf, ""];
+  let lastOk = -1;
+  let firstAfter = -1;
+  for (const m of buf.matchAll(SENTENCE_END)) {
+    const end = m.index + m[0].length;
+    if (end <= max) lastOk = end;
+    else {
+      firstAfter = end;
+      break;
+    }
+  }
+  let cut = -1;
+  if (lastOk >= min || (final && lastOk > 0)) cut = lastOk;
+  else if (buf.length > max) {
+    // Nuqtasiz juda uzun gap — vergul yoki bo'shliqdan bo'lamiz
+    const comma = buf.lastIndexOf(", ", max);
+    const space = buf.lastIndexOf(" ", max);
+    cut = firstAfter > 0 && firstAfter <= max * 1.4 ? firstAfter : comma > min ? comma + 1 : space > min ? space : max;
+  } else if (final) cut = buf.length;
+  if (cut <= 0) return null;
+  return [buf.slice(0, cut), buf.slice(cut)];
+}
+
+async function fetchAudio(text: string): Promise<Blob> {
+  const { data } = await api.post<Blob>("/tts", { text, speed: currentRate().server }, { responseType: "blob" });
+  return data;
+}
+
+function playBlob(blob: Blob, mySession: number) {
+  if (mySession !== session) return Promise.resolve();
+  if (audioUrl) URL.revokeObjectURL(audioUrl);
+  audioUrl = URL.createObjectURL(blob);
   audio = new Audio(audioUrl);
-  await new Promise<void>((resolve, reject) => {
-    audio!.onended = () => resolve();
-    audio!.onerror = () => reject(new Error("audio"));
-    audio!.play().catch(reject);
+  const el = audio;
+  return new Promise<void>((resolve, reject) => {
+    el.onended = () => resolve();
+    el.onpause = () => mySession !== session && resolve(); // stopSpeaking() to'xtatdi
+    el.onerror = () => reject(new Error("audio"));
+    el.play().catch(reject);
   });
 }
+
+export type SpeechStream = {
+  // Hozirgacha yozilgan TO'LIQ matn (har safar kattalashib boradi)
+  push: (fullText: string) => void;
+  // Matn tugadi — qolganini o'qib, tugashini kutish
+  end: (fullText?: string) => Promise<SpeakResult>;
+  stop: () => void;
+};
 
 // Tugma bosilgan zahoti (hali await'dan oldin) brauzer ovozini "uyg'otamiz" —
 // aks holda Chrome kechikib kelgan ovozni foydalanuvchi bosmagan deb bloklaydi
@@ -250,31 +308,107 @@ function primeBrowserVoice() {
   synth.speak(warm);
 }
 
-// quick=true — qisqa xabarlar (sahifa nomi, javob) uchun darhol brauzer ovozi.
-// Aks holda: server ovozi mavjud bo'lsa — u, bo'lmasa yoki xato bersa — brauzer ovozi.
-export async function speak(text: string, { quick = false }: { quick?: boolean } = {}): Promise<SpeakResult> {
+// quick=true — qisqa xabarlar uchun darhol brauzer ovozi (server kutilmaydi)
+export function createSpeechStream({ quick = false }: { quick?: boolean } = {}): SpeechStream {
   stopSpeaking();
-  const clean = plain(text);
-  if (!clean || typeof window === "undefined") return { ok: false, error: "O'qiladigan matn yo'q" };
   const mySession = session;
-  primeBrowserVoice();
+  if (typeof window !== "undefined") primeBrowserVoice();
   notify(true);
-  try {
-    if (!quick && serverTtsOk !== false) {
-      try {
-        await speakWithServer(clean, mySession);
-        serverTtsOk = true;
-        return { ok: true };
-      } catch {
-        serverTtsOk = false;
-        serverCheckedAt = Date.now();
-        if (mySession !== session) return { ok: true };
+
+  let received = 0; // push qilingan matndan qancha qismi bo'laklarga ajratildi
+  let buffer = "";
+  let ended = false;
+  const segments: string[] = [];
+  const audios: (Promise<Blob> | undefined)[] = [];
+  let useServer = !quick && serverTtsOk !== false;
+  let wake: (() => void) | null = null;
+  const signal = () => {
+    wake?.();
+    wake = null;
+  };
+  activeStreams.add(signal);
+
+  const split = () => {
+    for (;;) {
+      const taken = takeSegment(buffer, segments.length === 0, ended);
+      if (!taken) break;
+      const text = plain(taken[0]);
+      buffer = taken[1];
+      if (text) segments.push(text);
+    }
+    signal();
+  };
+
+  // Keyingi bo'lakni oldindan so'rab qo'yamiz (ko'pi bilan 2 ta oldinda) — o'qish orasida pauza bo'lmasin
+  const prefetch = (i: number) => {
+    for (let j = i; j < Math.min(i + 2, segments.length); j++) {
+      if (!audios[j]) {
+        audios[j] = fetchAudio(segments[j]);
+        audios[j]!.catch(() => {}); // xato player ichida ushlanadi
       }
     }
-    return await speakWithBrowser(clean, mySession);
-  } finally {
+  };
+
+  const player = (async (): Promise<SpeakResult> => {
+    let spokeAny = false;
+    let lastError: string | undefined;
+    for (let i = 0; ; i++) {
+      while (i >= segments.length) {
+        if (ended || mySession !== session) return spokeAny || mySession !== session ? { ok: true } : { ok: false, error: lastError ?? "O'qiladigan matn yo'q" };
+        await new Promise<void>((r) => (wake = r));
+      }
+      if (mySession !== session) return { ok: true };
+      if (useServer) {
+        prefetch(i);
+        try {
+          const blob = await audios[i]!;
+          await playBlob(blob, mySession);
+          serverTtsOk = true;
+          spokeAny = true;
+          continue;
+        } catch {
+          // Server ovozi ishlamadi — shu va qolgan bo'laklarni brauzer ovozi o'qiydi
+          useServer = false;
+          serverTtsOk = false;
+          serverCheckedAt = Date.now();
+          if (mySession !== session) return { ok: true };
+        }
+      }
+      const result = await speakWithBrowser(segments[i], mySession);
+      if (result.ok) spokeAny = true;
+      else lastError = result.error;
+    }
+  })().finally(() => {
+    activeStreams.delete(signal);
     if (mySession === session) notify(false);
-  }
+  });
+
+  const push = (fullText: string) => {
+    if (mySession !== session || ended) return;
+    buffer += fullText.slice(received);
+    received = fullText.length;
+    split();
+  };
+
+  return {
+    push,
+    end(fullText) {
+      if (fullText !== undefined) push(fullText);
+      ended = true;
+      split();
+      return player;
+    },
+    stop() {
+      if (mySession === session) stopSpeaking();
+      signal();
+    },
+  };
+}
+
+// Matnni o'qish: server ovozi (bo'laklab) mavjud bo'lsa — u, bo'lmasa yoki xato bersa — brauzer ovozi
+export function speak(text: string, opts: { quick?: boolean } = {}): Promise<SpeakResult> {
+  if (typeof window === "undefined" || !plain(text)) return Promise.resolve({ ok: false, error: "O'qiladigan matn yo'q" });
+  return createSpeechStream(opts).end(text);
 }
 // ---------- Nutqni tanib olish ----------
 
