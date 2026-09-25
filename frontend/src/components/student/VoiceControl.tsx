@@ -17,15 +17,32 @@ import {
   isRecognitionSupported,
   listenOnce,
   normalizeSpeech,
+  MIC_SETUP_ERRORS,
   OPEN_LESSON_EVENT,
+  RecognitionError,
   speak,
   stopSpeaking,
 } from "@/lib/speech";
 import { voiceMode } from "@/lib/voiceMode";
+import { setTheme } from "@/lib/theme";
+import MicPermissionDialog from "./MicPermissionDialog";
 import Modal from "@/components/ui/Modal";
 
-type Ctx = { go: (href: string) => void; back: () => void; logout: () => void; setMode: (on: boolean) => void; pathname: string };
-type Command = { label: string; match: (t: string) => boolean; run: (ctx: Ctx, text: string) => void };
+type Ctx = {
+  go: (href: string) => void;
+  back: () => void;
+  logout: () => void;
+  setMode: (on: boolean) => void;
+  fontStep: (delta: 1 | -1) => string; // javob matnini qaytaradi
+  pathname: string;
+};
+// reply — buyruq bajarilgach ovoz bilan aytiladigan qisqa javob ("Bosh sahifa ochildi")
+type Command = {
+  label: string;
+  match: (t: string) => boolean;
+  run: (ctx: Ctx, text: string) => void | string;
+  reply?: string;
+};
 
 const has = (t: string, ...words: string[]) => words.some((w) => t.includes(w));
 
@@ -39,7 +56,8 @@ function pageName(pathname: string) {
   return "";
 }
 
-// Tartib muhim: aniqroq buyruqlar birinchi tekshiriladi ("o'chir" "och" dan oldin)
+// Tartib muhim: aniqroq buyruqlar birinchi tekshiriladi ("o'chir" "och" dan, "tushuntir" "qayta" dan oldin).
+// run() matn qaytarsa — o'sha aytiladi, aks holda reply
 const COMMANDS: Command[] = [
   { label: "“To'xta” — ovozni to'xtatadi", match: (t) => has(t, "toxta", "stop", "jim"), run: () => { stopSpeaking(); dispatchVoiceAction("stop"); } },
   { label: "“Ovoz rejimini o'chir”", match: (t) => has(t, "ovoz") && has(t, "ochir"), run: ({ setMode }) => setMode(false) },
@@ -50,6 +68,7 @@ const COMMANDS: Command[] = [
       const n = extractNumber(t);
       if (pathname === "/student/lessons") window.dispatchEvent(new CustomEvent(OPEN_LESSON_EVENT, { detail: n }));
       else go(`/student/lessons?open=${n}`);
+      return `${n}-dars ochilmoqda`;
     },
   },
   { label: "“Tushuntir” — ochiq darsni AI tushuntiradi", match: (t) => has(t, "tushuntir"), run: () => dispatchVoiceAction("explain") },
@@ -64,29 +83,44 @@ const COMMANDS: Command[] = [
     run: (_, t) => {
       const next = has(t, "sekin") ? (getSpeechRate() === "fast" ? "medium" : "slow") : getSpeechRate() === "slow" ? "medium" : "fast";
       setSpeechRate(next);
-      speak(`Tezlik: ${SPEECH_RATES.find((r) => r.key === next)?.label}`, { quick: true });
+      return `Tezlik: ${SPEECH_RATES.find((r) => r.key === next)?.label}`;
+    },
+  },
+  { label: "“Kattalashtir” — shriftni kattalashtiradi", match: (t) => has(t, "kattalashtir", "katta qil"), run: ({ fontStep }) => fontStep(1) },
+  { label: "“Kichraytir” — shriftni kichraytiradi", match: (t) => has(t, "kichraytir", "kichik qil"), run: ({ fontStep }) => fontStep(-1) },
+  {
+    label: "“Tungi rejim” / “Kunduzgi rejim”",
+    match: (t) => has(t, "tungi", "kunduzgi", "qorongi", "yorug"),
+    run: (_, t) => {
+      const dark = has(t, "tungi", "qorongi");
+      setTheme(dark ? "dark" : "light");
+      return dark ? "Tungi rejim yoqildi" : "Kunduzgi rejim yoqildi";
     },
   },
   { label: "“O'qib ber” — sahifadagi ma'lumotni o'qiydi", match: (t) => has(t, "oqi", "tingla"), run: () => dispatchVoiceAction("read") },
-  { label: "“Jadval” — dars jadvali", match: (t) => has(t, "jadval"), run: ({ go }) => go("/student/schedule") },
-  { label: "“Vazifalar” — uy vazifalari", match: (t) => has(t, "vazifa", "uy ishi"), run: ({ go }) => go("/student/assignments") },
-  { label: "“Baholar” — baholarim", match: (t) => has(t, "baho"), run: ({ go }) => go("/student/grades") },
-  { label: "“Darslar” — darslarim", match: (t) => has(t, "dars"), run: ({ go }) => go("/student/lessons") },
-  { label: "“Bosh sahifa”", match: (t) => has(t, "bosh sahifa", "asosiy"), run: ({ go }) => go("/student") },
-  { label: "“Orqaga” — oldingi sahifa", match: (t) => has(t, "orqaga"), run: ({ back }) => back() },
-  { label: "“Qayerdaman” — qaysi sahifadaligingiz", match: (t) => has(t, "qayer"), run: ({ pathname }) => speak(pageName(pathname) || "Imkon AI", { quick: true }) },
+  { label: "“Jadval” — dars jadvali", match: (t) => has(t, "jadval"), run: ({ go }) => go("/student/schedule"), reply: "Dars jadvali ochildi" },
+  { label: "“Vazifalar” — uy vazifalari", match: (t) => has(t, "vazifa", "uy ishi"), run: ({ go }) => go("/student/assignments"), reply: "Vazifalar ochildi" },
+  { label: "“Baholar” — baholarim", match: (t) => has(t, "baho"), run: ({ go }) => go("/student/grades"), reply: "Baholar ochildi" },
+  { label: "“Darslar” — darslarim", match: (t) => has(t, "dars"), run: ({ go }) => go("/student/lessons"), reply: "Darslar ochildi. Ro'yxatni eshitish uchun o'qib ber deb ayting" },
+  { label: "“Bosh sahifa”", match: (t) => has(t, "bosh sahifa", "asosiy"), run: ({ go }) => go("/student"), reply: "Bosh sahifa ochildi" },
+  { label: "“Orqaga” — oldingi sahifa", match: (t) => has(t, "orqaga"), run: ({ back }) => back(), reply: "Oldingi sahifaga qaytildi" },
+  { label: "“Qayerdaman” — qaysi sahifadaligingiz", match: (t) => has(t, "qayer"), run: ({ pathname }) => pageName(pathname) || "Imkon AI" },
   {
     label: "“Yordam” — buyruqlarni aytib beradi",
     match: (t) => has(t, "yordam"),
     run: () =>
-      speak(
-        "Buyruqlar: darslar, vazifalar, jadval, baholar, bosh sahifa, ikkinchi darsni och, o'qib ber, tushuntir, to'xta, orqaga, ovoz rejimini o'chir, chiqish.",
-        { quick: true }
-      ),
+      "Buyruqlar: darslar, vazifalar, jadval, baholar, bosh sahifa, ikkinchi darsni och, o'qib ber, tushuntir, keyingi, qayta, " +
+      "sekinroq, kattalashtir, kichraytir, tungi rejim, to'xta, orqaga, ovoz rejimini o'chir, chiqish.",
   },
-  { label: "“Chiqish” — tizimdan chiqish", match: (t) => has(t, "chiqish"), run: ({ logout }) => logout() },
+  {
+    label: "“Chiqish” — tizimdan chiqish",
+    match: (t) => has(t, "chiqish"),
+    // Avval xayrlashamiz, keyin chiqamiz (chiqqach sahifa almashib, ovoz uzilib qolmasin)
+    run: ({ logout }) => {
+      speak("Tizimdan chiqildi. Xayr!", { quick: true }).finally(logout);
+    },
+  },
 ];
-
 const FONT_KEY = "imkon_font_scale";
 const MODE_KEY = "imkon_voice_mode";
 const FONT_SCALES = [100, 115, 130];
@@ -135,10 +169,25 @@ export default function VoiceControl() {
   const rateLabel = SPEECH_RATES.find((r) => r.key === rateKey)?.label;
 
   const modeRef = useRef(false);
+  const [micError, setMicError] = useState<string | null>(null); // mikrofon xatosi kodi -> yo'riqnoma oynasi
+
+  // Mikrofon xatosi: jiddiy bo'lsa — yo'riqnoma oynasi, aks holda qisqa bildirishnoma. Ovoz bilan ham aytiladi
+  const reportMicError = useCallback((message: string, code: string) => {
+    if (MIC_SETUP_ERRORS.includes(code)) setMicError(code);
+    else toast.error(message);
+    speak(message, { quick: true });
+  }, []);
+
+  const setFont = (index: number) => {
+    setFontIndex(index);
+    document.documentElement.style.fontSize = `${FONT_SCALES[index]}%`;
+    writeStorage(FONT_KEY, String(index));
+  };
 
   // ---------- Buyruqni bajarish ----------
   const handleRef = useRef<(heard: string) => void>(() => {});
   const setModeRef = useRef<(on: boolean) => void>(() => {});
+  const skipAnnounceRef = useRef(false); // buyruq javobini aytgan bo'lsak, sahifa nomini qayta aytmaymiz
 
   useEffect(() => {
     handleRef.current = (heard: string) => {
@@ -150,10 +199,27 @@ export default function VoiceControl() {
         speak("Tushunmadim. Yordam deb ayting", { quick: true });
         return;
       }
-      command.run(
-        { go: (href) => router.push(href), back: () => router.back(), logout, setMode: (on) => setModeRef.current(on), pathname },
-        text
-      );
+      const reply =
+        command.run(
+          {
+            go: (href) => router.push(href),
+            back: () => router.back(),
+            logout,
+            setMode: (on) => setModeRef.current(on),
+            fontStep: (delta) => {
+              const next = Math.min(Math.max(fontIndex + delta, 0), FONT_SCALES.length - 1);
+              if (next === fontIndex) return delta > 0 ? "Shrift eng katta o'lchamda" : "Shrift eng kichik o'lchamda";
+              setFont(next);
+              return delta > 0 ? "Shrift kattalashtirildi" : "Shrift kichraytirildi";
+            },
+            pathname,
+          },
+          text
+        ) || command.reply;
+      if (reply) {
+        skipAnnounceRef.current = true;
+        speak(reply, { quick: true });
+      }
     };
   });
 
@@ -162,18 +228,18 @@ export default function VoiceControl() {
     voiceMode.setHandlers({
       onCommand: (text) => handleRef.current(text),
       onHeard: (text) => setLastHeard(text),
-      onFatal: (message) => {
-        toast.error(message);
+      onFatal: (message, code) => {
         modeRef.current = false;
         setModeState(false);
         writeStorage(MODE_KEY, "0");
+        reportMicError(message, code);
       },
     });
-  }, []);
+  }, [reportMicError]);
 
   const setMode = useCallback((on: boolean) => {
     if (on && !isRecognitionSupported()) {
-      toast.error("Brauzeringiz ovozni tanishni qo'llab-quvvatlamaydi. Google Chrome yoki Microsoft Edge'dan foydalaning");
+      setMicError("unsupported");
       return;
     }
     modeRef.current = on;
@@ -221,6 +287,10 @@ export default function VoiceControl() {
       firstPath.current = false;
       return;
     }
+    if (skipAnnounceRef.current) {
+      skipAnnounceRef.current = false; // ovozli buyruq javobi ("Darslar ochildi") allaqachon aytilgan
+      return;
+    }
     if (modeRef.current) {
       const name = pageName(pathname);
       if (name) speak(name, { quick: true });
@@ -239,18 +309,14 @@ export default function VoiceControl() {
         handleRef.current(heard);
       }
     } catch (e) {
-      toast.error((e as Error).message);
+      if (e instanceof RecognitionError) reportMicError(e.message, e.code);
+      else toast.error((e as Error).message);
     } finally {
       setListening(false);
     }
   };
 
-  const cycleFont = () => {
-    const next = (fontIndex + 1) % FONT_SCALES.length;
-    setFontIndex(next);
-    document.documentElement.style.fontSize = `${FONT_SCALES[next]}%`;
-    writeStorage(FONT_KEY, String(next));
-  };
+  const cycleFont = () => setFont((fontIndex + 1) % FONT_SCALES.length);
 
   // Klaviatura: Alt+O — ovoz rejimi, Alt+V — bir martalik buyruq, Esc — ovozni to'xtatish
   const keyRef = useRef<(e: KeyboardEvent) => void>(() => {});
@@ -336,6 +402,15 @@ export default function VoiceControl() {
           <span className="max-sm:hidden">{mode ? "Ovoz rejimi: yoniq" : "Ovoz rejimi"}</span>
         </button>
       </div>
+
+      <MicPermissionDialog
+        code={micError}
+        onClose={() => setMicError(null)}
+        onRetry={() => {
+          setMicError(null);
+          setMode(true); // brauzer ruxsatni qayta so'raydi
+        }}
+      />
 
       <Modal open={helpOpen} title="Ovozli boshqaruv" onClose={() => setHelpOpen(false)}>
         <div className="space-y-3 text-slate-700">

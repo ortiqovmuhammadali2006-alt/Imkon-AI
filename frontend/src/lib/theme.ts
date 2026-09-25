@@ -15,6 +15,8 @@ export function setTheme(theme: Theme) {
   try {
     localStorage.setItem(KEY, theme);
   } catch {}
+  // Cookie — server sahifani darhol to'g'ri rangda yuborsin (app/layout.tsx), oq "miltillash" bo'lmasin
+  document.cookie = `${KEY}=${theme}; path=/; max-age=31536000; samesite=lax`;
   listeners.forEach((fn) => fn());
 }
 

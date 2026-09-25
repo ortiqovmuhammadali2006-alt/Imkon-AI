@@ -9,7 +9,7 @@ import {
 type Handlers = {
   onCommand: (text: string) => void;
   onHeard?: (text: string) => void; // gapirayotgan paytdagi matn
-  onFatal: (message: string) => void; // tinglashni davom ettirib bo'lmaydi (masalan, mikrofonga ruxsat yo'q)
+  onFatal: (message: string, code: string) => void; // tinglashni davom ettirib bo'lmaydi (code: "not-allowed", "audio-capture"...)
 };
 
 const FATAL = ["not-allowed", "service-not-allowed", "audio-capture", "language-not-supported"];
@@ -59,7 +59,7 @@ class VoiceMode {
     this.timer = null;
     if (!this.on || this.speaking || this.rec) return;
     const r = createRecognition(true, true);
-    if (!r) return this.fatal("Brauzeringiz ovozni tanishni qo'llab-quvvatlamaydi. Google Chrome yoki Microsoft Edge'dan foydalaning");
+    if (!r) return this.fatal("Brauzeringiz ovozni tanishni qo'llab-quvvatlamaydi. Google Chrome yoki Microsoft Edge'dan foydalaning", "unsupported");
     this.rec = r;
 
     r.onresult = (e) => {
@@ -71,7 +71,7 @@ class VoiceMode {
     };
     r.onerror = (e) => {
       if (e.error === "language-not-supported" && fallbackLanguage()) return; // onend qayta ishga tushiradi
-      if (FATAL.includes(e.error)) this.fatal(recognitionErrorMessage(e.error) ?? "Mikrofon ishlamayapti");
+      if (FATAL.includes(e.error)) this.fatal(recognitionErrorMessage(e.error) ?? "Mikrofon ishlamayapti", e.error);
     };
     // Brauzer jimlikdan keyin tinglashni o'zi to'xtatadi — yoniq bo'lsa, qayta boshlaymiz
     r.onend = () => {
@@ -101,9 +101,9 @@ class VoiceMode {
     }
   }
 
-  private fatal(message: string) {
+  private fatal(message: string, code: string) {
     this.disable();
-    this.handlers?.onFatal(message);
+    this.handlers?.onFatal(message, code);
   }
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
@@ -18,6 +18,11 @@ export default function Modal({
   size?: "md" | "lg";
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
   const onCloseRef = useRef(onClose);
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -38,7 +43,8 @@ export default function Modal({
     };
   }, [open]);
 
-  if (!open || typeof document === "undefined") return null;
+  // Portal faqat brauzerda — server va brauzer birinchi chizishda bir xil (null) bo'lsin
+  if (!open || !mounted) return null;
 
   // Portal: ota elementlardagi transform/overflow modalni buzmasin
   return createPortal(

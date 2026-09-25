@@ -339,19 +339,33 @@ export function recognitionErrorMessage(error: string): string | null {
   }
 }
 
+// Nutqni tanish xatosi: code — "not-allowed" (ruxsat yo'q), "audio-capture" (mikrofon yo'q), "no-speech" va h.k.
+export class RecognitionError extends Error {
+  constructor(message: string, public code: string) {
+    super(message);
+  }
+}
+
+// Mikrofon bilan bog'liq jiddiy xatolar — foydalanuvchiga batafsil ko'rsatma oynasi kerak
+export const MIC_SETUP_ERRORS = ["not-allowed", "service-not-allowed", "audio-capture", "unsupported", "language-not-supported"];
+
 // Bir marta tinglab, aytilgan matnni qaytaradi (buyruq, savol yoki javobni ovoz bilan yozish uchun).
 // onInterim — gapirayotgan paytda eshitilayotgan matn (ekranda ko'rsatish uchun)
 export function listenOnce(onInterim?: (text: string) => void): Promise<string> {
   return new Promise((resolve, reject) => {
     const r = createRecognition(false, true);
-    if (!r) return reject(new Error("Brauzeringiz ovozni tanishni qo'llab-quvvatlamaydi. Google Chrome yoki Microsoft Edge'dan foydalaning"));
+    if (!r) {
+      return reject(
+        new RecognitionError("Brauzeringiz ovozni tanishni qo'llab-quvvatlamaydi. Google Chrome yoki Microsoft Edge'dan foydalaning", "unsupported")
+      );
+    }
     stopSpeaking();
     let finalText = "";
     let latest = "";
     let settled = false;
-    const fail = (message: string) => {
+    const fail = (message: string, code: string) => {
       settled = true;
-      reject(new Error(message));
+      reject(new RecognitionError(message, code));
     };
 
     r.onresult = (e) => {
@@ -371,21 +385,21 @@ export function listenOnce(onInterim?: (text: string) => void): Promise<string> 
         listenOnce(onInterim).then(resolve, reject);
         return;
       }
-      if (e.error === "no-speech") return fail("Ovoz eshitilmadi. Mikrofonga yaqinroq gapiring");
+      if (e.error === "no-speech") return fail("Ovoz eshitilmadi. Mikrofonga yaqinroq gapiring", "no-speech");
       const message = recognitionErrorMessage(e.error);
-      if (message) fail(message);
+      if (message) fail(message, e.error);
     };
     r.onend = () => {
       if (settled) return;
       settled = true;
       const text = (finalText || latest).trim();
       if (text) resolve(text);
-      else reject(new Error("Ovoz eshitilmadi. Mikrofonga yaqinroq gapiring"));
+      else reject(new RecognitionError("Ovoz eshitilmadi. Mikrofonga yaqinroq gapiring", "no-speech"));
     };
     try {
       r.start();
     } catch {
-      fail("Mikrofonni ishga tushirib bo'lmadi. Sahifani yangilab, qayta urinib ko'ring");
+      fail("Mikrofonni ishga tushirib bo'lmadi. Sahifani yangilab, qayta urinib ko'ring", "start-failed");
     }
   });
 }
