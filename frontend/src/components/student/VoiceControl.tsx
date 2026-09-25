@@ -126,6 +126,25 @@ const COMMANDS: Command[] = [
     },
   },
 ];
+// Qaysi sahifa va qaysi rejimdaligini Madina ovozida aytish (server ovozi holati avval aniqlanadi)
+function announce(kind: "login" | "reload" | "unsupported", fullName: string, pathname: string) {
+  const page = pageName(pathname) || "Imkon AI";
+  const text =
+    kind === "login"
+      ? `Xush kelibsiz, ${fullName}! Hozir siz turgan sahifa: ${page}. Ovoz rejimi yoqilgan, men sizni tinglayapman. ` +
+        "Buyruq ayting, masalan: darslar, suhbat yoki yordam."
+      : kind === "unsupported"
+        ? `Xush kelibsiz, ${fullName}! Hozir siz turgan sahifa: ${page}. ` +
+          "Bu brauzerda ovozli boshqaruv ishlamaydi. Google Chrome yoki Microsoft Edge'dan foydalaning."
+        : `Ovoz rejimi yoqilgan. Hozir siz turgan sahifa: ${page}.`;
+  checkServerTts().then(() =>
+    speakOrWaitForClick(text, { quick: true }).then((r) => {
+      if (r.error === AUTOPLAY_BLOCKED) toast(AUTOPLAY_BLOCKED, { icon: "🔊", duration: 8000 });
+    })
+  );
+}
+
+let pendingLoginWelcome = false; // login'dan keyingi "xush kelibsiz" hali aytilmagan
 const FONT_KEY = "imkon_font_scale";
 const MODE_KEY = "imkon_voice_mode";
 const FONT_SCALES = [100, 115, 130];
@@ -291,11 +310,12 @@ export default function VoiceControl() {
     const savedFont = Number(readStorage(FONT_KEY)) || 0;
     document.documentElement.style.fontSize = `${FONT_SCALES[savedFont] ?? 100}%`;
     // Login'dan so'ng birinchi ochilish: ovoz rejimi o'zi yoqiladi (o'quvchi "ovoz rejimini o'chir" deb o'chira oladi)
-    let justLoggedIn = false;
+    // Belgi modul darajasida saqlanadi: dasturlash rejimida React komponentni ikki marta yuklaganda ham yo'qolmasin
     try {
-      justLoggedIn = sessionStorage.getItem(LOGIN_WELCOME_KEY) === "1";
+      if (sessionStorage.getItem(LOGIN_WELCOME_KEY) === "1") pendingLoginWelcome = true;
       sessionStorage.removeItem(LOGIN_WELCOME_KEY);
     } catch {}
+    const justLoggedIn = pendingLoginWelcome;
     const supported = isRecognitionSupported();
     const savedMode = (justLoggedIn || readStorage(MODE_KEY) === "1") && supported;
     if (justLoggedIn && supported) writeStorage(MODE_KEY, "1");
@@ -320,22 +340,15 @@ export default function VoiceControl() {
   useEffect(() => {
     const kind = welcomeRef.current;
     if (!kind || !user) return;
-    welcomeRef.current = null;
-    const page = pageName(pathname) || "Imkon AI";
-    const text =
-      kind === "login"
-        ? `Xush kelibsiz, ${user.full_name}! Hozir siz turgan sahifa: ${page}. Ovoz rejimi yoqilgan, men sizni tinglayapman. ` +
-          "Buyruq ayting, masalan: darslar, suhbat yoki yordam."
-        : kind === "unsupported"
-          ? `Xush kelibsiz, ${user.full_name}! Hozir siz turgan sahifa: ${page}. ` +
-            "Bu brauzerda ovozli boshqaruv ishlamaydi. Google Chrome yoki Microsoft Edge'dan foydalaning."
-          : `Ovoz rejimi yoqilgan. Hozir siz turgan sahifa: ${page}.`;
-    checkServerTts().then(() =>
-      speakOrWaitForClick(text, { quick: true }).then((r) => {
-        if (r.error === AUTOPLAY_BLOCKED) toast(AUTOPLAY_BLOCKED, { icon: "🔊", duration: 8000 });
-      })
-    );
+    // Biroz kechiktiramiz: komponent darhol qayta yuklansa (dasturlash rejimi), birinchi urinish bekor bo'ladi
+    const id = setTimeout(() => {
+      welcomeRef.current = null;
+      pendingLoginWelcome = false;
+      announce(kind, user.full_name, pathname);
+    }, 400);
+    return () => clearTimeout(id);
   }, [user, pathname]);
+
 
   // Ovoz rejimida sahifa o'zgarganda nomini aytamiz
   const firstPath = useRef(true);

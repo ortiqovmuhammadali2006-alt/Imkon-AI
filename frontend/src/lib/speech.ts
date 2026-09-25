@@ -225,8 +225,9 @@ async function speakWithBrowser(text: string, mySession: number): Promise<SpeakR
   const synth = window.speechSynthesis;
   if (!synth) return { ok: false, error: "Brauzeringiz ovozli o'qishni qo'llab-quvvatlamaydi" };
   const choice = pickVoice(await loadVoices());
-  if (!choice.voice && !synth.getVoices().length) {
-    return { ok: false, error: "Kompyuterda birorta ham ovoz o'rnatilmagan. Microsoft Edge'dan foydalanib ko'ring" };
+  // Tizimda faqat Madina (o'zbekcha ayol) ovozi eshitilsin: brauzerda o'zbekcha ovoz bo'lmasa — boshqa ovozga o'tmaymiz
+  if (choice.label !== "o'zbekcha") {
+    return { ok: false, error: "Madina ovozi vaqtincha ishlamayapti. Birozdan so'ng qayta urinib ko'ring" };
   }
   let spoke = false;
   const rate = currentRate();
@@ -344,8 +345,8 @@ function primeBrowserVoice() {
   synth.speak(warm);
 }
 
-// quick=true — qisqa xabarlar (buyruq javoblari)
-export function createSpeechStream({ quick = false }: { quick?: boolean } = {}): SpeechStream {
+// quick — qisqa xabarlar (buyruq javoblari); endi ular ham Madina (server) ovozida aytiladi, parametr moslik uchun qoldirilgan
+export function createSpeechStream(_opts: { quick?: boolean } = {}): SpeechStream {
   stopSpeaking();
   const mySession = session;
   if (typeof window !== "undefined") primeBrowserVoice();
@@ -356,9 +357,9 @@ export function createSpeechStream({ quick = false }: { quick?: boolean } = {}):
   let ended = false;
   const segments: string[] = [];
   const audios: (Promise<Blob> | undefined)[] = [];
-  // quick (qisqa javoblar): server haqiqiy o'zbekcha ovoz bersa — u (brauzerdagi ruscha ovoz tushunarsiz),
-  // aks holda tezroq bo'lgani uchun brauzer ovozi
-  let useServer = serverTtsOk !== false && (!quick || serverUzbek);
+  // Server (Madina) ovozi — asosiy va yagona. Xato bergan bo'lsa ham 30 soniyadan keyin yana urinib ko'ramiz
+  const serverDown = serverTtsOk === false && Date.now() - serverCheckedAt < 30_000;
+  let useServer = !serverDown;
   let wake: (() => void) | null = null;
   const signal = () => {
     wake?.();

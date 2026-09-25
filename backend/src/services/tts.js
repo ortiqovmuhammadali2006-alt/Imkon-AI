@@ -4,7 +4,7 @@
 //  2) Microsoft Edge "Ovoz bilan o'qish" xizmati — xuddi shu o'zbekcha ovozlar, kalitsiz va bepul.
 //     Rasmiy API emas: Microsoft o'zgartirsa ishlamay qolishi mumkin — shunda keyingi manbaga o'tiladi.
 //     .env: EDGE_TTS_VOICE (standart: uz-UZ-MadinaNeural), EDGE_TTS=off — o'chirish
-//  3) OpenAI TTS — .env: OPENAI_API_KEY (o'zbekchani chet el aksenti bilan o'qiydi)
+//  3) OpenAI TTS — faqat .env: TTS_OPENAI_FALLBACK=on bo'lsa (boshqa ovoz; tizimda faqat Madina eshitilishi uchun o'chiq)
 // Hech biri ishlamasa — brauzer o'z ovozi bilan o'qiydi (frontend: lib/speech.ts).
 const crypto = require("crypto");
 const { EdgeTTS } = require("edge-tts-universal");
@@ -23,7 +23,7 @@ function providers() {
   const list = [];
   if (azureConfigured() && Date.now() > blockedUntil.azure) list.push("azure");
   if (process.env.EDGE_TTS !== "off" && Date.now() > blockedUntil.edge) list.push("edge");
-  if (process.env.OPENAI_API_KEY && Date.now() > blockedUntil.openai) list.push("openai");
+  if (process.env.TTS_OPENAI_FALLBACK === "on" && process.env.OPENAI_API_KEY && Date.now() > blockedUntil.openai) list.push("openai");
   return list;
 }
 
@@ -61,7 +61,7 @@ async function azureTts(text, speed) {
 async function edgeOnce(text, voice, rate) {
   let timer;
   const timeout = new Promise((_, reject) => {
-    timer = setTimeout(() => reject(new Error("Edge TTS: javob kelmadi")), 8000);
+    timer = setTimeout(() => reject(new Error("Edge TTS: javob kelmadi")), 7000);
   });
   try {
     const result = await Promise.race([new EdgeTTS(text, voice, { rate }).synthesize(), timeout]);
@@ -73,16 +73,20 @@ async function edgeOnce(text, voice, rate) {
   }
 }
 
-// Edge ba'zan bir martalik kechikadi — bir marta qayta urinib ko'ramiz
+// Edge ba'zan bir martalik kechikadi — Madina ovozi bo'lmay qolmasligi uchun 3 martagacha urinamiz
 async function edgeTts(text, speed) {
   const voice = process.env.EDGE_TTS_VOICE || "uz-UZ-MadinaNeural";
   const rate = `${speed >= 1 ? "+" : ""}${Math.round((speed - 1) * 100)}%`; // 0.85 -> "-15%"
-  try {
-    return await edgeOnce(text, voice, rate);
-  } catch (err) {
-    console.error("edge TTS xatosi, qayta urinilmoqda:", err.message);
-    return edgeOnce(text, voice, rate);
+  let lastError;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      return await edgeOnce(text, voice, rate);
+    } catch (err) {
+      lastError = err;
+      console.error(`edge TTS xatosi (${attempt}/3):`, err.message);
+    }
   }
+  throw lastError;
 }
 
 // Bir xil matn qayta so'ralsa ("Qayta tinglash") — xotiradan beramiz, bepul limit tejaladi
@@ -121,7 +125,8 @@ async function synthesize(text, speed) {
       if (provider === "azure" && [401, 403, 429].includes(err.status)) blockedUntil.azure = Date.now() + BLOCK_MS;
       if (provider === "openai" && toHttpError(err).status === 503) blockedUntil.openai = Date.now() + BLOCK_MS;
       // Edge: bitta tasodifiy xato uchun o'chirmaymiz; ketma-ket 3 marta ishlamasa — 2 daqiqa chetlab o'tamiz
-      if (provider === "edge" && ++edgeFailures >= 3) {
+      // Madina uchun boshqa manba bo'lmasa — o'chirmaymiz (aks holda hech qanday ovoz qolmaydi)
+      if (provider === "edge" && list.length > 1 && ++edgeFailures >= 3) {
         blockedUntil.edge = Date.now() + 2 * 60 * 1000;
         edgeFailures = 0;
       }
@@ -138,7 +143,7 @@ function status() {
   // Edge vaqtincha to'xtagan bo'lsa ham o'zbekcha deb ko'rsatamiz: brauzer bu holatni 10 daqiqa eslab qoladi,
   // har bir so'rov esa baribir o'zi keyingi manbaga o'tadi
   const uzbek = azureConfigured() || process.env.EDGE_TTS !== "off";
-  return { available: list.length > 0, provider: list[0] || null, uzbek_voice: uzbek };
+  return { available: list.length > 0 || uzbek, provider: list[0] || null, uzbek_voice: uzbek };
 }
 
 module.exports = { synthesize, status };
