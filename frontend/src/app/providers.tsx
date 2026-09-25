@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/lib/auth";
 
@@ -28,7 +27,6 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           success: { iconTheme: { primary: "#4f46e5", secondary: "#fff" } },
         }}
       />
-      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
 }
