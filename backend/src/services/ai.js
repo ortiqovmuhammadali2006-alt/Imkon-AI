@@ -10,6 +10,18 @@ function getClient() {
   return client;
 }
 
+// Model va javob uzunligi. GPT-5 oilasi (va o-seriya) "fikrlovchi" modellar: max_tokens o'rniga
+// max_completion_tokens talab qiladi, fikrlash qisqa bo'lsin (tezroq javob) — reasoning_effort: low
+const DEFAULT_MODEL = "gpt-5.4-mini";
+function chatParams(maxTokens) {
+  const model = process.env.OPENAI_MODEL || DEFAULT_MODEL;
+  const reasoning = /^(gpt-5|o\d)/.test(model);
+  return {
+    model,
+    max_completion_tokens: reasoning ? maxTokens + 800 : maxTokens, // fikrlash tokenlari ham shu hisobga kiradi
+    ...(reasoning && { reasoning_effort: "low" }),
+  };
+}
 // O'quvchi toifasiga qarab tushuntirish uslubi
 const STYLE = {
   general: "Oddiy, tushunarli tilda, misollar bilan tushuntir.",
@@ -55,9 +67,8 @@ async function explainLesson(lesson, category, messages) {
     : [{ role: "user", content: "Shu darsni menga batafsil, bosqichma-bosqich tushuntirib ber." }];
 
   const completion = await getClient().chat.completions.create({
-    model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+    ...chatParams(1500),
     messages: [{ role: "system", content: systemPrompt(lesson, category) }, ...history],
-    max_tokens: 1500,
   });
   return completion.choices[0]?.message?.content?.trim() || "Kechirasiz, javob tayyorlab bo'lmadi.";
 }
@@ -96,8 +107,7 @@ async function transcribe(filePath) {
 // Rasmni ko'rishi cheklangan o'quvchi uchun so'z bilan tasvirlash
 async function describeImage(buffer, mime) {
   const completion = await getClient().chat.completions.create({
-    model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-    max_tokens: 700,
+    ...chatParams(700),
     messages: [
       {
         role: "system",
@@ -121,8 +131,7 @@ async function describeImage(buffer, mime) {
 // Dars matnidan: oddiy tildagi qisqa variant + atamalar lug'ati (JSON)
 async function simplifyLesson(title, sourceText) {
   const completion = await getClient().chat.completions.create({
-    model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-    max_tokens: 1800,
+    ...chatParams(1800),
     response_format: { type: "json_object" },
     messages: [
       {
@@ -159,4 +168,4 @@ function toHttpError(err) {
   return new HttpError(502, "AI xizmatiga ulanib bo'lmadi");
 }
 
-module.exports = { explainLesson, textToSpeech, transcribe, describeImage, simplifyLesson, toHttpError };
+module.exports = { getClient, chatParams, explainLesson, textToSpeech, transcribe, describeImage, simplifyLesson, toHttpError };

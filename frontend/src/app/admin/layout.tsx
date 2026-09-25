@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, UserCog, Users, Wallet, Activity, CalendarDays } from "lucide-react";
+import { LayoutDashboard, UserCog, Users, Wallet, Activity, CalendarDays, MessagesSquare } from "lucide-react";
 import DashboardShell, { type NavItem } from "@/components/DashboardShell";
 
 const nav: NavItem[] = [
@@ -10,6 +10,7 @@ const nav: NavItem[] = [
   { href: "/admin/schedule", label: "Dars jadvali", icon: CalendarDays },
   { href: "/admin/salaries", label: "Oyliklar", icon: Wallet },
   { href: "/admin/monitoring", label: "Nazorat", icon: Activity },
+  { href: "/admin/chat", label: "AI suhbat", icon: MessagesSquare },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

@@ -53,6 +53,7 @@ function pageName(pathname: string) {
   if (pathname.startsWith("/student/lessons/")) return "Dars sahifasi. O'qib ber yoki tushuntir deb ayting";
   if (pathname === "/student/assignments") return "Vazifalar";
   if (pathname === "/student/grades") return "Baholarim";
+  if (pathname === "/student/chat") return "AI suhbat";
   return "";
 }
 
@@ -98,6 +99,7 @@ const COMMANDS: Command[] = [
     },
   },
   { label: "“O'qib ber” — sahifadagi ma'lumotni o'qiydi", match: (t) => has(t, "oqi", "tingla"), run: () => dispatchVoiceAction("read") },
+  { label: "“Suhbat” — AI bilan suhbat", match: (t) => has(t, "suhbat", "chat", "чат"), run: ({ go }) => go("/student/chat"), reply: "AI suhbat ochildi. Ovozli suhbat tugmasini bosing yoki savolingizni yozing" },
   { label: "“Jadval” — dars jadvali", match: (t) => has(t, "jadval"), run: ({ go }) => go("/student/schedule"), reply: "Dars jadvali ochildi" },
   { label: "“Vazifalar” — uy vazifalari", match: (t) => has(t, "vazifa", "uy ishi"), run: ({ go }) => go("/student/assignments"), reply: "Vazifalar ochildi" },
   { label: "“Baholar” — baholarim", match: (t) => has(t, "baho"), run: ({ go }) => go("/student/grades"), reply: "Baholar ochildi" },
@@ -109,7 +111,7 @@ const COMMANDS: Command[] = [
     label: "“Yordam” — buyruqlarni aytib beradi",
     match: (t) => has(t, "yordam"),
     run: () =>
-      "Buyruqlar: darslar, vazifalar, jadval, baholar, bosh sahifa, ikkinchi darsni och, o'qib ber, tushuntir, keyingi, qayta, " +
+      "Buyruqlar: darslar, vazifalar, jadval, suhbat, baholar, bosh sahifa, ikkinchi darsni och, o'qib ber, tushuntir, keyingi, qayta, " +
       "sekinroq, kattalashtir, kichraytir, tungi rejim, to'xta, orqaga, ovoz rejimini o'chir, chiqish.",
   },
   {

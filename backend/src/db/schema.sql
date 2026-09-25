@@ -120,3 +120,21 @@ CREATE INDEX IF NOT EXISTS schedule_teacher_day_idx ON schedule (teacher_id, day
 ALTER TABLE lessons ADD COLUMN IF NOT EXISTS subtitle_url  TEXT;
 ALTER TABLE lessons ADD COLUMN IF NOT EXISTS subtitle_name TEXT;
 ALTER TABLE lessons ADD COLUMN IF NOT EXISTS a11y JSONB NOT NULL DEFAULT '{}'::jsonb;
+-- AI Chat: foydalanuvchi suhbatlari (ChatGPT kabi) va ulardagi xabarlar
+CREATE TABLE IF NOT EXISTS chat_conversations (
+  id         SERIAL PRIMARY KEY,
+  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title      VARCHAR(120) NOT NULL DEFAULT 'Yangi suhbat',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS chat_conversations_user_idx ON chat_conversations (user_id, updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id              SERIAL PRIMARY KEY,
+  conversation_id INTEGER NOT NULL REFERENCES chat_conversations(id) ON DELETE CASCADE,
+  role            VARCHAR(10) NOT NULL CHECK (role IN ('user', 'assistant')),
+  content         TEXT NOT NULL,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS chat_messages_conversation_idx ON chat_messages (conversation_id, id);

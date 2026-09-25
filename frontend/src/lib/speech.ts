@@ -351,8 +351,10 @@ export const MIC_SETUP_ERRORS = ["not-allowed", "service-not-allowed", "audio-ca
 
 // Bir marta tinglab, aytilgan matnni qaytaradi (buyruq, savol yoki javobni ovoz bilan yozish uchun).
 // onInterim — gapirayotgan paytda eshitilayotgan matn (ekranda ko'rsatish uchun)
-export function listenOnce(onInterim?: (text: string) => void): Promise<string> {
+// signal — tinglashni tashqaridan to'xtatish (masalan, ovozli suhbatni yopganda); to'xtatilsa "aborted" xatosi qaytadi
+export function listenOnce(onInterim?: (text: string) => void, signal?: AbortSignal): Promise<string> {
   return new Promise((resolve, reject) => {
+    if (signal?.aborted) return reject(new RecognitionError("To'xtatildi", "aborted"));
     const r = createRecognition(false, true);
     if (!r) {
       return reject(
@@ -382,7 +384,7 @@ export function listenOnce(onInterim?: (text: string) => void): Promise<string> 
       if (settled) return;
       if (e.error === "language-not-supported" && fallbackLanguage()) {
         settled = true;
-        listenOnce(onInterim).then(resolve, reject);
+        listenOnce(onInterim, signal).then(resolve, reject);
         return;
       }
       if (e.error === "no-speech") return fail("Ovoz eshitilmadi. Mikrofonga yaqinroq gapiring", "no-speech");
@@ -396,6 +398,17 @@ export function listenOnce(onInterim?: (text: string) => void): Promise<string> 
       if (text) resolve(text);
       else reject(new RecognitionError("Ovoz eshitilmadi. Mikrofonga yaqinroq gapiring", "no-speech"));
     };
+    signal?.addEventListener(
+      "abort",
+      () => {
+        if (settled) return;
+        fail("To'xtatildi", "aborted");
+        try {
+          r.abort();
+        } catch {}
+      },
+      { once: true }
+    );
     try {
       r.start();
     } catch {
