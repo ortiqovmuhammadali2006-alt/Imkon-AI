@@ -68,7 +68,10 @@ function toHttpError(err) {
   if (err instanceof HttpError) return err;
   const status = err?.status;
   if (status === 401) return new HttpError(503, "OpenAI kaliti noto'g'ri. Administratorga murojaat qiling");
-  if (status === 429) return new HttpError(429, "AI hozir band yoki limit tugagan. Birozdan so'ng urinib ko'ring");
+  if (err?.code === "insufficient_quota" || err?.type === "insufficient_quota" || err?.code === "credit_balance_exhausted") {
+    return new HttpError(503, "AI hisobida mablag' tugagan. Administrator OpenAI hisobini to'ldirishi kerak");
+  }
+  if (status === 429) return new HttpError(429, "AI hozir band. Birozdan so'ng urinib ko'ring");
   console.error("OpenAI xatosi:", err?.message);
   return new HttpError(502, "AI xizmatiga ulanib bo'lmadi");
 }
