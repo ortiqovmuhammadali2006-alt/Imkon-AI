@@ -342,6 +342,20 @@ export function createSpeechStream({ quick = false }: { quick?: boolean } = {}):
   };
   activeStreams.add(signal);
 
+  let current = 0; // hozir o'qilayotgan bo'lak
+
+  // Keyingi bo'laklarni oldindan so'rab qo'yamiz (joriydan tashqari 2 tagacha) — gaplar orasida sukut bo'lmasin
+  const prefetch = (i: number) => {
+    if (!useServer) return;
+    for (let j = i; j < Math.min(i + 3, segments.length); j++) {
+      if (!audios[j]) {
+        audios[j] = fetchAudio(segments[j]);
+        audios[j]!.catch(() => {}); // xato player ichida ushlanadi
+      }
+    }
+  };
+
+  // Yangi to'liq gaplar paydo bo'lishi bilan ovozini darhol so'raymiz (oldingisi o'qilayotgan paytda tayyor bo'lsin)
   const split = () => {
     for (;;) {
       const taken = takeSegment(buffer, segments.length === 0, ended);
@@ -350,17 +364,8 @@ export function createSpeechStream({ quick = false }: { quick?: boolean } = {}):
       buffer = taken[1];
       if (text) segments.push(text);
     }
+    if (mySession === session) prefetch(current);
     signal();
-  };
-
-  // Keyingi bo'lakni oldindan so'rab qo'yamiz (ko'pi bilan 2 ta oldinda) — o'qish orasida pauza bo'lmasin
-  const prefetch = (i: number) => {
-    for (let j = i; j < Math.min(i + 2, segments.length); j++) {
-      if (!audios[j]) {
-        audios[j] = fetchAudio(segments[j]);
-        audios[j]!.catch(() => {}); // xato player ichida ushlanadi
-      }
-    }
   };
 
   const player = (async (): Promise<SpeakResult> => {
@@ -372,6 +377,7 @@ export function createSpeechStream({ quick = false }: { quick?: boolean } = {}):
         await new Promise<void>((r) => (wake = r));
       }
       if (mySession !== session) return { ok: true };
+      current = i;
       if (useServer) {
         prefetch(i);
         try {

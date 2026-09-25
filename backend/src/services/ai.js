@@ -89,19 +89,71 @@ async function textToSpeech(text, speed = 0.85) {
   return Buffer.from(await response.arrayBuffer());
 }
 
-// Audio/videodan matn: vaqt belgilari bilan bo'laklar (subtitr uchun). Fayl 25 MB dan oshmasligi kerak
+// Audio/videodan matn: vaqt belgilari bilan bo'laklar (subtitr uchun). Fayl 25 MB dan oshmasligi kerak.
+// OpenAI "uz" til kodini qabul qilmaydi, whisper-1 esa o'zbekchani turkchaga o'xshatib yozadi ("kasırlarına").
+// Shuning uchun: whisper-1 — vaqt belgilari, gpt-4o-transcribe — aniq o'zbekcha matn, AI — matnni bo'laklarga taqsimlaydi.
+// Biror bosqich ishlamasa — whisper natijasi ishlatiladi.
+const UZ_PROMPT = "Bugun biz o‘zbek tilida dars o‘tamiz. O‘quvchilar, diqqat bilan tinglang. Shunday qilib, g‘oya, qo‘shish.";
+
 async function transcribe(filePath) {
   const fs = require("fs");
-  const result = await getClient().audio.transcriptions.create({
-    file: fs.createReadStream(filePath),
-    model: process.env.OPENAI_TRANSCRIBE_MODEL || "whisper-1",
-    response_format: "verbose_json",
-    language: "uz",
-  });
-  const segments = (result.segments || [])
-    .map((s) => ({ start: s.start, end: s.end, text: String(s.text || "").trim() }))
-    .filter((s) => s.text);
-  return { text: String(result.text || "").trim(), segments };
+  const client = getClient();
+  const [timed, accurate] = await Promise.all([
+    client.audio.transcriptions.create({
+      file: fs.createReadStream(filePath),
+      model: "whisper-1",
+      response_format: "verbose_json",
+      prompt: UZ_PROMPT,
+    }),
+    client.audio.transcriptions
+      .create({
+        file: fs.createReadStream(filePath),
+        model: process.env.OPENAI_TRANSCRIBE_MODEL || "gpt-4o-transcribe",
+        response_format: "json",
+        prompt: UZ_PROMPT,
+      })
+      .then((r) => String(r.text || "").trim())
+      .catch((err) => {
+        console.error("Aniq transkripsiya ishlamadi, whisper matni ishlatiladi:", err.message);
+        return "";
+      }),
+  ]);
+
+  let segments = (timed.segments || [])
+    .map((seg) => ({ start: seg.start, end: seg.end, text: String(seg.text || "").trim() }))
+    .filter((seg) => seg.text);
+  if (accurate && segments.length) segments = await alignText(accurate, segments);
+  return { text: accurate || String(timed.text || "").trim(), segments };
+}
+
+// Aniq matnni whisper vaqt bo'laklariga taqsimlash (subtitr to'g'ri paytda chiqsin)
+async function alignText(text, segments) {
+  if (segments.length === 1) return [{ ...segments[0], text }];
+  try {
+    const completion = await getClient().chat.completions.create({
+      ...chatParams(Math.min(16000, Math.ceil(text.length / 2) + 500)),
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content:
+            "Senga to'g'ri matn va xuddi shu nutqning taxminiy (xato yozilgan) bo'laklari beriladi. " +
+            "To'g'ri matnni tartibi bilan, hech narsa qo'shmasdan va tashlab ketmasdan, bo'laklar soniga teng qismlarga bo'l: " +
+            "har bir qism mos taxminiy bo'lakka to'g'ri kelsin. Faqat JSON qaytar: {\"parts\": [\"...\", ...]}",
+        },
+        {
+          role: "user",
+          content: JSON.stringify({ correct_text: text, rough_segments: segments.map((seg) => seg.text) }),
+        },
+      ],
+    });
+    const parts = JSON.parse(completion.choices[0].message.content || "{}").parts;
+    if (!Array.isArray(parts) || parts.length !== segments.length) throw new Error(`bo'laklar soni mos emas`);
+    return segments.map((seg, i) => ({ ...seg, text: String(parts[i] || "").trim() || seg.text }));
+  } catch (err) {
+    console.error("Subtitrni moslashtirib bo'lmadi, whisper matni ishlatiladi:", err.message);
+    return segments;
+  }
 }
 
 // Rasmni ko'rishi cheklangan o'quvchi uchun so'z bilan tasvirlash
