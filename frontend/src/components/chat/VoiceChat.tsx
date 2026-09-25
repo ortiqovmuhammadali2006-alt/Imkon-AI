@@ -3,7 +3,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Keyboard, Loader2, Mic, MicOff, Square, X } from "lucide-react";
-import { createSpeechStream, listenOnce, RecognitionError, stopSpeaking } from "@/lib/speech";
+import {
+  createSpeechStream,
+  listenForBargeIn,
+  listenOnce,
+  RecognitionError,
+  stopSpeaking,
+  VOICE_COMMAND_EVENT,
+} from "@/lib/speech";
 import { voiceMode } from "@/lib/voiceMode";
 
 type Phase = "listening" | "thinking" | "speaking" | "paused" | "error";
@@ -32,6 +39,10 @@ export default function VoiceChat({
   const activeRef = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
   const answerRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   useEffect(() => {
     answerRef.current?.scrollTo({ top: answerRef.current.scrollHeight });
@@ -83,6 +94,19 @@ export default function VoiceChat({
       setPhase("thinking");
       setAnswer("");
       const voice = createSpeechStream();
+      // AI o'ylayotganda va gapirayotganda ham tinglaymiz: "to'xta" — jim bo'lib, yana tinglaydi;
+      // "darslarga o't" — oynani yopib, buyruqni bajaradi
+      let interrupted = false;
+      const stopBargeIn = listenForBargeIn((kind, said) => {
+        interrupted = true;
+        voice.stop();
+        ctrl.abort();
+        setHeard(said);
+        if (kind === "command") {
+          window.dispatchEvent(new CustomEvent<string>(VOICE_COMMAND_EVENT, { detail: said }));
+          onCloseRef.current();
+        }
+      });
       let reply = "";
       try {
         reply = await onSend(
@@ -97,19 +121,26 @@ export default function VoiceChat({
       } catch {
         reply = "";
       }
-      if (!activeRef.current || !reply) {
+      if (!activeRef.current) {
+        stopBargeIn();
+        return;
+      }
+      if (!reply && !interrupted) {
+        stopBargeIn();
         voice.stop();
-        if (activeRef.current) {
-          setPhase("paused");
-          activeRef.current = false;
-        }
+        setPhase("paused");
+        activeRef.current = false;
         return;
       }
 
-      // 3. Qolgan gaplar aytilib bo'lgach — yana tinglash
-      setPhase("speaking");
-      const result = await voice.end(reply);
-      if (!result.ok && result.error) setError(result.error);
+      // 3. Qolgan gaplar aytilib bo'lgach (yoki "to'xta" deyilsa) — yana tinglash
+      if (!interrupted) {
+        setPhase("speaking");
+        const result = await voice.end(reply);
+        if (!result.ok && result.error && !interrupted) setError(result.error);
+      }
+      stopBargeIn();
+      if (!activeRef.current) return;
       // Karnaydan chiqqan ovozning oxiri mikrofonga tushib, AI o'z gapini savol deb olmasin
       await new Promise((r) => setTimeout(r, 600));
     }

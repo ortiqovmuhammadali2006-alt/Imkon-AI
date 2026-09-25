@@ -25,6 +25,7 @@ import {
   speakOrWaitForClick,
   AUTOPLAY_BLOCKED,
   stopSpeaking,
+  VOICE_COMMAND_EVENT,
 } from "@/lib/speech";
 import { LOGIN_WELCOME_KEY, voiceMode } from "@/lib/voiceMode";
 import { setTheme } from "@/lib/theme";
@@ -210,18 +211,19 @@ export default function VoiceControl() {
   };
 
   // ---------- Buyruqni bajarish ----------
-  const handleRef = useRef<(heard: string) => void>(() => {});
+  // asCommand — AI gapirayotganda aytilgan buyruq: suhbat sahifasida ham savol emas, buyruq sifatida bajariladi
+  const handleRef = useRef<(heard: string, asCommand?: boolean) => void>(() => {});
   const setModeRef = useRef<(on: boolean) => void>(() => {});
   const skipAnnounceRef = useRef(false); // buyruq javobini aytgan bo'lsak, sahifa nomini qayta aytmaymiz
 
   useEffect(() => {
-    handleRef.current = (heard: string) => {
+    handleRef.current = (heard: string, asCommand = false) => {
       const text = normalizeSpeech(heard);
       if (!text) return;
       setLastHeard(heard);
 
       // AI suhbat sahifasida: savollar to'g'ridan-to'g'ri AI'ga yuboriladi, javob ovoz bilan aytiladi
-      if (pathname === "/student/chat") {
+      if (pathname === "/student/chat" && !asCommand) {
         if (has(text, "yangi suhbat")) {
           dispatchVoiceAction("new-chat");
           speak("Yangi suhbat boshlandi. Savolingizni ayting", { quick: true });
@@ -268,11 +270,25 @@ export default function VoiceControl() {
     };
   });
 
+  // Ovozli suhbat oynasida AI gapirayotganda aytilgan sahifa buyrug'i ("darslarga o't")
+  useEffect(() => {
+    const listener = (e: Event) => handleRef.current((e as CustomEvent<string>).detail, true);
+    window.addEventListener(VOICE_COMMAND_EVENT, listener);
+    return () => window.removeEventListener(VOICE_COMMAND_EVENT, listener);
+  }, []);
+
   // ---------- Doimiy tinglash (lib/voiceMode) ----------
   useEffect(() => {
     voiceMode.setHandlers({
       onCommand: (text) => handleRef.current(text),
       onHeard: (text) => setLastHeard(text),
+      // AI gapirayotganda "to'xta" / "darslarga o't": ovoz darhol to'xtaydi, buyruq bo'lsa — bajariladi
+      onBargeIn: (kind, text) => {
+        stopSpeaking();
+        dispatchVoiceAction("stop");
+        setLastHeard(text);
+        if (kind === "command") handleRef.current(text, true);
+      },
       onFatal: (message, code) => {
         modeRef.current = false;
         setModeState(false);

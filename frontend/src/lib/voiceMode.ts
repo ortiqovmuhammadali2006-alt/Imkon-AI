@@ -1,4 +1,5 @@
 import {
+  bargeInKind,
   createRecognition,
   fallbackLanguage,
   onSpeakingChange,
@@ -10,6 +11,7 @@ type Handlers = {
   onCommand: (text: string) => void;
   onHeard?: (text: string) => void; // gapirayotgan paytdagi matn
   onFatal: (message: string, code: string) => void; // tinglashni davom ettirib bo'lmaydi (code: "not-allowed", "audio-capture"...)
+  onBargeIn?: (kind: "stop" | "command", text: string) => void; // AI gapirayotganda aytilgan buyruq
 };
 
 const UTTERANCE_PAUSE_MS = 1300; // shuncha jimlikdan keyin gap tugagan hisoblanadi
@@ -18,7 +20,8 @@ const AFTER_SPEECH_MS = 700; // AI gapirib bo'lgach mikrofonni qayta yoqishdan o
 const FATAL = ["not-allowed", "service-not-allowed", "audio-capture", "language-not-supported"];
 
 // Doimiy tinglash ("Ovoz rejimi"). React'dan tashqarida — sahifa almashganda ham uzilmaydi.
-// Ovoz o'qilayotganda mikrofon to'xtaydi (o'z ovozini buyruq deb olmasin), tugagach yana tinglaydi.
+// AI gapirayotganda ham tinglaydi, lekin faqat "to'xta" va sahifa buyruqlarini qabul qiladi
+// (AI'ning o'z ovozi — aks-sado — lib/speech.ts: bargeInKind ichida ajratiladi).
 class VoiceMode {
   private on = false;
   private speaking = false;
@@ -28,6 +31,7 @@ class VoiceMode {
   private subscribed = false;
   private pending = ""; // hali yuborilmagan gap bo'laklari
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
+  private quietUntil = 0; // shu vaqtgacha oddiy gaplar qabul qilinmaydi (AI ovozining oxiri)
 
   get enabled() {
     return this.on;
@@ -42,8 +46,12 @@ class VoiceMode {
       this.subscribed = true;
       onSpeakingChange((speaking) => {
         this.speaking = speaking;
-        if (speaking) this.stopRec();
-        else this.schedule(AFTER_SPEECH_MS); // ovozning oxiri mikrofonga tushmasin
+        // Gapirish boshlansa — yig'ilgan chala gapni tashlaymiz; tugasa — ovozning oxiri buyruq bo'lib ketmasin
+        if (this.flushTimer) clearTimeout(this.flushTimer);
+        this.flushTimer = null;
+        this.pending = "";
+        if (!speaking) this.quietUntil = Date.now() + AFTER_SPEECH_MS;
+        if (this.on && !this.rec) this.schedule();
       });
     }
     this.on = true;
@@ -62,7 +70,7 @@ class VoiceMode {
 
   private startRec() {
     this.timer = null;
-    if (!this.on || this.speaking || this.rec) return;
+    if (!this.on || this.rec) return;
     const r = createRecognition(true, true);
     if (!r) return this.fatal("Brauzeringiz ovozni tanishni qo'llab-quvvatlamaydi. Google Chrome yoki Microsoft Edge'dan foydalaning", "unsupported");
     this.rec = r;
@@ -70,6 +78,19 @@ class VoiceMode {
     // Brauzer gapni pauzalarda bo'lib-bo'lib beradi ("Nima uchun kun" + "va tun almashadi").
     // Bo'laklarni yig'amiz va jimlikdan keyin bitta gap sifatida yuboramiz — aks holda chala savol ketadi
     r.onresult = (e) => {
+      // AI gapirayotganda (yoki endigina tugatganda) — faqat buyruqlar
+      if (this.speaking || Date.now() < this.quietUntil) {
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const text = e.results[i][0].transcript;
+          const kind = bargeInKind(text);
+          if (kind === "stop" || (kind === "command" && e.results[i].isFinal)) {
+            this.quietUntil = Date.now() + AFTER_SPEECH_MS; // shu buyruqning qolgan bo'laklari qayta ishlanmasin
+            this.handlers?.onBargeIn?.(kind, text);
+            return;
+          }
+        }
+        return;
+      }
       let interim = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const text = e.results[i][0].transcript.trim();
@@ -89,7 +110,7 @@ class VoiceMode {
     r.onend = () => {
       if (this.rec === r) this.rec = null;
       this.flush();
-      if (this.on && !this.speaking) this.schedule();
+      if (this.on) this.schedule();
     };
     try {
       r.start();

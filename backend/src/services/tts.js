@@ -8,6 +8,7 @@
 // Hech biri ishlamasa — brauzer o'z ovozi bilan o'qiydi (frontend: lib/speech.ts).
 const crypto = require("crypto");
 const { EdgeTTS } = require("edge-tts-universal");
+const { uzNumbersToWords } = require("./uzNumbers");
 const { HttpError } = require("../utils/validation");
 const { textToSpeech: openaiTts, toHttpError } = require("./ai");
 
@@ -103,7 +104,9 @@ function remember(key, audio) {
   if (cache.size > CACHE_LIMIT) cache.delete(cache.keys().next().value);
 }
 
-async function synthesize(text, speed) {
+async function synthesize(rawText, speed) {
+  // Raqamlar o'zbekcha so'z bilan o'qilsin ("0" -> "nol", "5-sinf" -> "beshinchi sinf"), inglizcha ("oh") emas
+  const text = uzNumbersToWords(rawText);
   const list = providers();
   if (!list.length) throw new HttpError(503, "Server ovozi sozlanmagan yoki vaqtincha ishlamayapti");
 

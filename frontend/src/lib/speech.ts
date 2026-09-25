@@ -64,7 +64,14 @@ const currentRate = () => SPEECH_RATES.find((r) => r.key === getSpeechRate()) ??
 let serverTtsOk: boolean | null = null;
 let serverCheckedAt = 0;
 
+// Hozir (yoki yaqinda) aytilayotgan matn — mikrofon AI'ning o'z ovozini buyruq deb olmasligi uchun
+let spokenText = "";
+let speakingNow = false;
+let spokeUntil = 0;
+
 function notify(speaking: boolean) {
+  speakingNow = speaking;
+  if (!speaking) spokeUntil = Date.now();
   listeners.forEach((fn) => fn(speaking));
 }
 
@@ -123,6 +130,7 @@ const activeStreams = new Set<() => void>(); // to'xtatilganda kutib turgan oqim
 export function stopSpeaking() {
   session++;
   activeStreams.forEach((wakeUp) => wakeUp());
+  finishPlayback?.();
   audio?.pause();
   audio = null;
   if (audioUrl) URL.revokeObjectURL(audioUrl);
@@ -312,6 +320,9 @@ async function fetchAudio(text: string): Promise<Blob> {
   return data;
 }
 
+// stopSpeaking() hozirgi ijroni darhol tugatadi — brauzer "pause" hodisasini chiqarmasa ham ("to'xta" buyrug'i)
+let finishPlayback: (() => void) | null = null;
+
 function playBlob(blob: Blob, mySession: number) {
   if (mySession !== session) return Promise.resolve();
   if (audioUrl) URL.revokeObjectURL(audioUrl);
@@ -319,10 +330,13 @@ function playBlob(blob: Blob, mySession: number) {
   audio = new Audio(audioUrl);
   const el = audio;
   return new Promise<void>((resolve, reject) => {
+    finishPlayback = resolve;
     el.onended = () => resolve();
     el.onpause = () => mySession !== session && resolve(); // stopSpeaking() to'xtatdi
     el.onerror = () => reject(new Error("audio"));
     el.play().catch(reject);
+  }).finally(() => {
+    finishPlayback = null;
   });
 }
 
@@ -435,6 +449,7 @@ export function createSpeechStream(_opts: { quick?: boolean } = {}): SpeechStrea
 
   const push = (fullText: string) => {
     if (mySession !== session || ended) return;
+    spokenText = fullText;
     buffer += fullText.slice(received);
     received = fullText.length;
     split();
@@ -460,6 +475,82 @@ export function speak(text: string, opts: { quick?: boolean } = {}): Promise<Spe
   if (typeof window === "undefined" || !plain(text)) return Promise.resolve({ ok: false, error: "O'qiladigan matn yo'q" });
   return createSpeechStream(opts).end(text);
 }
+// ---------- AI gapirayotganda buyruq ("to'xta", "darslarga o't") ----------
+// Mikrofon AI gapirayotganda ham tinglaydi, lekin faqat to'xtatish va sahifa buyruqlarini qabul qiladi.
+// Eshitilgan gap AI'ning hozir aytayotgan matnida bo'lsa — bu karnaydan kelgan aks-sado, e'tiborsiz qoldiriladi.
+
+const STOP_WORDS = ["toxta", "toxtat", "toxtang", "stop", "jim", "bas", "yetarli", "boldi", "бас", "стоп"];
+const COMMAND_WORDS = ["dars", "vazifa", "jadval", "baho", "bosh sahifa", "orqaga", "chiqish", "suhbat", "ovoz rejim", "qayer", "yordam"];
+
+export function isEcho(heard: string) {
+  const h = normalizeSpeech(heard);
+  if (!h) return true;
+  if (!speakingNow && Date.now() - spokeUntil > 3000) return false;
+  return normalizeSpeech(spokenText).includes(h);
+}
+
+// "stop" — ovozni to'xtatish, "command" — sahifa/rejim buyrug'i, null — buyruq emas (yoki aks-sado)
+export function bargeInKind(heard: string): "stop" | "command" | null {
+  const t = normalizeSpeech(heard);
+  const words = t.split(" ").filter(Boolean);
+  if (!words.length || words.length > 6 || isEcho(heard)) return null;
+  if (words.some((w) => STOP_WORDS.includes(w) || w.startsWith("toxta"))) return "stop";
+  if (COMMAND_WORDS.some((w) => t.includes(w))) return "command";
+  return null;
+}
+
+// Ovozli suhbat oynasi uchun: AI gapirayotganda buyruqni kutish. Qaytgan funksiya — tinglashni to'xtatadi
+export function listenForBargeIn(onHit: (kind: "stop" | "command", text: string) => void): () => void {
+  let active = true;
+  let rec: Recognition | null = null;
+  const stop = () => {
+    active = false;
+    const r = rec;
+    rec = null;
+    if (r) {
+      r.onend = null;
+      r.onresult = null;
+      r.onerror = null;
+      try {
+        r.abort();
+      } catch {}
+    }
+  };
+  const start = () => {
+    if (!active) return;
+    const r = createRecognition(true, true);
+    if (!r) return;
+    rec = r;
+    r.onresult = (e) => {
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const text = e.results[i][0].transcript;
+        const kind = bargeInKind(text);
+        // "To'xta" — darhol (oraliq natijada ham), sahifa buyrug'i — gap tugagach
+        if (kind === "stop" || (kind === "command" && e.results[i].isFinal)) {
+          stop();
+          onHit(kind, text);
+          return;
+        }
+      }
+    };
+    r.onerror = () => {};
+    r.onend = () => {
+      rec = null;
+      if (active) setTimeout(start, 200);
+    };
+    try {
+      r.start();
+    } catch {
+      rec = null;
+    }
+  };
+  start();
+  return stop;
+}
+
+// Ovozli suhbat oynasidan sahifa buyrug'ini umumiy ovozli boshqaruvga (VoiceControl) uzatish
+export const VOICE_COMMAND_EVENT = "imkon:voice-command";
+
 // ---------- Nutqni tanib olish ----------
 
 type RecognitionResult = { isFinal: boolean; 0: { transcript: string } };
