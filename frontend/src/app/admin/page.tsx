@@ -1,47 +1,30 @@
 "use client";
 
 import Link from "next/link";
-import { Activity, UserCog, UserPlus, Users, Wallet, type LucideIcon } from "lucide-react";
+import { Activity, CalendarDays, UserCog, UserPlus, Users, Wallet, type LucideIcon } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
 import { useAdminStats } from "@/lib/admin";
 import { useAuth } from "@/lib/auth";
 import { CATEGORIES, currentMonth, formatDate, formatMoney, formatMonth } from "@/lib/format";
 import type { Category } from "@/lib/types";
 import { ErrorState, LoadingState } from "@/components/ui/States";
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  hint,
-  tone,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-  hint: string;
-  tone: string;
-}) {
-  return (
-    <div className="card flex items-start gap-4 p-5">
-      <div className={`rounded-xl p-3 ${tone}`}>
-        <Icon className="size-6" aria-hidden />
-      </div>
-      <div className="min-w-0">
-        <p className="text-sm text-slate-500">{label}</p>
-        <p className="mt-0.5 truncate text-2xl font-bold">{value}</p>
-        <p className="text-sm text-slate-500">{hint}</p>
-      </div>
-    </div>
-  );
-}
+import StatCard from "@/components/ui/StatCard";
+import WelcomeBanner from "@/components/ui/WelcomeBanner";
+import Avatar from "@/components/ui/Avatar";
 
 const QUICK_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/teachers", label: "O'qituvchi qo'shish", icon: UserPlus },
   { href: "/admin/students", label: "O'quvchi qo'shish", icon: Users },
+  { href: "/admin/schedule", label: "Dars jadvali", icon: CalendarDays },
   { href: "/admin/salaries", label: "Oylik to'lash", icon: Wallet },
-  { href: "/admin/monitoring", label: "Faollikni ko'rish", icon: Activity },
 ];
+
+const CATEGORY_BAR: Record<Category, string> = {
+  general: "from-slate-400 to-slate-500",
+  visual: "from-amber-400 to-orange-500",
+  hearing: "from-sky-400 to-indigo-500",
+  physical: "from-emerald-400 to-teal-500",
+};
 
 export default function AdminHome() {
   const { user } = useAuth();
@@ -54,96 +37,83 @@ export default function AdminHome() {
   const salaryPercent = salary.expected ? Math.min((salary.paid / salary.expected) * 100, 100) : 0;
 
   return (
-    <section className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Xush kelibsiz, {user?.full_name}!</h1>
-        <p className="mt-1 text-slate-500">Platformaning umumiy holati</p>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <StatCard
-          icon={UserCog}
-          label="O'qituvchilar"
-          value={String(teachers.total)}
-          hint={`${teachers.active} tasi faol`}
-          tone="bg-indigo-100 text-indigo-700"
-        />
-        <StatCard
-          icon={Users}
-          label="O'quvchilar"
-          value={String(students.total)}
-          hint={`${students.active} tasi faol`}
-          tone="bg-sky-100 text-sky-700"
-        />
-        <StatCard
-          icon={Wallet}
-          label={`${formatMonth(currentMonth())} oyliklari`}
-          value={formatMoney(salary.paid)}
-          hint={`${formatMoney(salary.expected)} dan`}
-          tone="bg-emerald-100 text-emerald-700"
-        />
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="card p-5">
-          <h2 className="mb-4 font-semibold">O&apos;quvchilar toifalari</h2>
-          <ul className="space-y-3">
-            {(Object.keys(CATEGORIES) as Category[]).map((key) => {
-              const count = students.by_category[key];
-              const percent = students.total ? (count / students.total) * 100 : 0;
-              return (
-                <li key={key}>
-                  <div className="mb-1 flex justify-between text-sm">
-                    <span>{CATEGORIES[key].label}</span>
-                    <span className="font-medium">{count} ta</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                    <div className="h-full rounded-full bg-indigo-500" style={{ width: `${percent}%` }} />
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-
-        <div className="card p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-semibold">So&apos;nggi to&apos;lovlar</h2>
-            <span className="text-sm text-slate-500">Bu oy: {Math.round(salaryPercent)}%</span>
-          </div>
-          {data.recent_payments.length === 0 ? (
-            <p className="py-6 text-center text-slate-500">Hali to&apos;lov qilinmagan</p>
-          ) : (
-            <ul className="divide-y divide-slate-100">
-              {data.recent_payments.map((p) => (
-                <li key={p.id} className="flex justify-between gap-3 py-2.5 text-sm">
-                  <div>
-                    <p className="font-medium">{p.teacher_name}</p>
-                    <p className="text-slate-500">
-                      {formatMonth(p.month)} · {formatDate(p.paid_at)}
-                    </p>
-                  </div>
-                  <p className="font-semibold whitespace-nowrap text-emerald-700">{formatMoney(p.amount)}</p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
-
-      <div>
-        <h2 className="mb-3 font-semibold">Tezkor amallar</h2>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <section className="space-y-8">
+      <WelcomeBanner name={user?.full_name ?? ""} subtitle="Platformaning bugungi umumiy holati">
+        <div className="flex flex-wrap gap-2">
           {QUICK_LINKS.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
               href={href}
-              className="card flex items-center gap-3 p-4 font-medium hover:ring-indigo-300"
+              className="flex items-center gap-2 rounded-xl bg-white/15 px-3.5 py-2 text-sm font-medium ring-1 ring-white/20 backdrop-blur-sm transition-colors hover:bg-white/25"
             >
-              <Icon className="size-5 text-indigo-600" aria-hidden />
+              <Icon className="size-4" aria-hidden />
               {label}
             </Link>
           ))}
+        </div>
+      </WelcomeBanner>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard icon={UserCog} label="O'qituvchilar" value={teachers.total} hint={`${teachers.active} tasi faol`} href="/admin/teachers" tone="indigo" />
+        <StatCard icon={Users} label="O'quvchilar" value={students.total} hint={`${students.active} tasi faol`} href="/admin/students" tone="sky" />
+        <StatCard icon={Wallet} label={`${formatMonth(currentMonth())} oyliklari`} value={formatMoney(salary.paid)} hint={`${formatMoney(salary.expected)} dan`} href="/admin/salaries" tone="emerald" />
+        <StatCard icon={Activity} label="Nazorat" value="Faollik" hint="O'qituvchilar faoliyati" href="/admin/monitoring" tone="violet" />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="card p-6">
+          <h2 className="mb-5 text-lg font-semibold tracking-tight">O&apos;quvchilar toifalari</h2>
+          {students.total === 0 ? (
+            <p className="py-6 text-center text-slate-500">Hali o&apos;quvchi qo&apos;shilmagan</p>
+          ) : (
+            <ul className="space-y-4">
+              {(Object.keys(CATEGORIES) as Category[]).map((key) => {
+                const count = students.by_category[key];
+                const percent = (count / students.total) * 100;
+                return (
+                  <li key={key}>
+                    <div className="mb-1.5 flex justify-between text-sm">
+                      <span className="font-medium text-slate-700">{CATEGORIES[key].label}</span>
+                      <span className="text-slate-500">
+                        <b className="text-slate-900">{count}</b> ta · {Math.round(percent)}%
+                      </span>
+                    </div>
+                    <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className={`h-full rounded-full bg-gradient-to-r transition-all duration-700 ${CATEGORY_BAR[key]}`}
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
+        <div className="card p-6">
+          <div className="mb-5 flex items-center justify-between">
+            <h2 className="text-lg font-semibold tracking-tight">So&apos;nggi to&apos;lovlar</h2>
+            <span className="badge bg-emerald-50 text-emerald-700">Bu oy: {Math.round(salaryPercent)}%</span>
+          </div>
+          {data.recent_payments.length === 0 ? (
+            <p className="py-6 text-center text-slate-500">Hali to&apos;lov qilinmagan</p>
+          ) : (
+            <ul className="space-y-1">
+              {data.recent_payments.map((p) => (
+                <li key={p.id} className="flex items-center gap-3 rounded-xl px-2 py-2.5 hover:bg-slate-50">
+                  <Avatar name={p.teacher_name} size="sm" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium">{p.teacher_name}</p>
+                    <p className="text-sm text-slate-500">
+                      {formatMonth(p.month)} · {formatDate(p.paid_at)}
+                    </p>
+                  </div>
+                  <p className="font-semibold whitespace-nowrap text-emerald-600">+{formatMoney(p.amount)}</p>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </section>

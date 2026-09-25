@@ -14,7 +14,20 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>{children}</AuthProvider>
-      <Toaster position="top-right" />
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          duration: 3500,
+          style: {
+            borderRadius: "14px",
+            padding: "10px 14px",
+            fontWeight: 500,
+            boxShadow: "0 10px 30px -10px rgb(15 23 42 / 0.25)",
+            border: "1px solid rgb(226 232 240)",
+          },
+          success: { iconTheme: { primary: "#4f46e5", secondary: "#fff" } },
+        }}
+      />
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );

@@ -1,29 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, CalendarCheck, ClipboardList, Mic, Star, type LucideIcon } from "lucide-react";
+import { BookOpen, CalendarCheck, ClipboardList, Headphones, Star } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { CATEGORIES } from "@/lib/format";
 import { useStudentAssignments, useStudentProfile, useStudentSchedule, useStudentStats } from "@/lib/student";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { SlotCard, WEEKDAYS, todayWeekday } from "@/components/ui/WeeklySchedule";
+import StatCard from "@/components/ui/StatCard";
+import WelcomeBanner from "@/components/ui/WelcomeBanner";
 import AssignmentCard from "@/components/student/AssignmentCard";
 import useVoiceRead from "@/components/student/useVoiceRead";
-
-function StatCard({ icon: Icon, label, value, href, tone }: { icon: LucideIcon; label: string; value: string; href: string; tone: string }) {
-  return (
-    <Link href={href} className="card flex items-center gap-4 p-5 hover:ring-indigo-300">
-      <div className={`rounded-xl p-3 ${tone}`}>
-        <Icon className="size-6" aria-hidden />
-      </div>
-      <div>
-        <p className="text-sm text-slate-500">{label}</p>
-        <p className="text-2xl font-bold">{value}</p>
-      </div>
-    </Link>
-  );
-}
 
 export default function StudentHome() {
   const { user } = useAuth();
@@ -54,39 +42,38 @@ export default function StudentHome() {
   const pending = (assignments.data ?? []).filter((a) => !a.submission_id).slice(0, 3);
 
   return (
-    <section className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Salom, {user?.full_name}!</h1>
-        <p className="mt-1 text-slate-500">
-          {profile.data?.grade && `${profile.data.grade} · `}
-          {profile.data && CATEGORIES[profile.data.category].label}
-        </p>
-      </div>
-
-      <div className="flex items-start gap-3 rounded-xl bg-indigo-50 px-4 py-3 text-indigo-900 ring-1 ring-indigo-200">
-        <Mic className="mt-0.5 size-5 shrink-0" aria-hidden />
-        <p>
-          Pastdagi <b>Ovoz rejimi</b> tugmasini bosing (<b>Alt + O</b>) va <b>“Darslar”</b>, <b>“Vazifalar”</b>,{" "}
-          <b>“Jadval”</b>, <b>“O&apos;qib ber”</b>, <b>“Birinchi darsni och”</b> yoki <b>“Yordam”</b> deb ayting.
-        </p>
-      </div>
+    <section className="space-y-8">
+      <WelcomeBanner
+        name={user?.full_name ?? ""}
+        subtitle={[profile.data?.grade, profile.data && CATEGORIES[profile.data.category].label].filter(Boolean).join(" · ") || undefined}
+      >
+        <div className="max-w-sm rounded-2xl bg-white/15 p-4 ring-1 ring-white/20 backdrop-blur-sm">
+          <p className="flex items-center gap-2 font-semibold">
+            <Headphones className="size-5" aria-hidden /> Ovoz bilan boshqaring
+          </p>
+          <p className="mt-1 text-sm text-indigo-100">
+            <b>Ovoz rejimi</b> tugmasini bosing (<b>Alt + O</b>) va “Darslar”, “O&apos;qib ber”, “Birinchi darsni och” yoki
+            “Yordam” deb ayting.
+          </p>
+        </div>
+      </WelcomeBanner>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard icon={ClipboardList} label="Topshirilmagan vazifalar" value={String(s.pending_assignments)} href="/student/assignments" tone="bg-amber-100 text-amber-700" />
-        <StatCard icon={Star} label="O'rtacha baho" value={s.avg_score != null ? String(s.avg_score) : "—"} href="/student/grades" tone="bg-indigo-100 text-indigo-700" />
-        <StatCard icon={CalendarCheck} label="Davomat (30 kun)" value={s.attendance_rate != null ? `${s.attendance_rate}%` : "—"} href="/student/grades" tone="bg-emerald-100 text-emerald-700" />
-        <StatCard icon={BookOpen} label="O'qituvchilarim" value={String(profile.data?.teachers.length ?? 0)} href="/student/lessons" tone="bg-sky-100 text-sky-700" />
+        <StatCard icon={ClipboardList} label="Topshirilmagan vazifalar" value={s.pending_assignments} href="/student/assignments" tone="amber" />
+        <StatCard icon={Star} label="O'rtacha baho" value={s.avg_score ?? "—"} href="/student/grades" tone="indigo" />
+        <StatCard icon={CalendarCheck} label="Davomat (30 kun)" value={s.attendance_rate != null ? `${s.attendance_rate}%` : "—"} href="/student/grades" tone="emerald" />
+        <StatCard icon={BookOpen} label="O'qituvchilarim" value={profile.data?.teachers.length ?? 0} href="/student/lessons" tone="sky" />
       </div>
 
-      <div className="card p-5">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-semibold">Bugungi darslar — {WEEKDAYS[todayWeekday() - 1]}</h2>
-          <Link href="/student/schedule" className="text-sm text-indigo-700 hover:underline">
-            Haftalik jadval
+      <div className="card p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold tracking-tight">Bugungi darslar — {WEEKDAYS[todayWeekday() - 1]}</h2>
+          <Link href="/student/schedule" className="text-sm font-medium text-indigo-600 hover:text-indigo-800">
+            Haftalik jadval →
           </Link>
         </div>
         {today.length === 0 ? (
-          <p className="text-slate-500">Bugun dars yo&apos;q</p>
+          <p className="rounded-xl bg-slate-50 px-4 py-6 text-center text-slate-500">Bugun dars yo&apos;q 🎉</p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {today.map((slot) => (

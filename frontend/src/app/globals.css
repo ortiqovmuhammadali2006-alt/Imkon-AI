@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
+  --background: #f6f7fb;
   --foreground: #0f172a;
 }
 
@@ -10,28 +10,106 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  --animate-fade-in: fade-in 0.35s ease-out both;
+  --animate-slide-up: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-pop: pop 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  /* Oxirgi holat "transform: none" — aks holda ichidagi position: fixed elementlar (modal, ovoz tugmasi) buziladi */
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes pop {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Yumshoq rangli fon — alohida qatlamda (background-attachment: fixed scroll paytida chizishni buzadi) */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(1200px 500px at 100% -10%, rgb(99 102 241 / 0.07), transparent 60%),
+    radial-gradient(900px 400px at -10% 0%, rgb(139 92 246 / 0.06), transparent 60%);
+}
+
+/* Klaviatura bilan ishlaganda fokus aniq ko'rinsin (ekran o'qigich va klaviatura foydalanuvchilari uchun) */
+:focus-visible {
+  outline: 3px solid rgb(99 102 241 / 0.55);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+::selection {
+  background: rgb(99 102 241 / 0.18);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(148 163 184 / 0.5) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @layer components {
   .btn-primary,
   .btn-secondary,
   .btn-danger {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 font-medium transition-all duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 disabled:active:scale-100;
   }
   .btn-primary {
-    @apply bg-indigo-600 text-white hover:bg-indigo-700;
+    @apply bg-gradient-to-b from-indigo-500 to-indigo-600 text-white shadow-sm shadow-indigo-600/25 hover:from-indigo-600 hover:to-indigo-700 hover:shadow-md hover:shadow-indigo-600/25;
   }
   .btn-secondary {
-    @apply border border-slate-300 bg-white text-slate-700 hover:bg-slate-50;
+    @apply border border-slate-200 bg-white text-slate-700 shadow-sm shadow-slate-900/[0.03] hover:border-slate-300 hover:bg-slate-50;
   }
   .btn-danger {
-    @apply bg-red-600 text-white hover:bg-red-700;
+    @apply bg-gradient-to-b from-red-500 to-red-600 text-white shadow-sm shadow-red-600/25 hover:from-red-600 hover:to-red-700;
   }
   .icon-btn {
     @apply rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800;
@@ -40,15 +118,22 @@ body {
     @apply mb-1.5 block text-sm font-medium text-slate-700;
   }
   .input {
-    @apply w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200;
+    @apply w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm shadow-slate-900/[0.02] transition-colors outline-none placeholder:text-slate-400 hover:border-slate-300 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100;
   }
   .card {
-    @apply rounded-2xl bg-white ring-1 ring-slate-200;
+    @apply rounded-2xl border border-slate-200/70 bg-white shadow-[0_1px_2px_rgb(15_23_42/0.04),0_4px_16px_-4px_rgb(15_23_42/0.06)];
+  }
+  .card-hover {
+    @apply transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-[0_2px_4px_rgb(15_23_42/0.04),0_12px_28px_-8px_rgb(79_70_229/0.18)];
   }
   .badge {
-    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap;
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap;
   }
   .table-head {
-    @apply bg-slate-50 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase;
+    @apply border-b border-slate-100 bg-slate-50/80 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase;
+  }
+  .skeleton {
+    @apply rounded-xl bg-[linear-gradient(90deg,rgb(241_245_249)_0%,rgb(226_232_240)_50%,rgb(241_245_249)_100%)] bg-[length:200%_100%];
+    animation: shimmer 1.4s linear infinite;
   }
 }

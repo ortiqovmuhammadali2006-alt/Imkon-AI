@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, BookOpen, CalendarCheck, ClipboardCheck, ClipboardList, Users, type LucideIcon } from "lucide-react";
+import { AlertTriangle, BookOpen, CalendarCheck, ClipboardCheck, ClipboardList, Users } from "lucide-react";
+import StatCard from "@/components/ui/StatCard";
+import WelcomeBanner from "@/components/ui/WelcomeBanner";
+import Avatar from "@/components/ui/Avatar";
 import { getErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { CATEGORIES, formatDate } from "@/lib/format";
@@ -12,35 +15,21 @@ import CategoryBadge from "@/components/ui/CategoryBadge";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { ScoreBadge } from "@/components/teacher/ScorePicker";
 
-function StatCard({ icon: Icon, label, value, href, tone }: { icon: LucideIcon; label: string; value: number; href: string; tone: string }) {
-  return (
-    <Link href={href} className="card flex items-center gap-4 p-5 hover:ring-indigo-300">
-      <div className={`rounded-xl p-3 ${tone}`}>
-        <Icon className="size-6" aria-hidden />
-      </div>
-      <div>
-        <p className="text-sm text-slate-500">{label}</p>
-        <p className="text-2xl font-bold">{value}</p>
-      </div>
-    </Link>
-  );
-}
-
 function TodaySchedule() {
   const { data } = useMySchedule();
   if (!data) return null;
   const today = data.filter((s) => s.day_of_week === todayWeekday());
 
   return (
-    <div className="card p-5">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="font-semibold">Bugungi darslar — {WEEKDAYS[todayWeekday() - 1]}</h2>
-        <Link href="/teacher/schedule" className="text-sm text-indigo-700 hover:underline">
-          Haftalik jadval
+    <div className="card p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-lg font-semibold tracking-tight">Bugungi darslar — {WEEKDAYS[todayWeekday() - 1]}</h2>
+        <Link href="/teacher/schedule" className="text-sm font-medium text-indigo-600 hover:text-indigo-800">
+          Haftalik jadval →
         </Link>
       </div>
       {today.length === 0 ? (
-        <p className="text-slate-500">Bugun darsingiz yo&apos;q</p>
+        <p className="rounded-xl bg-slate-50 px-4 py-6 text-center text-slate-500">Bugun darsingiz yo&apos;q — dam oling ☕</p>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {today.map((s) => (
@@ -62,41 +51,39 @@ export default function TeacherHome() {
   const s = stats.data;
 
   return (
-    <section className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Xush kelibsiz, {user?.full_name}!</h1>
-        <p className="mt-1 text-slate-500">Bugungi holat va o&apos;quvchilaringiz</p>
-      </div>
-
-      {(s.students.total > 0 && s.attendance_marked_today === 0) || s.ungraded_submissions > 0 ? (
-        <div className="space-y-2">
+    <section className="space-y-8">
+      <WelcomeBanner
+        name={user?.full_name ?? ""}
+        subtitle={user?.subject ? `${user.subject} fani o'qituvchisi · bugungi holat va o'quvchilaringiz` : "Bugungi holat va o'quvchilaringiz"}
+      >
+        <div className="flex flex-col gap-2">
           {s.students.total > 0 && s.attendance_marked_today === 0 && (
-            <Link href="/teacher/attendance" className="flex items-center gap-3 rounded-xl bg-amber-50 px-4 py-3 text-amber-900 ring-1 ring-amber-200 hover:bg-amber-100">
-              <AlertTriangle className="size-5 shrink-0" aria-hidden />
-              Bugungi davomat hali belgilanmagan
+            <Link href="/teacher/attendance" className="flex items-center gap-2.5 rounded-xl bg-amber-400/90 px-4 py-2.5 text-sm font-semibold text-amber-950 shadow-lg shadow-amber-900/20 hover:bg-amber-300">
+              <AlertTriangle className="size-4 shrink-0" aria-hidden />
+              Bugungi davomat belgilanmagan
             </Link>
           )}
           {s.ungraded_submissions > 0 && (
-            <Link href="/teacher/lessons" className="flex items-center gap-3 rounded-xl bg-indigo-50 px-4 py-3 text-indigo-900 ring-1 ring-indigo-200 hover:bg-indigo-100">
-              <ClipboardCheck className="size-5 shrink-0" aria-hidden />
-              {s.ungraded_submissions} ta topshirilgan ish tekshirilishini kutmoqda
+            <Link href="/teacher/lessons" className="flex items-center gap-2.5 rounded-xl bg-white/15 px-4 py-2.5 text-sm font-medium ring-1 ring-white/25 backdrop-blur-sm hover:bg-white/25">
+              <ClipboardCheck className="size-4 shrink-0" aria-hidden />
+              {s.ungraded_submissions} ta ish tekshirilishini kutmoqda
             </Link>
           )}
         </div>
-      ) : null}
+      </WelcomeBanner>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard icon={Users} label="O'quvchilarim" value={s.students.total} href="/teacher/grades" tone="sky" />
+        <StatCard icon={BookOpen} label="Darslar" value={s.lessons} href="/teacher/lessons" tone="indigo" />
+        <StatCard icon={ClipboardList} label="Faol vazifalar" value={s.open_assignments} href="/teacher/lessons" tone="violet" />
+        <StatCard icon={CalendarCheck} label="Bugun belgilangan" value={s.attendance_marked_today} href="/teacher/attendance" tone="emerald" />
+      </div>
 
       <TodaySchedule />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard icon={Users} label="O'quvchilarim" value={s.students.total} href="/teacher/grades" tone="bg-sky-100 text-sky-700" />
-        <StatCard icon={BookOpen} label="Darslar" value={s.lessons} href="/teacher/lessons" tone="bg-indigo-100 text-indigo-700" />
-        <StatCard icon={ClipboardList} label="Faol vazifalar" value={s.open_assignments} href="/teacher/lessons" tone="bg-violet-100 text-violet-700" />
-        <StatCard icon={CalendarCheck} label="Bugun belgilangan" value={s.attendance_marked_today} href="/teacher/attendance" tone="bg-emerald-100 text-emerald-700" />
-      </div>
-
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="card overflow-hidden lg:col-span-2">
-          <h2 className="border-b border-slate-100 px-5 py-4 font-semibold">O&apos;quvchilarim</h2>
+          <h2 className="border-b border-slate-100 px-6 py-4 text-lg font-semibold tracking-tight">O&apos;quvchilarim</h2>
           {students.isLoading ? (
             <LoadingState />
           ) : !students.data?.length ? (
@@ -114,10 +101,15 @@ export default function TeacherHome() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {students.data.map((st) => (
-                    <tr key={st.id} className={st.is_active ? "" : "opacity-50"}>
+                    <tr key={st.id} className={`transition-colors hover:bg-slate-50/70 ${st.is_active ? "" : "opacity-50"}`}>
                       <td className="px-5 py-3">
-                        <p className="font-medium">{st.full_name}</p>
-                        <p className="text-slate-500">{st.grade || "—"}</p>
+                        <div className="flex items-center gap-3">
+                          <Avatar name={st.full_name} size="sm" />
+                          <div>
+                            <p className="font-medium">{st.full_name}</p>
+                            <p className="text-slate-500">{st.grade || "—"}</p>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-5 py-3">
                         <CategoryBadge category={st.category} />
@@ -141,26 +133,27 @@ export default function TeacherHome() {
         </div>
 
         <div className="space-y-6">
-          <div className="card p-5">
-            <h2 className="mb-3 font-semibold">Toifalar</h2>
-            <ul className="space-y-2 text-sm">
+          <div className="card p-6">
+            <h2 className="mb-4 text-lg font-semibold tracking-tight">Toifalar</h2>
+            <ul className="space-y-2.5 text-sm">
               {(Object.keys(CATEGORIES) as Category[]).map((key) => (
-                <li key={key} className="flex justify-between">
-                  <span>{CATEGORIES[key].label}</span>
-                  <span className="font-medium">{s.students.by_category[key]}</span>
+                <li key={key} className="flex items-center justify-between">
+                  <span className={`badge ${CATEGORIES[key].className}`}>{CATEGORIES[key].label}</span>
+                  <span className="font-semibold text-slate-900">{s.students.by_category[key]}</span>
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="card p-5">
-            <h2 className="mb-3 font-semibold">So&apos;nggi topshiriqlar</h2>
+          <div className="card p-6">
+            <h2 className="mb-4 text-lg font-semibold tracking-tight">So&apos;nggi topshiriqlar</h2>
             {s.recent_submissions.length === 0 ? (
-              <p className="text-sm text-slate-500">Hali topshiriq kelmagan</p>
+              <p className="rounded-xl bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">Hali topshiriq kelmagan</p>
             ) : (
               <ul className="space-y-3 text-sm">
                 {s.recent_submissions.map((r) => (
                   <li key={r.id} className="flex items-center gap-3">
+                    <Avatar name={r.student_name} size="sm" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{r.student_name}</p>
                       <p className="truncate text-slate-500">

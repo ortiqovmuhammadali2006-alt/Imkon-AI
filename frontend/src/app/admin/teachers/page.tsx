@@ -88,7 +88,7 @@ export default function TeachersPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filtered.map((t) => (
-                  <tr key={t.id} className="hover:bg-slate-50">
+                  <tr key={t.id} className="transition-colors hover:bg-slate-50/70">
                     <td className="px-4 py-3">
                       <p className="font-medium">{t.full_name}</p>
                       <p className="text-slate-500">@{t.username}</p>

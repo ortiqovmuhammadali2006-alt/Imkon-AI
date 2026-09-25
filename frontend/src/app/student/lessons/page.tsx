@@ -102,7 +102,7 @@ export default function StudentLessonsPage() {
                 <Link
                   key={l.id}
                   href={`/student/lessons/${l.id}`}
-                  className="card flex flex-col p-5 transition-shadow hover:shadow-md hover:ring-indigo-300"
+                  className="card card-hover flex flex-col p-5"
                 >
                   <div className="mb-2 flex items-center justify-between gap-2 text-sm">
                     <span className="flex items-center gap-2 font-medium text-indigo-700">

@@ -1,28 +1,64 @@
-import { AlertCircle, Inbox, Loader2 } from "lucide-react";
+import { AlertCircle, Inbox, type LucideIcon } from "lucide-react";
 
-export function LoadingState() {
+// Yuklanish paytida sahifa shaklidagi "skelet" bloklar
+export function LoadingState({ rows = 3 }: { rows?: number }) {
   return (
-    <div className="flex justify-center py-16">
-      <Loader2 className="size-8 animate-spin text-indigo-600" aria-label="Yuklanmoqda" />
+    <div role="status" aria-label="Yuklanmoqda" className="animate-fade-in space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {Array.from({ length: 3 }, (_, i) => (
+          <div key={i} className="card flex items-center gap-4 p-5">
+            <div className="skeleton size-12 shrink-0" />
+            <div className="flex-1 space-y-2">
+              <div className="skeleton h-3 w-1/2" />
+              <div className="skeleton h-5 w-1/3" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="card space-y-3 p-5">
+        {Array.from({ length: rows }, (_, i) => (
+          <div key={i} className="flex items-center gap-4">
+            <div className="skeleton size-10 shrink-0 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <div className="skeleton h-3 w-2/5" />
+              <div className="skeleton h-3 w-1/4" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <span className="sr-only">Yuklanmoqda...</span>
     </div>
   );
 }
 
 export function ErrorState({ message }: { message: string }) {
   return (
-    <div className="flex flex-col items-center rounded-2xl bg-red-50 px-6 py-12 text-center text-red-700">
-      <AlertCircle className="mb-2 size-8" aria-hidden />
-      <p>{message}</p>
+    <div role="alert" className="flex animate-fade-in flex-col items-center rounded-2xl border border-red-100 bg-red-50/70 px-6 py-12 text-center">
+      <div className="mb-3 rounded-2xl bg-red-100 p-3 text-red-600">
+        <AlertCircle className="size-7" aria-hidden />
+      </div>
+      <p className="font-medium text-red-800">Xatolik yuz berdi</p>
+      <p className="mt-1 text-red-700/80">{message}</p>
     </div>
   );
 }
 
-export function EmptyState({ message, action }: { message: string; action?: React.ReactNode }) {
+export function EmptyState({
+  message,
+  action,
+  icon: Icon = Inbox,
+}: {
+  message: string;
+  action?: React.ReactNode;
+  icon?: LucideIcon;
+}) {
   return (
-    <div className="flex flex-col items-center rounded-2xl border-2 border-dashed border-slate-300 bg-white px-6 py-14 text-center">
-      <Inbox className="mb-3 size-10 text-slate-400" aria-hidden />
-      <p className="text-slate-500">{message}</p>
-      {action && <div className="mt-4">{action}</div>}
+    <div className="flex animate-fade-in flex-col items-center rounded-2xl border-2 border-dashed border-slate-200 bg-white/60 px-6 py-16 text-center">
+      <div className="mb-4 rounded-2xl bg-gradient-to-br from-indigo-50 to-violet-100 p-4 text-indigo-500">
+        <Icon className="size-9" aria-hidden />
+      </div>
+      <p className="max-w-sm text-slate-600">{message}</p>
+      {action && <div className="mt-5">{action}</div>}
     </div>
   );
 }
@@ -37,12 +73,12 @@ export function PageHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h1 className="text-2xl font-bold">{title}</h1>
-        {description && <p className="mt-1 text-slate-500">{description}</p>}
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{title}</h1>
+        {description && <p className="mt-1.5 max-w-2xl text-slate-500">{description}</p>}
       </div>
-      {action}
+      {action && <div className="shrink-0">{action}</div>}
     </div>
   );
 }

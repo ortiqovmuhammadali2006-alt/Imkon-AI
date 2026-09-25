@@ -90,7 +90,7 @@ export default function LessonsPage() {
                 <Link
                   key={l.id}
                   href={`/teacher/lessons/${l.id}`}
-                  className="card flex flex-col p-5 transition-shadow hover:shadow-md hover:ring-indigo-300"
+                  className="card card-hover flex flex-col p-5"
                 >
                   <div className="mb-2 flex items-start justify-between gap-2">
                     <CategoryBadge category={l.category} />
