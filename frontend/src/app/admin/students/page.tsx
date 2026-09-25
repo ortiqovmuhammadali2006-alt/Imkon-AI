@@ -1,12 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Lock, LockOpen, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Users, Lock, LockOpen, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { api, getErrorMessage } from "@/lib/api";
 import { useAdminMutation, useStudents } from "@/lib/admin";
 import { CATEGORIES, formatDate } from "@/lib/format";
 import type { Category, Student } from "@/lib/types";
 import Modal from "@/components/ui/Modal";
+import Avatar from "@/components/ui/Avatar";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/ui/States";
 import StudentForm from "@/components/admin/StudentForm";
@@ -47,7 +48,7 @@ export default function StudentsPage() {
 
   return (
     <section>
-      <PageHeader
+      <PageHeader icon={Users}
         title="O'quvchilar"
         description={data ? `Jami: ${data.length} ta` : undefined}
         action={addButton}
@@ -104,8 +105,13 @@ export default function StudentsPage() {
                 {filtered.map((s) => (
                   <tr key={s.id} className="transition-colors hover:bg-slate-50/70">
                     <td className="px-4 py-3">
-                      <p className="font-medium">{s.full_name}</p>
-                      <p className="text-slate-500">@{s.username}</p>
+                      <div className="flex items-center gap-3">
+                        <Avatar name={s.full_name} size="sm" />
+                        <div className="min-w-0">
+                          <p className="font-medium text-slate-900">{s.full_name}</p>
+                          <p className="text-slate-500">@{s.username}</p>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <span className={`badge ${CATEGORIES[s.category].className}`}>

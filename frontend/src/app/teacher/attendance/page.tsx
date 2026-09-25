@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCheck, Clock, Loader2, Save, UserCheck, UserX, type LucideIcon } from "lucide-react";
+import { CalendarCheck, CheckCheck, Clock, Loader2, Save, UserCheck, UserX, type LucideIcon } from "lucide-react";
 import { api, getErrorMessage } from "@/lib/api";
 import { currentMonth, formatMonth } from "@/lib/format";
 import {
@@ -12,6 +12,7 @@ import {
   type AttendanceStatus,
 } from "@/lib/teacher";
 import CategoryBadge from "@/components/ui/CategoryBadge";
+import Avatar from "@/components/ui/Avatar";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/ui/States";
 
 const STATUS: Record<AttendanceStatus, { label: string; icon: LucideIcon; active: string }> = {
@@ -112,11 +113,14 @@ function DailyAttendance() {
                   key={r.student_id}
                   className={`flex flex-col gap-3 px-5 py-3 sm:flex-row sm:items-center ${r.student_id in draft ? "bg-indigo-50/50" : ""}`}
                 >
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium">{r.full_name}</p>
-                    <div className="mt-1 flex items-center gap-2 text-sm text-slate-500">
-                      <CategoryBadge category={r.category} />
-                      {r.grade}
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <Avatar name={r.full_name} />
+                    <div className="min-w-0">
+                      <p className="font-medium text-slate-900">{r.full_name}</p>
+                      <div className="mt-1 flex items-center gap-2 text-sm text-slate-500">
+                        <CategoryBadge category={r.category} />
+                        {r.grade}
+                      </div>
                     </div>
                   </div>
                   <div role="radiogroup" aria-label={`${r.full_name} davomati`} className="flex gap-2">
@@ -196,10 +200,15 @@ function MonthlyReport() {
                 const total = r.present + r.late + r.absent;
                 const rate = total ? Math.round(((r.present + r.late) / total) * 100) : null;
                 return (
-                  <tr key={r.student_id}>
+                  <tr key={r.student_id} className="transition-colors hover:bg-slate-50/70">
                     <td className="px-4 py-3">
-                      <p className="font-medium">{r.full_name}</p>
-                      <CategoryBadge category={r.category} />
+                      <div className="flex items-center gap-3">
+                        <Avatar name={r.full_name} size="sm" />
+                        <div>
+                          <p className="font-medium text-slate-900">{r.full_name}</p>
+                          <CategoryBadge category={r.category} />
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-center text-emerald-700">{r.present}</td>
                     <td className="px-4 py-3 text-center text-amber-700">{r.late}</td>
@@ -229,7 +238,7 @@ export default function AttendancePage() {
 
   return (
     <section>
-      <PageHeader title="Davomat" description="O'quvchilar davomatini belgilang va oylik hisobotni ko'ring" />
+      <PageHeader icon={CalendarCheck} title="Davomat" description="O'quvchilar davomatini belgilang va oylik hisobotni ko'ring" />
       <div role="tablist" className="mb-6 inline-flex rounded-lg bg-slate-100 p-1">
         {[
           { key: "daily", label: "Kunlik belgilash" },

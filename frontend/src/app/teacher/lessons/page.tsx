@@ -3,14 +3,15 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ClipboardList, Paperclip, Plus, Search } from "lucide-react";
+import { BookOpen, ClipboardList, Plus, Search } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { CATEGORIES, formatDate } from "@/lib/format";
+import { CATEGORIES, formatDate, subjectTone } from "@/lib/format";
 import { useLessons } from "@/lib/teacher";
 import type { Category } from "@/lib/types";
 import Modal from "@/components/ui/Modal";
 import CategoryBadge from "@/components/ui/CategoryBadge";
+import FileTypeBadge from "@/components/ui/FileTypeBadge";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/ui/States";
 import LessonForm from "@/components/teacher/LessonForm";
 
@@ -40,7 +41,7 @@ export default function LessonsPage() {
 
   return (
     <section>
-      <PageHeader
+      <PageHeader icon={BookOpen}
         title="Darslar va materiallar"
         description={`${user?.subject ? `${user.subject} fani bo'yicha dars` : "Dars"} materiallarini yuklang: PDF, taqdimot, audio, video. Darsni ochib, uy vazifasi qo'shing va topshiriqlarni tekshiring.`}
         action={addButton}
@@ -90,24 +91,22 @@ export default function LessonsPage() {
                 <Link
                   key={l.id}
                   href={`/teacher/lessons/${l.id}`}
-                  className="card card-hover flex flex-col p-5"
+                  className="card card-hover flex flex-col overflow-hidden"
                 >
-                  <div className="mb-2 flex items-start justify-between gap-2">
-                    <CategoryBadge category={l.category} />
-                    <span className="text-sm text-slate-500">{formatDate(l.created_at)}</span>
-                  </div>
-                  <h2 className="text-lg font-semibold">{l.title}</h2>
-                  {l.description && <p className="mt-1 line-clamp-2 text-slate-500">{l.description}</p>}
-                  <div className="mt-auto flex items-center gap-4 pt-4 text-sm text-slate-500">
-                    <span className="flex items-center gap-1">
-                      <ClipboardList className="size-4" aria-hidden /> {l.assignments_count} ta vazifa
-                    </span>
-                    {l.file_name && (
-                      <span className="flex min-w-0 items-center gap-1">
-                        <Paperclip className="size-4 shrink-0" aria-hidden />
-                        <span className="truncate">{l.file_name}</span>
+                  <div className={`h-1.5 bg-gradient-to-r ${subjectTone(user?.subject)}`} aria-hidden />
+                  <div className="flex flex-1 flex-col p-5">
+                    <div className="mb-3 flex items-start justify-between gap-2">
+                      <CategoryBadge category={l.category} />
+                      <span className="text-sm text-slate-400">{formatDate(l.created_at)}</span>
+                    </div>
+                    <h2 className="text-lg font-semibold tracking-tight text-slate-900">{l.title}</h2>
+                    {l.description && <p className="mt-1 mb-5 line-clamp-2 text-slate-500">{l.description}</p>}
+                    <div className="mt-auto flex items-center gap-3 border-t border-slate-100 pt-4 text-sm text-slate-500">
+                      <span className="flex items-center gap-1.5">
+                        <ClipboardList className="size-4" aria-hidden /> {l.assignments_count} ta vazifa
                       </span>
-                    )}
+                      {l.file_name && <FileTypeBadge name={l.file_name} />}
+                    </div>
                   </div>
                 </Link>
               ))}

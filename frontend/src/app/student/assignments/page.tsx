@@ -1,5 +1,6 @@
 "use client";
 
+import { ClipboardList } from "lucide-react";
 import { useState } from "react";
 import { getErrorMessage } from "@/lib/api";
 import { useStudentAssignments, type StudentAssignment } from "@/lib/student";
@@ -33,7 +34,7 @@ export default function AssignmentsPage() {
 
   return (
     <section>
-      <PageHeader title="Uy vazifalari" description="Javobni yozib, ovoz bilan aytib yoki fayl biriktirib topshiring" />
+      <PageHeader icon={ClipboardList} title="Uy vazifalari" description="Javobni yozib, ovoz bilan aytib yoki fayl biriktirib topshiring" />
 
       <div role="tablist" className="mb-6 flex flex-wrap gap-2">
         {TABS.map((t) => {

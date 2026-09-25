@@ -32,6 +32,14 @@ export function AssignmentStatus({ a }: { a: AssignmentLike }) {
   return <span className="badge bg-amber-100 text-amber-800">Topshirilmagan</span>;
 }
 
+// Holatga qarab chap chegara rangi
+function accentOf(a: AssignmentLike) {
+  if (a.score !== null) return "border-l-emerald-500";
+  if (a.submission_id) return "border-l-sky-500";
+  if (isOverdue(a.due_date)) return "border-l-red-500";
+  return "border-l-amber-400";
+}
+
 export default function AssignmentCard({ a, showLesson }: { a: AssignmentLike; showLesson?: boolean }) {
   const [open, setOpen] = useState(false);
   const canSubmit = a.score === null;
@@ -40,14 +48,14 @@ export default function AssignmentCard({ a, showLesson }: { a: AssignmentLike; s
     .join(". ");
 
   return (
-    <article className="card p-5">
+    <article className={`card border-l-4 p-5 sm:p-6 ${accentOf(a)}`}>
       <div className="flex flex-wrap items-start gap-3">
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex flex-wrap items-center gap-2">
             <AssignmentStatus a={a} />
             {a.subject && <span className="text-sm text-slate-500">{a.subject}</span>}
           </div>
-          <h3 className="text-lg font-semibold">{a.title}</h3>
+          <h3 className="text-lg font-semibold tracking-tight text-slate-900">{a.title}</h3>
           {showLesson && a.lesson_id && (
             <Link href={`/student/lessons/${a.lesson_id}`} className="mt-0.5 inline-flex items-center gap-1 text-sm text-indigo-700 hover:underline">
               <BookOpen className="size-3.5" aria-hidden /> {a.lesson_title}
@@ -70,7 +78,7 @@ export default function AssignmentCard({ a, showLesson }: { a: AssignmentLike; s
       </div>
 
       {a.feedback && (
-        <p className="mt-3 flex gap-2 rounded-lg bg-emerald-50 p-3 text-emerald-900">
+        <p className="mt-4 flex gap-2.5 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 p-4 text-emerald-900 ring-1 ring-emerald-100">
           <MessageSquare className="mt-0.5 size-4 shrink-0" aria-hidden />
           <span>
             <b>O&apos;qituvchi izohi:</b> {a.feedback}

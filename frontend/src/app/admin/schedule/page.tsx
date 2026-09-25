@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { CalendarDays, Plus } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
 import { useSchedule, useTeachers } from "@/lib/admin";
 import type { ScheduleSlot } from "@/lib/types";
@@ -26,7 +26,7 @@ export default function SchedulePage() {
 
   return (
     <section>
-      <PageHeader
+      <PageHeader icon={CalendarDays}
         title="Dars jadvali"
         description="Haftalik jadval. Tahrirlash uchun darsni bosing. O'qituvchilar o'z jadvalini panelida ko'radi."
         action={addButton}

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { Bot, Loader2, Mic, Send, Sparkles } from "lucide-react";
+import { Bot, Mic, Send, Sparkles } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
 import { explainLesson, type ChatMessage } from "@/lib/student";
 import { listenOnce, onVoiceAction, speak } from "@/lib/speech";
@@ -16,7 +16,7 @@ export default function AiTutor({ lessonId, autoSpeak }: { lessonId: number; aut
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [listening, setListening] = useState(false);
-  const endRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const ask = async (question?: string) => {
     if (loading) return;
@@ -61,13 +61,15 @@ export default function AiTutor({ lessonId, autoSpeak }: { lessonId: number; aut
   useEffect(() => onVoiceAction((action) => action === "explain" && askRef.current()), []);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    // Faqat chat ichida aylantiramiz — sahifaning o'zi joyidan qimirlamasin
+    const box = scrollRef.current;
+    if (box && (messages.length || loading)) box.scrollTo({ top: box.scrollHeight, behavior: "smooth" });
   }, [messages, loading]);
 
   return (
     <section aria-label="AI yordamchi" className="card overflow-hidden">
       <div className="flex items-center gap-3 border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-violet-50 px-5 py-4">
-        <div className="rounded-xl bg-indigo-600 p-2 text-white">
+        <div className="rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 p-2.5 text-white shadow-md shadow-indigo-500/30">
           <Bot className="size-5" aria-hidden />
         </div>
         <div>
@@ -76,10 +78,10 @@ export default function AiTutor({ lessonId, autoSpeak }: { lessonId: number; aut
         </div>
       </div>
 
-      <div className="max-h-[32rem] space-y-4 overflow-y-auto p-5" aria-live="polite">
+      <div ref={scrollRef} className="max-h-[32rem] space-y-4 overflow-y-auto p-5" aria-live="polite">
         {messages.length === 0 && !loading && (
           <div className="flex flex-col items-center py-6 text-center">
-            <button onClick={() => ask()} className="btn-primary px-6 py-3 text-lg">
+            <button onClick={() => ask()} className="btn-primary rounded-full px-7 py-3.5 text-lg shadow-lg shadow-indigo-500/30">
               <Sparkles className="size-5" aria-hidden /> Darsni batafsil tushuntir
             </button>
             <p className="mt-3 text-sm text-slate-500">yoki pastda savolingizni yozing / ayting</p>
@@ -88,16 +90,18 @@ export default function AiTutor({ lessonId, autoSpeak }: { lessonId: number; aut
 
         {messages.map((m, i) =>
           m.role === "user" ? (
-            <div key={i} className="flex justify-end">
-              <p className="max-w-[85%] rounded-2xl rounded-br-sm bg-indigo-600 px-4 py-2.5 text-white">{m.content}</p>
+            <div key={i} className="flex animate-pop justify-end">
+              <p className="max-w-[85%] rounded-3xl rounded-br-md bg-gradient-to-br from-indigo-500 to-violet-600 px-4 py-2.5 text-white shadow-md shadow-indigo-500/20">
+                {m.content}
+              </p>
             </div>
           ) : (
-            <div key={i} className="flex gap-3">
-              <div className="mt-1 h-fit rounded-lg bg-indigo-100 p-1.5 text-indigo-700">
+            <div key={i} className="flex animate-pop gap-3">
+              <div className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/25">
                 <Bot className="size-4" aria-hidden />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="rounded-2xl rounded-tl-sm bg-slate-50 px-4 py-3 leading-relaxed whitespace-pre-wrap ring-1 ring-slate-100">
+                <div className="rounded-3xl rounded-tl-md bg-slate-50 px-5 py-3.5 text-[1.05rem] leading-relaxed whitespace-pre-wrap text-slate-800 ring-1 ring-slate-100">
                   {m.content}
                 </div>
                 <div className="mt-2">
@@ -109,11 +113,18 @@ export default function AiTutor({ lessonId, autoSpeak }: { lessonId: number; aut
         )}
 
         {loading && (
-          <div className="flex items-center gap-2 text-slate-500">
-            <Loader2 className="size-5 animate-spin" aria-hidden /> AI o&apos;ylayapti...
+          <div className="flex items-center gap-3" role="status">
+            <div className="flex size-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-white">
+              <Bot className="size-4" aria-hidden />
+            </div>
+            <div className="flex items-center gap-1.5 rounded-3xl rounded-tl-md bg-slate-50 px-5 py-4 ring-1 ring-slate-100">
+              {[0, 150, 300].map((delay) => (
+                <span key={delay} className="size-2 animate-bounce rounded-full bg-indigo-400" style={{ animationDelay: `${delay}ms` }} />
+              ))}
+              <span className="sr-only">AI javob yozmoqda</span>
+            </div>
           </div>
         )}
-        <div ref={endRef} />
       </div>
 
       {messages.length > 0 && (
@@ -136,13 +147,13 @@ export default function AiTutor({ lessonId, autoSpeak }: { lessonId: number; aut
           e.preventDefault();
           if (input.trim()) ask(input.trim());
         }}
-        className="flex gap-2 border-t border-slate-100 p-4"
+        className="flex items-center gap-2 border-t border-slate-100 bg-slate-50/50 p-4"
       >
         <button
           type="button"
           onClick={askByVoice}
           disabled={loading || listening}
-          className={`rounded-lg p-3 ${listening ? "animate-pulse bg-red-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}
+          className={`flex size-11 shrink-0 items-center justify-center rounded-full ${listening ? "animate-pulse bg-red-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}
           aria-label="Savolni ovoz bilan aytish"
           title="Savolni ovoz bilan aytish"
         >
@@ -150,13 +161,13 @@ export default function AiTutor({ lessonId, autoSpeak }: { lessonId: number; aut
         </button>
         <input
           aria-label="Savolingiz"
-          className="input flex-1"
+          className="input flex-1 rounded-full px-5"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Savolingizni yozing..."
           maxLength={2000}
         />
-        <button type="submit" disabled={loading || !input.trim()} className="btn-primary" aria-label="Yuborish">
+        <button type="submit" disabled={loading || !input.trim()} className="btn-primary size-11 rounded-full p-0" aria-label="Yuborish">
           <Send className="size-5" aria-hidden />
         </button>
       </form>

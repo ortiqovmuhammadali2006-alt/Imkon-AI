@@ -5,10 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { OPEN_LESSON_EVENT, speak } from "@/lib/speech";
 import useVoiceRead from "@/components/student/useVoiceRead";
-import { ClipboardList, Paperclip, Search, UserRound } from "lucide-react";
+import { BookOpen, ClipboardList, Search, UserRound } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
-import { formatDate } from "@/lib/format";
+import { formatDate, subjectTone } from "@/lib/format";
 import { useStudentLessons } from "@/lib/student";
+import FileTypeBadge from "@/components/ui/FileTypeBadge";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/ui/States";
 
 export default function StudentLessonsPage() {
@@ -59,7 +60,7 @@ export default function StudentLessonsPage() {
 
   return (
     <section>
-      <PageHeader
+      <PageHeader icon={BookOpen}
         title="Darslarim"
         description="O'qituvchilaringiz yuklagan darslar. Darsni oching — AI batafsil tushuntirib beradi."
       />
@@ -102,29 +103,35 @@ export default function StudentLessonsPage() {
                 <Link
                   key={l.id}
                   href={`/student/lessons/${l.id}`}
-                  className="card card-hover flex flex-col p-5"
+                  className="card card-hover flex flex-col overflow-hidden"
                 >
-                  <div className="mb-2 flex items-center justify-between gap-2 text-sm">
-                    <span className="flex items-center gap-2 font-medium text-indigo-700">
-                      <span className="inline-flex size-6 items-center justify-center rounded-full bg-indigo-600 text-xs text-white" title="Ovozli buyruq uchun tartib raqami">
-                        {data!.indexOf(l) + 1}
+                  <div className={`h-1.5 bg-gradient-to-r ${subjectTone(l.subject)}`} aria-hidden />
+                  <div className="flex flex-1 flex-col p-5">
+                    <div className="mb-3 flex items-center justify-between gap-2 text-sm">
+                      <span className="flex items-center gap-2 font-semibold text-slate-700">
+                        <span
+                          className={`inline-flex size-7 items-center justify-center rounded-full bg-gradient-to-br text-xs font-bold text-white ${subjectTone(l.subject)}`}
+                          title="Ovozli buyruq uchun tartib raqami"
+                        >
+                          {data!.indexOf(l) + 1}
+                        </span>
+                        {l.subject || "Dars"}
                       </span>
-                      {l.subject || "Dars"}
-                    </span>
-                    <span className="text-slate-500">{formatDate(l.created_at)}</span>
-                  </div>
-                  <h2 className="text-lg font-semibold">{l.title}</h2>
-                  {l.description && <p className="mt-1 line-clamp-2 text-slate-500">{l.description}</p>}
-                  <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 pt-4 text-sm text-slate-500">
-                    <span className="flex items-center gap-1">
-                      <UserRound className="size-4" aria-hidden /> {l.teacher_name}
-                    </span>
-                    {l.assignments_count > 0 && (
-                      <span className="flex items-center gap-1">
-                        <ClipboardList className="size-4" aria-hidden /> {l.assignments_count} ta vazifa
+                      <span className="text-slate-400">{formatDate(l.created_at)}</span>
+                    </div>
+                    <h2 className="text-lg font-semibold tracking-tight text-slate-900">{l.title}</h2>
+                    {l.description && <p className="mt-1 mb-5 line-clamp-2 text-slate-500">{l.description}</p>}
+                    <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-slate-100 pt-4 text-sm text-slate-500">
+                      <span className="flex items-center gap-1.5">
+                        <UserRound className="size-4" aria-hidden /> {l.teacher_name}
                       </span>
-                    )}
-                    {l.file_name && <Paperclip className="size-4" aria-label="Material bor" />}
+                      {l.assignments_count > 0 && (
+                        <span className="flex items-center gap-1.5">
+                          <ClipboardList className="size-4" aria-hidden /> {l.assignments_count}
+                        </span>
+                      )}
+                      {l.file_name && <FileTypeBadge name={l.file_name} />}
+                    </div>
                   </div>
                 </Link>
               ))}

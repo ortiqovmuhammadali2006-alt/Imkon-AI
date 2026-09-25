@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CalendarClock, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { api, getErrorMessage } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 import FilePreview from "@/components/ui/FilePreview";
-import { formatDate } from "@/lib/format";
+import { formatDate, subjectTone } from "@/lib/format";
 import { useLesson, useTeacherMutation, type Assignment } from "@/lib/teacher";
 import Modal from "@/components/ui/Modal";
 import ConfirmModal from "@/components/ui/ConfirmModal";
@@ -24,6 +25,7 @@ export default function LessonDetailPage({ params }: { params: Promise<{ id: str
   const { id } = use(params);
   const lessonId = Number(id);
   const router = useRouter();
+  const { user } = useAuth();
   const { data: lesson, isLoading, error } = useLesson(lessonId);
 
   const [editing, setEditing] = useState(false);
@@ -53,14 +55,15 @@ export default function LessonDetailPage({ params }: { params: Promise<{ id: str
         <ArrowLeft className="size-4" aria-hidden /> Darslar
       </Link>
 
-      <div className="card p-6">
+      <div className="card relative overflow-hidden p-6 sm:p-8">
+        <div className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${subjectTone(user?.subject)}`} aria-hidden />
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <CategoryBadge category={lesson.category} />
               <span className="text-sm text-slate-500">{formatDate(lesson.created_at)}</span>
             </div>
-            <h1 className="text-2xl font-bold">{lesson.title}</h1>
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{lesson.title}</h1>
             {lesson.description && <p className="mt-1 text-slate-600">{lesson.description}</p>}
           </div>
           <div className="flex shrink-0 gap-2">
@@ -81,7 +84,7 @@ export default function LessonDetailPage({ params }: { params: Promise<{ id: str
         {lesson.content && (
           <div className="mt-6 border-t border-slate-100 pt-6">
             <h2 className="mb-2 font-semibold">Dars matni</h2>
-            <p className="leading-relaxed whitespace-pre-wrap text-slate-700">{lesson.content}</p>
+            <p className="max-w-[70ch] text-lg leading-8 whitespace-pre-wrap text-slate-700">{lesson.content}</p>
           </div>
         )}
 

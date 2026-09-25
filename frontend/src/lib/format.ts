@@ -34,6 +34,23 @@ export function currentMonth() {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
+const SUBJECT_TONES = [
+  "from-indigo-500 to-violet-500",
+  "from-sky-500 to-cyan-400",
+  "from-emerald-500 to-teal-400",
+  "from-amber-400 to-orange-500",
+  "from-rose-500 to-pink-400",
+  "from-violet-500 to-fuchsia-400",
+];
+
+// Fanga qarab doim bir xil rang (dars kartochkalaridagi chiziq uchun)
+export function subjectTone(subject: string | null | undefined) {
+  if (!subject) return SUBJECT_TONES[0];
+  let hash = 0;
+  for (const ch of subject) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  return SUBJECT_TONES[hash % SUBJECT_TONES.length];
+}
+
 // Nechchi kun oldin (nazorat sahifasi uchun)
 export function daysAgo(value: string | null) {
   if (!value) return null;

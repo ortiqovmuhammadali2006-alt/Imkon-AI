@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Banknote, Trash2 } from "lucide-react";
+import { Wallet, Banknote, Trash2 } from "lucide-react";
 import { api, getErrorMessage } from "@/lib/api";
 import { useAdminMutation, useSalaries, useSalaryPayments } from "@/lib/admin";
 import { currentMonth, formatDate, formatMoney, formatMonth } from "@/lib/format";
 import type { SalaryPayment, SalaryRow } from "@/lib/types";
 import Modal from "@/components/ui/Modal";
+import Avatar from "@/components/ui/Avatar";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/ui/States";
 import PaymentForm from "@/components/admin/PaymentForm";
@@ -38,7 +39,7 @@ export default function SalariesPage() {
 
   return (
     <section>
-      <PageHeader
+      <PageHeader icon={Wallet}
         title="Oyliklar"
         description="O'qituvchilarga oylik to'lash va to'lovlar tarixi"
         action={
@@ -95,8 +96,13 @@ export default function SalariesPage() {
                 return (
                   <tr key={r.id} className={r.is_active ? "hover:bg-slate-50" : "opacity-60"}>
                     <td className="px-4 py-3">
-                      <p className="font-medium">{r.full_name}</p>
-                      <p className="text-slate-500">{r.subject || "—"}</p>
+                      <div className="flex items-center gap-3">
+                        <Avatar name={r.full_name} size="sm" />
+                        <div className="min-w-0">
+                          <p className="font-medium text-slate-900">{r.full_name}</p>
+                          <p className="text-slate-500">{r.subject || "—"}</p>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">{formatMoney(r.monthly_salary)}</td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">{formatMoney(r.paid)}</td>

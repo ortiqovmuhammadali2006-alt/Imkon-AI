@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpen, CalendarCheck, ChevronRight, Star } from "lucide-react";
+import { Activity, BookOpen, CalendarCheck, ChevronRight, Star } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
 import { useMonitoring, useTeacherActivity } from "@/lib/admin";
 import { CATEGORIES, daysAgo, formatDate } from "@/lib/format";
@@ -112,7 +112,7 @@ export default function MonitoringPage() {
 
   return (
     <section>
-      <PageHeader
+      <PageHeader icon={Activity}
         title="Nazorat"
         description="O'qituvchilarning so'nggi 30 kundagi faoliyati. Batafsil ko'rish uchun qatorni bosing."
       />

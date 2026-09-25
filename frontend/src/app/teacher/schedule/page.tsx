@@ -1,5 +1,6 @@
 "use client";
 
+import { CalendarDays } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
 import { useMySchedule } from "@/lib/teacher";
 import WeeklySchedule from "@/components/ui/WeeklySchedule";
@@ -10,7 +11,7 @@ export default function TeacherSchedulePage() {
 
   return (
     <section>
-      <PageHeader title="Dars jadvali" description="Haftalik jadvalingiz. Jadvalni administrator tuzadi." />
+      <PageHeader icon={CalendarDays} title="Dars jadvali" description="Haftalik jadvalingiz. Jadvalni administrator tuzadi." />
       {isLoading ? (
         <LoadingState />
       ) : error ? (

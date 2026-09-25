@@ -1,12 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Lock, LockOpen, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { UserCog, Lock, LockOpen, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { api, getErrorMessage } from "@/lib/api";
 import { useAdminMutation, useTeachers } from "@/lib/admin";
 import { formatMoney } from "@/lib/format";
 import type { Teacher } from "@/lib/types";
 import Modal from "@/components/ui/Modal";
+import Avatar from "@/components/ui/Avatar";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/ui/States";
 import TeacherForm from "@/components/admin/TeacherForm";
@@ -46,7 +47,7 @@ export default function TeachersPage() {
 
   return (
     <section>
-      <PageHeader
+      <PageHeader icon={UserCog}
         title="O'qituvchilar"
         description={data ? `Jami: ${data.length} ta` : undefined}
         action={addButton}
@@ -90,8 +91,13 @@ export default function TeachersPage() {
                 {filtered.map((t) => (
                   <tr key={t.id} className="transition-colors hover:bg-slate-50/70">
                     <td className="px-4 py-3">
-                      <p className="font-medium">{t.full_name}</p>
-                      <p className="text-slate-500">@{t.username}</p>
+                      <div className="flex items-center gap-3">
+                        <Avatar name={t.full_name} size="sm" />
+                        <div className="min-w-0">
+                          <p className="font-medium text-slate-900">{t.full_name}</p>
+                          <p className="text-slate-500">@{t.username}</p>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-3">{t.subject || "—"}</td>
                     <td className="px-4 py-3 whitespace-nowrap">{t.phone || "—"}</td>

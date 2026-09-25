@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Star, Pencil, Plus, Trash2 } from "lucide-react";
 import { api, getErrorMessage } from "@/lib/api";
 import { currentMonth, formatDate, formatMonth } from "@/lib/format";
 import { useGradeSummary, useGrades, useTeacherMutation, type Grade } from "@/lib/teacher";
 import Modal from "@/components/ui/Modal";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import CategoryBadge from "@/components/ui/CategoryBadge";
+import Avatar from "@/components/ui/Avatar";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/ui/States";
 import GradeForm from "@/components/teacher/GradeForm";
 import { ScoreBadge } from "@/components/teacher/ScorePicker";
@@ -31,7 +32,7 @@ export default function GradesPage() {
 
   return (
     <section className="space-y-8">
-      <PageHeader
+      <PageHeader icon={Star}
         title="Baholar"
         description="O'quvchilarga baho qo'ying va o'zlashtirishni kuzating"
         action={
@@ -63,12 +64,17 @@ export default function GradesPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {summary.data.map((s) => (
-                  <tr key={s.student_id} className="hover:bg-slate-50">
+                  <tr key={s.student_id} className="transition-colors hover:bg-slate-50/70">
                     <td className="px-4 py-3">
-                      <p className="font-medium">{s.full_name}</p>
-                      <div className="mt-0.5 flex items-center gap-2 text-slate-500">
-                        <CategoryBadge category={s.category} />
-                        {s.grade}
+                      <div className="flex items-center gap-3">
+                        <Avatar name={s.full_name} size="sm" />
+                        <div>
+                          <p className="font-medium text-slate-900">{s.full_name}</p>
+                          <div className="mt-0.5 flex items-center gap-2 text-slate-500">
+                            <CategoryBadge category={s.category} />
+                            {s.grade}
+                          </div>
+                        </div>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-center">{s.grades_count}</td>

@@ -1,5 +1,6 @@
 "use client";
 
+import { Star } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { useStudentAttendance, useStudentGrades, useStudentStats } from "@/lib/student";
@@ -57,7 +58,7 @@ export default function StudentGradesPage() {
 
   return (
     <section className="space-y-6">
-      <PageHeader title="Baholarim" description="Baholaringiz va so'nggi 30 kunlik davomatingiz" />
+      <PageHeader icon={Star} title="Baholarim" description="Baholaringiz va so'nggi 30 kunlik davomatingiz" />
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="card p-5">
