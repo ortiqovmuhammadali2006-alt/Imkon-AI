@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { api } from "@/lib/api";
 import { useTeacherMutation, type Assignment } from "@/lib/teacher";
 
@@ -56,7 +57,7 @@ export default function AssignmentForm({
       </div>
       <div>
         <label htmlFor="a-due" className="label">Topshirish muddati</label>
-        <input id="a-due" type="date" className="input" value={form.due_date} onChange={set("due_date")} />
+        <DatePicker id="a-due" value={form.due_date} onChange={(v) => setForm((f) => ({ ...f, due_date: v }))} />
       </div>
       <div className="flex justify-end gap-3">
         <button type="button" onClick={onDone} className="btn-secondary">

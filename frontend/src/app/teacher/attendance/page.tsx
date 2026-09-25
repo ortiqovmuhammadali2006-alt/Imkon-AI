@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CalendarCheck, CheckCheck, Clock, Loader2, Save, UserCheck, UserX, type LucideIcon } from "lucide-react";
+import { DatePicker, MonthPicker } from "@/components/ui/DatePicker";
 import { api, getErrorMessage } from "@/lib/api";
 import { currentMonth, formatMonth, formatGrade } from "@/lib/format";
 import {
@@ -76,14 +77,7 @@ function DailyAttendance() {
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end">
         <div>
           <label htmlFor="att-date" className="label">Sana</label>
-          <input
-            id="att-date"
-            type="date"
-            max={today()}
-            className="input sm:w-52"
-            value={date}
-            onChange={(e) => changeDate(e.target.value)}
-          />
+          <DatePicker id="att-date" max={today()} clearable={false} className="sm:w-60" value={date} onChange={changeDate} />
         </div>
         <button onClick={markAllPresent} disabled={!data?.length} className="btn-secondary">
           <CheckCheck className="size-5" aria-hidden /> Hammasi keldi
@@ -167,13 +161,7 @@ function MonthlyReport() {
     <div>
       <div className="mb-4">
         <label htmlFor="att-month" className="label">Oy</label>
-        <input
-          id="att-month"
-          type="month"
-          className="input sm:w-52"
-          value={month}
-          onChange={(e) => e.target.value && setMonth(e.target.value)}
-        />
+        <MonthPicker id="att-month" className="sm:w-52" value={month} onChange={setMonth} />
       </div>
 
       {isLoading ? (

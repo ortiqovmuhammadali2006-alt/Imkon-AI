@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { api } from "@/lib/api";
 import { useAdminMutation, useTeachers } from "@/lib/admin";
 import { CATEGORIES } from "@/lib/format";
@@ -106,7 +107,7 @@ export default function StudentForm({ student, onDone }: { student?: Student; on
       </div>
       <div>
         <label htmlFor="s-birth" className="label">Tug&apos;ilgan sana</label>
-        <input id="s-birth" type="date" className="input" value={form.birth_date} onChange={set("birth_date")} />
+        <DatePicker id="s-birth" value={form.birth_date} max={new Date().toISOString().slice(0, 10)} onChange={(v) => setForm((f) => ({ ...f, birth_date: v }))} />
       </div>
       <div className="sm:col-span-2">
         <label htmlFor="s-phone" className="label">Telefon (ota-ona)</label>

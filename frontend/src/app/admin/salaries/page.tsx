@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Wallet, Banknote, Trash2 } from "lucide-react";
+import { MonthPicker } from "@/components/ui/DatePicker";
 import { api, getErrorMessage } from "@/lib/api";
 import { useAdminMutation, useSalaries, useSalaryPayments } from "@/lib/admin";
 import { currentMonth, formatDate, formatMoney, formatMonth } from "@/lib/format";
@@ -45,13 +46,7 @@ export default function SalariesPage() {
         action={
           <div>
             <label htmlFor="month" className="label">Oy</label>
-            <input
-              id="month"
-              type="month"
-              className="input sm:w-52"
-              value={month}
-              onChange={(e) => e.target.value && setMonth(e.target.value)}
-            />
+            <MonthPicker id="month" className="sm:w-52" value={month} onChange={setMonth} />
           </div>
         }
       />

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Loader2, Trash2 } from "lucide-react";
+import { TimePicker } from "@/components/ui/DatePicker";
 import { api } from "@/lib/api";
 import { useAdminMutation, useTeachers } from "@/lib/admin";
 import type { ScheduleSlot } from "@/lib/types";
@@ -74,11 +75,11 @@ export default function ScheduleForm({
       </div>
       <div>
         <label htmlFor="sc-start" className="label">Boshlanishi *</label>
-        <input id="sc-start" type="time" required className="input" value={form.start_time} onChange={set("start_time")} />
+        <TimePicker id="sc-start" value={form.start_time} onChange={(v) => setForm((f) => ({ ...f, start_time: v }))} />
       </div>
       <div>
         <label htmlFor="sc-end" className="label">Tugashi *</label>
-        <input id="sc-end" type="time" required className="input" value={form.end_time} onChange={set("end_time")} />
+        <TimePicker id="sc-end" value={form.end_time} onChange={(v) => setForm((f) => ({ ...f, end_time: v }))} />
       </div>
       <div className="sm:col-span-2">
         <label htmlFor="sc-subject" className="label">Fan</label>

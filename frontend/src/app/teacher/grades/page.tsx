@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Star, Pencil, Plus, Trash2 } from "lucide-react";
+import { MonthPicker } from "@/components/ui/DatePicker";
 import { api, getErrorMessage } from "@/lib/api";
 import { currentMonth, formatDate, formatMonth, formatGrade } from "@/lib/format";
 import { useGradeSummary, useGrades, useTeacherMutation, type Grade } from "@/lib/teacher";
@@ -101,13 +102,7 @@ export default function GradesPage() {
       <div>
         <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <h2 className="text-lg font-semibold">{formatMonth(month)} — qo&apos;yilgan baholar</h2>
-          <input
-            type="month"
-            aria-label="Oy"
-            className="input sm:w-52"
-            value={month}
-            onChange={(e) => e.target.value && setMonth(e.target.value)}
-          />
+          <MonthPicker aria-label="Oy" className="sm:w-52" value={month} onChange={setMonth} />
         </div>
         {grades.isLoading ? (
           <LoadingState />
