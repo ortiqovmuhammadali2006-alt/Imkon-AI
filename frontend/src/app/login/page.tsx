@@ -40,9 +40,10 @@ export default function LoginPage() {
   });
 
   return (
-    // Login oynasi: fon to'liq oq (tungi rejim yoniq bo'lsa ham — .theme-light), forma o'rtada qalqib chiqqan karta
-    <main className="theme-light flex flex-1 flex-col items-center justify-center bg-white px-4 py-12">
-      <div className="w-full max-w-md animate-pop rounded-3xl bg-white p-8 shadow-[0_24px_64px_-12px_rgb(15_23_42/0.22),0_4px_16px_-4px_rgb(15_23_42/0.08)] ring-1 ring-slate-200/70 sm:p-10">
+    // Login oynasi: fon to'liq oq (tungi rejim yoniq bo'lsa ham — .theme-light), forma o'rtada qalqib chiqqan karta,
+    // asosiy rang ko'k (.brand-blue)
+    <main className="theme-light brand-blue flex flex-1 flex-col items-center justify-center bg-white px-4 py-12">
+      <div className="relative w-full max-w-md animate-pop rounded-3xl bg-white p-8 ring-1 ring-slate-200/60 -translate-y-1 shadow-[0_2px_4px_rgb(15_23_42/0.04),0_12px_24px_-6px_rgb(15_23_42/0.10),0_40px_80px_-24px_rgb(37_99_235/0.40)] sm:p-10">
         <div className="mb-8 flex justify-center">
           <Logo size="lg" />
         </div>

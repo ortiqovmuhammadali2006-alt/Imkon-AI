@@ -111,6 +111,31 @@
   --color-indigo-950: oklch(25.7% 0.09 281.288);
 }
 
+/* Login oynasi: asosiy rang ko'k (blue). Komponentlar indigo klasslarini ishlatadi — shu qism ichida
+   indigo shkalasi ko'k qiymatlarga almashtiriladi (logotip, "Kirish" tugmasi, maydon ramkasi, soyalar) */
+.brand-blue,
+.dark .brand-blue {
+  --color-indigo-50: oklch(97% 0.014 254.604);
+  --color-indigo-100: oklch(93.2% 0.032 255.585);
+  --color-indigo-200: oklch(88.2% 0.059 254.128);
+  --color-indigo-300: oklch(80.9% 0.105 251.813);
+  --color-indigo-400: oklch(70.7% 0.165 254.624);
+  --color-indigo-500: oklch(62.3% 0.214 259.815);
+  --color-indigo-600: oklch(54.6% 0.245 262.881);
+  --color-indigo-700: oklch(48.8% 0.243 264.376);
+  --color-indigo-800: oklch(42.4% 0.199 265.638);
+  --color-indigo-900: oklch(37.9% 0.146 265.522);
+  --color-indigo-950: oklch(28.2% 0.091 267.935);
+  --color-brand-700: #1e40af;
+}
+.brand-blue :focus-visible {
+  outline-color: rgb(37 99 235 / 0.55);
+}
+/* Login oynasi har doim oq fonda — tungi rejimdagi "och matn" qoidasi bu yerga tegishli emas */
+.dark .brand-blue :is(.text-indigo-500, .text-indigo-600) {
+  color: var(--color-indigo-600);
+}
+
 /* Tungi rejimda to'q fonda -600 rangli matnlar yetarlicha o'qilmaydi (kontrast < 4.5) —
    faqat matn rangini ochroq qilamiz, tugma fonlari (bg-*-600) o'zgarmaydi */
 .dark :is(.text-indigo-500, .text-indigo-600) {
