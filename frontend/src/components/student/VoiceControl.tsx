@@ -22,9 +22,11 @@ import {
   OPEN_LESSON_EVENT,
   RecognitionError,
   speak,
+  speakOrWaitForClick,
+  AUTOPLAY_BLOCKED,
   stopSpeaking,
 } from "@/lib/speech";
-import { voiceMode } from "@/lib/voiceMode";
+import { LOGIN_WELCOME_KEY, voiceMode } from "@/lib/voiceMode";
 import { setTheme } from "@/lib/theme";
 import MicPermissionDialog from "./MicPermissionDialog";
 import Modal from "@/components/ui/Modal";
@@ -146,7 +148,8 @@ function writeStorage(key: string, value: string) {
 export default function VoiceControl() {
   const router = useRouter();
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
+  const welcomeRef = useRef<"login" | "reload" | "unsupported" | null>(null);
 
   const [mode, setModeState] = useState(false); // doimiy tinglash rejimi
   const [listening, setListening] = useState(false); // bir martalik tinglash
@@ -287,7 +290,16 @@ export default function VoiceControl() {
     checkServerTts();
     const savedFont = Number(readStorage(FONT_KEY)) || 0;
     document.documentElement.style.fontSize = `${FONT_SCALES[savedFont] ?? 100}%`;
-    const savedMode = readStorage(MODE_KEY) === "1" && isRecognitionSupported();
+    // Login'dan so'ng birinchi ochilish: ovoz rejimi o'zi yoqiladi (o'quvchi "ovoz rejimini o'chir" deb o'chira oladi)
+    let justLoggedIn = false;
+    try {
+      justLoggedIn = sessionStorage.getItem(LOGIN_WELCOME_KEY) === "1";
+      sessionStorage.removeItem(LOGIN_WELCOME_KEY);
+    } catch {}
+    const supported = isRecognitionSupported();
+    const savedMode = (justLoggedIn || readStorage(MODE_KEY) === "1") && supported;
+    if (justLoggedIn && supported) writeStorage(MODE_KEY, "1");
+    welcomeRef.current = justLoggedIn ? (supported ? "login" : "unsupported") : savedMode ? "reload" : null;
     modeRef.current = savedMode;
     if (savedMode) voiceMode.enable();
     const id = requestAnimationFrame(() => {
@@ -302,6 +314,28 @@ export default function VoiceControl() {
       stopSpeaking();
     };
   }, []);
+
+  // Kirganda (yoki sahifa yangilanganda ovoz rejimi yoniq bo'lsa) — qaysi sahifa va qaysi rejimdaligini aytamiz.
+  // Server o'zbekcha ovozi holati avval aniqlanadi, aks holda birinchi xabar ruscha ovozga tushib qoladi
+  useEffect(() => {
+    const kind = welcomeRef.current;
+    if (!kind || !user) return;
+    welcomeRef.current = null;
+    const page = pageName(pathname) || "Imkon AI";
+    const text =
+      kind === "login"
+        ? `Xush kelibsiz, ${user.full_name}! Hozir siz turgan sahifa: ${page}. Ovoz rejimi yoqilgan, men sizni tinglayapman. ` +
+          "Buyruq ayting, masalan: darslar, suhbat yoki yordam."
+        : kind === "unsupported"
+          ? `Xush kelibsiz, ${user.full_name}! Hozir siz turgan sahifa: ${page}. ` +
+            "Bu brauzerda ovozli boshqaruv ishlamaydi. Google Chrome yoki Microsoft Edge'dan foydalaning."
+          : `Ovoz rejimi yoqilgan. Hozir siz turgan sahifa: ${page}.`;
+    checkServerTts().then(() =>
+      speakOrWaitForClick(text, { quick: true }).then((r) => {
+        if (r.error === AUTOPLAY_BLOCKED) toast(AUTOPLAY_BLOCKED, { icon: "🔊", duration: 8000 });
+      })
+    );
+  }, [user, pathname]);
 
   // Ovoz rejimida sahifa o'zgarganda nomini aytamiz
   const firstPath = useRef(true);

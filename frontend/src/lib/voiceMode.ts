@@ -108,3 +108,6 @@ class VoiceMode {
 }
 
 export const voiceMode = new VoiceMode();
+
+// Login'dan keyin o'quvchi panelida bir marta: ovoz rejimini yoqib, qayerdaligini aytish (sessionStorage)
+export const LOGIN_WELCOME_KEY = "imkon_login_welcome";

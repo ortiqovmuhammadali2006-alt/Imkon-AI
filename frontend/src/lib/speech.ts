@@ -6,6 +6,25 @@ import { api } from "./api";
 
 export type SpeakResult = { ok: boolean; error?: string };
 
+// Sahifa bosishsiz ochilganda brauzer ovozni bloklaydi — birinchi bosishdan keyin qayta aytish kerak
+export const AUTOPLAY_BLOCKED = "Ovozni eshitish uchun sahifaning istalgan joyini bosing";
+
+// Ovoz bloklangan bo'lsa — foydalanuvchi birinchi marta bosganda (yoki tugma bosganda) aytiladi
+export async function speakOrWaitForClick(text: string, opts: { quick?: boolean } = {}) {
+  const result = await speak(text, opts);
+  if (result.ok || typeof window === "undefined") return result;
+  const blocked = result.error === AUTOPLAY_BLOCKED || /blokladi|not-allowed/i.test(result.error ?? "");
+  if (!blocked) return result;
+  const retry = () => {
+    window.removeEventListener("pointerdown", retry, true);
+    window.removeEventListener("keydown", retry, true);
+    speak(text, opts);
+  };
+  window.addEventListener("pointerdown", retry, true);
+  window.addEventListener("keydown", retry, true);
+  return { ok: false, error: AUTOPLAY_BLOCKED };
+}
+
 let audio: HTMLAudioElement | null = null;
 let audioUrl: string | null = null;
 let session = 0; // har bir yangi speak() oldingisini bekor qiladi
@@ -386,7 +405,12 @@ export function createSpeechStream({ quick = false }: { quick?: boolean } = {}):
           serverTtsOk = true;
           spokeAny = true;
           continue;
-        } catch {
+        } catch (err) {
+          // Brauzer foydalanuvchi bosmaguncha ovozni bloklagan (sahifa bosishsiz ochilgan) — server aybdor emas
+          if ((err as Error)?.name === "NotAllowedError") {
+            if (mySession === session) stopSpeaking();
+            return { ok: false, error: AUTOPLAY_BLOCKED };
+          }
           // Server ovozi ishlamadi — shu va qolgan bo'laklarni brauzer ovozi o'qiydi
           useServer = false;
           serverTtsOk = false;

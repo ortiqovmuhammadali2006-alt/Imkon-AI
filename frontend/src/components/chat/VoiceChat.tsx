@@ -31,6 +31,11 @@ export default function VoiceChat({
   const [error, setError] = useState<string | null>(null);
   const activeRef = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
+  const answerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    answerRef.current?.scrollTo({ top: answerRef.current.scrollHeight });
+  }, [answer]);
 
   const stop = useCallback(() => {
     activeRef.current = false;
@@ -169,7 +174,12 @@ export default function VoiceChat({
         <div className="max-w-2xl space-y-4" aria-live="polite">
           <p className="text-lg font-medium text-white/80">{PHASE_TEXT[phase]}</p>
           {heard && <p className="text-2xl font-semibold">“{heard}”</p>}
-          {answer && phase !== "listening" && <p className="line-clamp-6 text-lg leading-8 text-white/75">{answer.replace(/[*#`>|]/g, "")}</p>}
+          {answer && phase !== "listening" && (
+            // Tushuntirish uzun bo'lishi mumkin — to'liq ko'rinadi, yangi gaplar kelganda pastga suriladi
+            <div ref={answerRef} className="max-h-[38vh] overflow-y-auto rounded-2xl bg-white/5 px-5 py-4 text-left ring-1 ring-white/10">
+              <p className="text-lg leading-8 whitespace-pre-line text-white/85">{answer.replace(/[*#`>|]/g, "")}</p>
+            </div>
+          )}
           {error && <p className="rounded-xl bg-red-500/15 px-4 py-3 text-red-200">{error}</p>}
         </div>
       </div>

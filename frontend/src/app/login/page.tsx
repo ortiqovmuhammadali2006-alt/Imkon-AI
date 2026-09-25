@@ -9,6 +9,7 @@ import { api, getErrorMessage } from "@/lib/api";
 import { ROLE_HOME, useAuth, type User } from "@/lib/auth";
 import Logo from "@/components/ui/Logo";
 import ThemeToggle from "@/components/ui/ThemeToggle";
+import { LOGIN_WELCOME_KEY } from "@/lib/voiceMode";
 
 const FEATURES = [
   { icon: Sparkles, title: "AI o'qituvchi yordamchisi", text: "Har bir darsni o'quvchiga mos, sodda tilda tushuntiradi" },
@@ -33,6 +34,12 @@ export default function LoginPage() {
       return data;
     },
     onSuccess: ({ token, user }) => {
+      // O'quvchi panelida ovoz rejimi o'zi yoqiladi va "qayerdasiz" aytiladi (components/student/VoiceControl)
+      if (user.role === "student") {
+        try {
+          sessionStorage.setItem(LOGIN_WELCOME_KEY, "1");
+        } catch {}
+      }
       login(token, user);
       toast.success(`Xush kelibsiz, ${user.full_name}!`);
     },

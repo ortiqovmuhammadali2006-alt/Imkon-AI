@@ -1,5 +1,6 @@
 // AI Chat (ChatGPT kabi): suhbatlar bazada saqlanadi, javob SSE orqali so'zma-so'z oqib keladi.
-// voice: true — ovozli suhbat rejimi: javob qisqa va markdown belgilarsiz (ovoz bilan o'qiladi)
+// voice: true — ovozli suhbat rejimi: javob markdown belgilarsiz (ovoz bilan o'qiladi);
+// o'quvchiga — o'qituvchidek bosqichma-bosqich tushuntirish, boshqalarga — ixcham javob
 const { Router } = require("express");
 const pool = require("../config/db");
 const { authenticate } = require("../middleware/auth");
@@ -10,9 +11,16 @@ const router = Router();
 router.use(authenticate);
 
 const DEFAULT_TITLE = "Yangi suhbat";
-const VOICE_REMINDER =
-  "Eslatma: bu javob ovoz bilan o'qiladi. Faqat oddiy gaplar bilan, 2-5 gapda javob ber. " +
-  "Raqamlangan ro'yxat, yulduzcha, qalin matn va boshqa markdown belgilarini umuman ishlatma.";
+// Ovozli rejimda eng oxirgi ko'rsatma (tarixdagi markdownli javoblarga taqlid qilmasin)
+const VOICE_REMINDER = {
+  student:
+    "Eslatma: bu javob ovoz bilan o'qiladi va o'quvchi uni tinglab o'rganadi. Oddiy savol yoki salomlashish bo'lsa — 1-3 gap. " +
+    "Mavzu yoki tushuncha so'ralsa — o'qituvchidek to'liq tushuntir (6-12 gap) va oxirida tushunganini tekshiruvchi savol ber. " +
+    "Raqamlangan ro'yxat, yulduzcha, qalin matn va boshqa markdown belgilarini umuman ishlatma.",
+  other:
+    "Eslatma: bu javob ovoz bilan o'qiladi. Faqat oddiy gaplar bilan, 3-6 gapda javob ber. " +
+    "Raqamlangan ro'yxat, yulduzcha, qalin matn va boshqa markdown belgilarini umuman ishlatma.",
+};
 const HISTORY_LIMIT = 30; // modelga yuboriladigan oxirgi xabarlar soni
 
 const CATEGORY_HINT = {
@@ -21,13 +29,26 @@ const CATEGORY_HINT = {
   physical: "O'quvchining harakati cheklangan: mavzuni kichik, ketma-ket qadamlarga bo'l.",
 };
 
+// Ovozli tushuntirishda o'quvchi toifasiga moslash (matnli rejimdagi "1., 2., 3." tuzilma ovozda kerak emas)
+const VOICE_CATEGORY_HINT = {
+  visual: "O'quvchining ko'rishi cheklangan: 'qarang', 'rasmda' kabi iboralarni ishlatma, hammasini so'z bilan tasvirla.",
+  hearing: "O'quvchining eshitishi cheklangan, javobni ekranda ham o'qiydi: juda qisqa gaplar va oddiy so'zlar ishlat.",
+  physical: "O'quvchining harakati cheklangan: mavzuni kichik, ketma-ket qadamlarga bo'l.",
+};
+
+function rowsHint(info) {
+  return VOICE_CATEGORY_HINT[info?.category] || "";
+}
+
 async function systemPrompt(user, voice) {
   const base = [
     "Sen Imkon AI — imkoniyati cheklangan o'quvchilar uchun ta'lim platformasining mehribon AI yordamchisisan.",
     "Faqat o'zbek tilida (lotin yozuvida) javob ber. Sodda, tushunarli, shoshilmasdan tushuntir, qiyin so'zlarni izohla.",
   ];
+  let studentInfo = null;
   if (user.role === "student") {
     const { rows } = await pool.query("SELECT category, grade FROM students WHERE user_id = $1", [user.id]);
+    studentInfo = rows[0] || null;
     base.push(
       "Suhbatdoshing — o'quvchi. Uni rag'batlantir, misollar keltir. Uy vazifasini uning o'rniga to'liq yechib berma — yo'l ko'rsat.",
       // Ovozli rejimda "1., 2., 3." tuzilma kerak emas — javob tinglanadi
@@ -42,9 +63,25 @@ async function systemPrompt(user, voice) {
   } else {
     base.push("Suhbatdoshing — maktab administratori. Ta'lim jarayonini tashkil etish bo'yicha amaliy maslahat ber.");
   }
-  if (voice) {
+  if (voice && user.role === "student") {
     base.push(
-      "Bu OVOZLI suhbat: javobing ovoz bilan o'qiladi. 2-5 ta qisqa gap bilan, jonli suhbat ohangida javob ber. " +
+      "Bu OVOZLI dars-suhbat: javobing ovoz bilan o'qiladi, o'quvchi uni TINGLAB o'rganadi. Sen — mehribon o'qituvchisan.",
+      "Mavzu, tushuncha yoki 'nima uchun/qanday' savoli bo'lsa, shunday tushuntir:\n" +
+        "birinchi — bir gapda oddiy javob;\n" +
+        "keyin — 'Birinchidan', 'Keyin', 'Shundan so'ng' kabi so'zlar bilan qadam-baqadam, har gapda bitta fikr;\n" +
+        "so'ng — o'quvchi hayotidan oddiy misol (uy, maktab, tabiat);\n" +
+        "oxirida — 'Demak,' bilan bir gapli xulosa va tushunganini tekshiruvchi bitta oson savol.",
+      "Jami 6-12 ta qisqa, sodda gap. Yangi atamani aytsang — darhol oddiy so'z bilan izohla.",
+      "O'quvchi sening savolingga javob bersa: to'g'ri bo'lsa — maqta va bir qadam oldinga o't; " +
+        "xato bo'lsa — 'Yo'q' deb boshlama: avval urinishini maqta ('Yaxshi o'yladingiz'), keyin to'g'risini boshqa misol bilan qayta tushuntir.",
+      "Salomlashish yoki oddiy savolga 1-3 gap bilan javob ber.",
+      rowsHint(studentInfo),
+      "Markdown belgilari (*, #, -, |, `), ro'yxat, jadval, formula belgilari va kod ishlatma — hammasini so'z bilan ayt " +
+        "(masalan, '2+3' emas, 'ikki qo'shuv uch')."
+    );
+  } else if (voice) {
+    base.push(
+      "Bu OVOZLI suhbat: javobing ovoz bilan o'qiladi. 3-6 ta aniq gap bilan, jonli suhbat ohangida javob ber. " +
         "Markdown belgilari (*, #, -, |, `), ro'yxat va kod ishlatma. Kerak bo'lsa, oxirida qisqa savol ber."
     );
   } else {
@@ -162,12 +199,12 @@ router.post("/conversations/:id/messages", async (req, res) => {
   try {
     const stream = await getClient().chat.completions.create(
       {
-        ...chatParams(voice ? 400 : 1800),
+        ...chatParams(voice ? (req.user.role === "student" ? 900 : 450) : 1800),
         messages: [
           { role: "system", content: await systemPrompt(req.user, voice) },
           ...history,
           // Tarixdagi oldingi (markdownli) javoblarga taqlid qilmasin — ovozli qoida eng oxirgi ko'rsatma bo'lsin
-          ...(voice ? [{ role: "system", content: VOICE_REMINDER }] : []),
+          ...(voice ? [{ role: "system", content: VOICE_REMINDER[req.user.role === "student" ? "student" : "other"] }] : []),
         ],
         stream: true,
       },
