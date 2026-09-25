@@ -142,6 +142,71 @@
   color: var(--color-indigo-600);
 }
 
+/*
+ * ROL RANGLARI: har bir panel o'z asosiy rangiga ega (DashboardShell <html> ga role-* klassini qo'yadi).
+ * Komponentlar indigo-* yozadi — shu yerda indigo shkalasi rol rangiga almashtiriladi:
+ * admin — binafsha, o'qituvchi — indigo (o'zgarishsiz), o'quvchi — ko'k. Yashil/sariq/qizil ma'nolari hamma rolda bir xil.
+ * html.dark.role-* — tungi rejim (och fonlar to'q tusga, to'q matnlar och tusga), .dark qoidalaridan ustun turadi.
+ */
+html.role-admin {
+  --color-indigo-50: oklch(96.9% 0.016 293.756);
+  --color-indigo-100: oklch(94.3% 0.029 294.588);
+  --color-indigo-200: oklch(89.4% 0.057 293.283);
+  --color-indigo-300: oklch(81.1% 0.111 293.571);
+  --color-indigo-400: oklch(70.2% 0.183 293.541);
+  --color-indigo-500: oklch(60.6% 0.25 292.717);
+  --color-indigo-600: oklch(54.1% 0.281 293.009);
+  --color-indigo-700: oklch(49.1% 0.27 292.581);
+  --color-indigo-800: oklch(43.2% 0.232 292.759);
+  --color-indigo-900: oklch(38% 0.189 293.745);
+  --color-indigo-950: oklch(28.3% 0.141 291.089);
+  --color-brand-100: #ede9fe;
+  --color-brand-200: #ddd6fe;
+  --color-brand-700: #6d28d9;
+}
+html.dark.role-admin {
+  --color-indigo-50: color-mix(in oklab, #8b5cf6 16%, var(--tint-base));
+  --color-indigo-100: color-mix(in oklab, #8b5cf6 24%, var(--tint-base));
+  --color-indigo-200: color-mix(in oklab, #8b5cf6 36%, var(--tint-base));
+  --color-indigo-300: color-mix(in oklab, #8b5cf6 50%, var(--tint-base));
+  --color-indigo-700: #c4b5fd;
+  --color-indigo-800: #ddd6fe;
+  --color-indigo-900: #ede9fe;
+  --color-indigo-950: #f5f3ff;
+}
+html.dark.role-admin :is(.text-indigo-500, .text-indigo-600) {
+  color: #c4b5fd;
+}
+html.role-student {
+  --color-indigo-50: oklch(97% 0.014 254.604);
+  --color-indigo-100: oklch(93.2% 0.032 255.585);
+  --color-indigo-200: oklch(88.2% 0.059 254.128);
+  --color-indigo-300: oklch(80.9% 0.105 251.813);
+  --color-indigo-400: oklch(70.7% 0.165 254.624);
+  --color-indigo-500: oklch(62.3% 0.214 259.815);
+  --color-indigo-600: oklch(54.6% 0.245 262.881);
+  --color-indigo-700: oklch(48.8% 0.243 264.376);
+  --color-indigo-800: oklch(42.4% 0.199 265.638);
+  --color-indigo-900: oklch(37.9% 0.146 265.522);
+  --color-indigo-950: oklch(28.2% 0.091 267.935);
+  --color-brand-100: #dbeafe;
+  --color-brand-200: #bfdbfe;
+  --color-brand-700: #1e40af;
+}
+html.dark.role-student {
+  --color-indigo-50: color-mix(in oklab, #3b82f6 16%, var(--tint-base));
+  --color-indigo-100: color-mix(in oklab, #3b82f6 24%, var(--tint-base));
+  --color-indigo-200: color-mix(in oklab, #3b82f6 36%, var(--tint-base));
+  --color-indigo-300: color-mix(in oklab, #3b82f6 50%, var(--tint-base));
+  --color-indigo-700: #93c5fd;
+  --color-indigo-800: #bfdbfe;
+  --color-indigo-900: #dbeafe;
+  --color-indigo-950: #eff6ff;
+}
+html.dark.role-student :is(.text-indigo-500, .text-indigo-600) {
+  color: #93c5fd;
+}
+
 /* Tungi rejimda to'q fonda -600 rangli matnlar yetarlicha o'qilmaydi (kontrast < 4.5) —
    faqat matn rangini ochroq qilamiz, tugma fonlari (bg-*-600) o'zgarmaydi */
 .dark :is(.text-indigo-500, .text-indigo-600) {
@@ -223,7 +288,7 @@ body {
 
 /* Klaviatura bilan ishlaganda fokus aniq ko'rinsin (ekran o'qigich va klaviatura foydalanuvchilari uchun) */
 :focus-visible {
-  outline: 3px solid rgb(99 102 241 / 0.55);
+  outline: 3px solid color-mix(in srgb, var(--color-indigo-500) 60%, transparent); /* rol rangida */
   outline-offset: 2px;
   border-radius: 8px;
 }
