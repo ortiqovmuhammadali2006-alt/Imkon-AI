@@ -96,3 +96,9 @@ CREATE TABLE IF NOT EXISTS grades (
   comment    TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- 3-bosqich: o'qituvchi topshirilgan vazifani baholaydi
+ALTER TABLE submissions ADD COLUMN IF NOT EXISTS score     SMALLINT CHECK (score BETWEEN 1 AND 5);
+ALTER TABLE submissions ADD COLUMN IF NOT EXISTS feedback  TEXT;
+ALTER TABLE submissions ADD COLUMN IF NOT EXISTS graded_at TIMESTAMPTZ;ALTER TABLE lessons     ADD COLUMN IF NOT EXISTS file_name TEXT;
+ALTER TABLE submissions ADD COLUMN IF NOT EXISTS file_name TEXT;

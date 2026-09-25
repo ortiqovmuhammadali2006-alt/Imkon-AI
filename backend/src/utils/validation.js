@@ -40,4 +40,37 @@ function parseMonth(value) {
   return `${value}-01`;
 }
 
-module.exports = { CATEGORIES, HttpError, validateUserFields, parseId, parseMonth };
+// "2026-09-25" formatini tekshiradi
+function parseDate(value, label = "Sana") {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value || "") || Number.isNaN(Date.parse(value))) {
+    throw new HttpError(400, `${label} YYYY-MM-DD formatida bo'lishi kerak`);
+  }
+  return value;
+}
+
+// Baho 1–5 oralig'ida butun son
+function parseScore(value) {
+  const score = Number(value);
+  if (!Number.isInteger(score) || score < 1 || score > 5) {
+    throw new HttpError(400, "Baho 1 dan 5 gacha bo'lishi kerak");
+  }
+  return score;
+}
+
+// Bo'sh qiymat — barcha toifalar uchun (null)
+function parseOptionalCategory(value) {
+  if (!value || value === "all") return null;
+  if (!CATEGORIES.includes(value)) throw new HttpError(400, "Toifa noto'g'ri");
+  return value;
+}
+
+module.exports = {
+  CATEGORIES,
+  HttpError,
+  validateUserFields,
+  parseId,
+  parseMonth,
+  parseDate,
+  parseScore,
+  parseOptionalCategory,
+};

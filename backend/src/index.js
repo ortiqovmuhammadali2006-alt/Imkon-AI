@@ -2,7 +2,9 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const pool = require("./config/db");
+const multer = require("multer");
 const authRoutes = require("./routes/auth");
+const { UPLOAD_DIR, MAX_SIZE_MB } = require("./middleware/upload");
 
 const app = express();
 
@@ -20,10 +22,21 @@ app.get("/api/health", async (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", require("./routes/admin"));
+app.use("/api/teacher", require("./routes/teacher"));
+
+// Yuklangan dars materiallari va vazifa fayllari
+app.use("/uploads", express.static(UPLOAD_DIR));
 
 // Express 5 async xatolarni shu yerga yuboradi
 app.use((err, req, res, next) => {
   if (err.status) return res.status(err.status).json({ message: err.message });
+  if (err instanceof multer.MulterError) {
+    const message =
+      err.code === "LIMIT_FILE_SIZE"
+        ? `Fayl hajmi ${MAX_SIZE_MB} MB dan oshmasligi kerak`
+        : "Faylni yuklashda xatolik";
+    return res.status(400).json({ message });
+  }
   if (err.code === "23505" && err.constraint === "users_username_key") {
     return res.status(409).json({ message: "Bu login band, boshqasini tanlang" });
   }
