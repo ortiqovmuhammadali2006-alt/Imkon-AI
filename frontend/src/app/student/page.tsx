@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, CalendarCheck, ClipboardList, Headphones, PartyPopper, Star } from "lucide-react";
+import { BookOpen, CalendarCheck, ClipboardList, PartyPopper, Star } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { CATEGORIES, formatGrade } from "@/lib/format";
@@ -46,17 +46,7 @@ export default function StudentHome() {
       <WelcomeBanner
         name={user?.full_name ?? ""}
         subtitle={[formatGrade(profile.data?.grade), profile.data && profile.data.category !== "general" && CATEGORIES[profile.data.category].label].filter(Boolean).join(" · ") || undefined}
-      >
-        <div className="max-w-sm rounded-2xl bg-white/15 p-4 ring-1 ring-white/20 backdrop-blur-sm">
-          <p className="flex items-center gap-2 font-semibold">
-            <Headphones className="size-5" aria-hidden /> Ovoz bilan boshqaring
-          </p>
-          <p className="mt-1 text-sm text-brand-100">
-            <b>Ovoz rejimi</b> tugmasini bosing (<b>Alt + O</b>) va “Darslar”, “O&apos;qib ber”, “Birinchi darsni och” yoki
-            “Yordam” deb ayting.
-          </p>
-        </div>
-      </WelcomeBanner>
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard icon={ClipboardList} label="Topshirilmagan vazifalar" value={s.pending_assignments} href="/student/assignments" />
