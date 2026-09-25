@@ -82,8 +82,8 @@ export default function AiTutor({
 
   return (
     <section aria-label="AI yordamchi" className="card overflow-hidden">
-      <div className="flex items-center gap-3 border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-violet-50 px-5 py-4">
-        <div className="rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 p-2.5 text-white shadow-md shadow-indigo-500/30">
+      <div className="flex items-center gap-3 border-b border-slate-100 bg-indigo-50 px-5 py-4">
+        <div className="rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 p-2.5 text-white shadow-md shadow-indigo-500/30">
           <Bot className="size-5" aria-hidden />
         </div>
         <div>
@@ -120,13 +120,13 @@ export default function AiTutor({
         {messages.map((m, i) =>
           m.role === "user" ? (
             <div key={i} className="flex animate-pop justify-end">
-              <p className="max-w-[85%] rounded-3xl rounded-br-md bg-gradient-to-br from-indigo-500 to-violet-600 px-4 py-2.5 text-white shadow-md shadow-indigo-500/20">
+              <p className="max-w-[85%] rounded-3xl rounded-br-md bg-gradient-to-br from-indigo-500 to-indigo-600 px-4 py-2.5 text-white shadow-md shadow-indigo-500/20">
                 {m.content}
               </p>
             </div>
           ) : (
             <div key={i} className="flex animate-pop gap-3">
-              <div className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/25">
+              <div className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-md shadow-indigo-500/25">
                 <Bot className="size-4" aria-hidden />
               </div>
               <div className="min-w-0 flex-1">
@@ -143,7 +143,7 @@ export default function AiTutor({
 
         {loading && (
           <div className="flex items-center gap-3" role="status">
-            <div className="flex size-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-white">
+            <div className="flex size-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 text-white">
               <Bot className="size-4" aria-hidden />
             </div>
             <div className="flex items-center gap-1.5 rounded-3xl rounded-tl-md bg-slate-50 px-5 py-4 ring-1 ring-slate-100">

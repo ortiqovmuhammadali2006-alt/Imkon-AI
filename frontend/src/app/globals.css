@@ -10,6 +10,17 @@
 }
 
 /*
+ * RANGLAR PALITRASI — har bir vazifa uchun bitta rang (yangi komponentlarda ham shunga amal qiling):
+ *  - indigo  — asosiy/brend: tugmalar, havolalar, faol menyu, AI, logotip, avatar, toifa va fan belgilari
+ *  - emerald — muvaffaqiyat: bajarildi, to'landi, keldi, yaxshi baho, AI gapiryapti
+ *  - amber   — ogohlantirish: kutilmoqda, kechikdi, qisman, maslahat
+ *  - red     — xato/xavf: xato, o'chirish, kelmadi, past baho, mikrofon yozmoqda
+ *  - sky     — ma'lumot: topshirilgan, subtitr bor
+ *  - slate   — neytral: matn, fon, chegara, fayl turi belgilari
+ *  Doimiy (tungi rejimda o'zgarmaydigan) nusxalar: brand-* (indigo), crimson-700 (red), gray-900/950 (to'q oynalar)
+ */
+
+/*
  * Tungi rejim palitrasi. Komponentlarda alohida "dark:" klasslari yozilmaydi —
  * buning o'rniga ranglar markazdan almashtiriladi:
  *  - slate shkalasi teskari (matn och, fon to'q),
@@ -46,18 +57,12 @@
   --color-indigo-900: #e0e7ff;
   --color-indigo-950: #eef2ff;
 
-  --color-violet-50: color-mix(in oklab, #8b5cf6 16%, var(--tint-base));
-  --color-violet-100: color-mix(in oklab, #8b5cf6 24%, var(--tint-base));
-  --color-violet-700: #c4b5fd;
-
   --color-emerald-50: color-mix(in oklab, #10b981 15%, var(--tint-base));
   --color-emerald-100: color-mix(in oklab, #10b981 24%, var(--tint-base));
   --color-emerald-200: color-mix(in oklab, #10b981 36%, var(--tint-base));
   --color-emerald-700: #6ee7b7;
   --color-emerald-800: #a7f3d0;
   --color-emerald-900: #d1fae5;
-
-  --color-teal-50: color-mix(in oklab, #14b8a6 15%, var(--tint-base));
 
   --color-amber-50: color-mix(in oklab, #f59e0b 14%, var(--tint-base));
   --color-amber-100: color-mix(in oklab, #f59e0b 22%, var(--tint-base));
@@ -76,11 +81,6 @@
   --color-sky-100: color-mix(in oklab, #0ea5e9 22%, var(--tint-base));
   --color-sky-700: #7dd3fc;
   --color-sky-800: #bae6fd;
-
-  --color-blue-50: color-mix(in oklab, #3b82f6 14%, var(--tint-base));
-  --color-orange-50: color-mix(in oklab, #f97316 14%, var(--tint-base));
-  --color-pink-50: color-mix(in oklab, #ec4899 14%, var(--tint-base));
-  --color-rose-50: color-mix(in oklab, #f43f5e 14%, var(--tint-base));
 }
 
 /* Tungi rejimda to'q fonda -600 rangli matnlar yetarlicha o'qilmaydi (kontrast < 4.5) —
@@ -97,20 +97,8 @@
 .dark .text-amber-600 {
   color: #fcd34d;
 }
-.dark .text-blue-600 {
-  color: #93c5fd;
-}
 .dark .text-sky-600 {
   color: #7dd3fc;
-}
-.dark .text-violet-600 {
-  color: #c4b5fd;
-}
-.dark .text-pink-600 {
-  color: #f9a8d4;
-}
-.dark .text-orange-600 {
-  color: #fdba74;
 }
 
 @theme inline {
@@ -122,8 +110,6 @@
   --color-brand-100: #e0e7ff;
   --color-brand-200: #c7d2fe;
   --color-brand-700: #4338ca;
-  --color-grape-700: #6d28d9;
-  --color-grape-800: #5b21b6;
   --color-crimson-700: #b91c1c;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);

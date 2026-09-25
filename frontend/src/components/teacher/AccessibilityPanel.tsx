@@ -24,7 +24,7 @@ export default function AccessibilityPanel({ lessonId, a11y }: { lessonId: numbe
     <section className="card p-6" aria-live="polite">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 p-2.5 text-white shadow-md shadow-indigo-500/25">
+          <div className="rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 p-2.5 text-white shadow-md shadow-indigo-500/25">
             <Sparkles className="size-5" aria-hidden />
           </div>
           <div>

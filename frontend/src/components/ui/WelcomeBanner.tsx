@@ -1,3 +1,5 @@
+import { Hand } from "lucide-react";
+
 const WEEKDAYS = ["Yakshanba", "Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba"];
 const MONTHS = ["yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avgust", "sentabr", "oktabr", "noyabr", "dekabr"];
 
@@ -26,9 +28,8 @@ export default function WelcomeBanner({
 }) {
   const firstName = name.split(/\s+/)[0];
   return (
-    <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-indigo-600 to-grape-700 p-6 text-white shadow-xl shadow-indigo-600/20 sm:p-8">
-      <div className="absolute -top-20 -right-16 size-72 rounded-full bg-white/10 blur-2xl" aria-hidden />
-      <div className="absolute -bottom-24 left-1/3 size-72 rounded-full bg-violet-400/20 blur-3xl" aria-hidden />
+    // Bitta rang boshidan oxirigacha (gradient va xira dog'larsiz) — palitra bir xil bo'lsin
+    <section className="relative overflow-hidden rounded-3xl bg-indigo-600 p-6 text-white shadow-xl shadow-indigo-600/20 sm:p-8">
       <div
         className="absolute inset-0 opacity-[0.08] [background-image:radial-gradient(white_1px,transparent_1px)] [background-size:20px_20px]"
         aria-hidden
@@ -37,7 +38,7 @@ export default function WelcomeBanner({
         <div>
           <p className="text-sm font-medium text-brand-100/90">{todayText()}</p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
-            {greeting()}, {firstName}! 👋
+            {greeting()}, {firstName}! <Hand className="ml-1 inline size-7 -rotate-12 align-[-0.1em]" aria-hidden />
           </h1>
           {subtitle && <p className="mt-2 max-w-xl text-brand-100/90">{subtitle}</p>}
         </div>

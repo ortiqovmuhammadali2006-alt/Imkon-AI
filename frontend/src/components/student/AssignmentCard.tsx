@@ -78,7 +78,7 @@ export default function AssignmentCard({ a, showLesson }: { a: AssignmentLike; s
       </div>
 
       {a.feedback && (
-        <p className="mt-4 flex gap-2.5 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 p-4 text-emerald-900 ring-1 ring-emerald-100">
+        <p className="mt-4 flex gap-2.5 rounded-2xl bg-emerald-50 p-4 text-emerald-900 ring-1 ring-emerald-100">
           <MessageSquare className="mt-0.5 size-4 shrink-0" aria-hidden />
           <span>
             <b>O&apos;qituvchi izohi:</b> {a.feedback}

@@ -163,12 +163,12 @@ export default function VoiceChat({
 
   const orbTone =
     phase === "listening"
-      ? "from-rose-500 to-orange-400 shadow-rose-500/40"
+      ? "from-red-500 to-red-600 shadow-red-500/40"
       : phase === "speaking"
-        ? "from-emerald-500 to-teal-400 shadow-emerald-500/40"
+        ? "from-emerald-500 to-emerald-600 shadow-emerald-500/40"
         : phase === "error"
           ? "from-slate-500 to-slate-600 shadow-slate-500/30"
-          : "from-indigo-500 to-violet-500 shadow-indigo-500/40";
+          : "from-indigo-500 to-indigo-600 shadow-indigo-500/40";
 
   return createPortal(
     <div role="dialog" aria-modal="true" aria-label="Ovozli suhbat" className="fixed inset-0 z-50 flex animate-fade-in flex-col bg-gray-950/95 text-white backdrop-blur-xl">

@@ -5,7 +5,7 @@ export default function Logo({ size = "md", light = false }: { size?: "md" | "lg
   return (
     <div className="flex items-center gap-2.5">
       <div
-        className={`flex items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-600/30 ${
+        className={`flex items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-white shadow-md shadow-indigo-600/30 ${
           lg ? "size-12" : "size-9"
         }`}
       >

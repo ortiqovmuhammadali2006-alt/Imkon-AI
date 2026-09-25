@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, CalendarCheck, ClipboardList, Headphones, Star } from "lucide-react";
+import { BookOpen, CalendarCheck, ClipboardList, Headphones, PartyPopper, Star } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { CATEGORIES, formatGrade } from "@/lib/format";
@@ -59,10 +59,10 @@ export default function StudentHome() {
       </WelcomeBanner>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard icon={ClipboardList} label="Topshirilmagan vazifalar" value={s.pending_assignments} href="/student/assignments" tone="amber" />
-        <StatCard icon={Star} label="O'rtacha baho" value={s.avg_score ?? "—"} href="/student/grades" tone="indigo" />
-        <StatCard icon={CalendarCheck} label="Davomat (30 kun)" value={s.attendance_rate != null ? `${s.attendance_rate}%` : "—"} href="/student/grades" tone="emerald" />
-        <StatCard icon={BookOpen} label="O'qituvchilarim" value={profile.data?.teachers.length ?? 0} href="/student/lessons" tone="sky" />
+        <StatCard icon={ClipboardList} label="Topshirilmagan vazifalar" value={s.pending_assignments} href="/student/assignments" />
+        <StatCard icon={Star} label="O'rtacha baho" value={s.avg_score ?? "—"} href="/student/grades" />
+        <StatCard icon={CalendarCheck} label="Davomat (30 kun)" value={s.attendance_rate != null ? `${s.attendance_rate}%` : "—"} href="/student/grades" />
+        <StatCard icon={BookOpen} label="O'qituvchilarim" value={profile.data?.teachers.length ?? 0} href="/student/lessons" />
       </div>
 
       <div className="card p-6">
@@ -73,7 +73,7 @@ export default function StudentHome() {
           </Link>
         </div>
         {today.length === 0 ? (
-          <p className="rounded-xl bg-slate-50 px-4 py-6 text-center text-slate-500">Bugun dars yo&apos;q 🎉</p>
+          <p className="rounded-xl bg-slate-50 px-4 py-6 text-center text-slate-500">Bugun dars yo&apos;q <PartyPopper className="mx-1 inline size-[1.1em] align-[-0.15em] text-indigo-600" aria-hidden /></p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {today.map((slot) => (

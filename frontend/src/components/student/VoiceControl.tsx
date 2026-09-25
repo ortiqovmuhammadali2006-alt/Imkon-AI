@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Headphones, HelpCircle, Loader2, Mic, Turtle, Type } from "lucide-react";
+import { Headphones, HelpCircle, Loader2, Mic, Turtle, Type, Volume2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import {
   checkServerTts,
@@ -140,7 +140,7 @@ function announce(kind: "login" | "reload" | "unsupported", fullName: string, pa
         : `Ovoz rejimi yoqilgan. Hozir siz turgan sahifa: ${page}.`;
   checkServerTts().then(() =>
     speakOrWaitForClick(text, { quick: true }).then((r) => {
-      if (r.error === AUTOPLAY_BLOCKED) toast(AUTOPLAY_BLOCKED, { icon: "🔊", duration: 8000 });
+      if (r.error === AUTOPLAY_BLOCKED) toast(AUTOPLAY_BLOCKED, { icon: <Volume2 className="size-5 text-indigo-600" aria-hidden />, duration: 8000 });
     })
   );
 }
@@ -391,7 +391,7 @@ export default function VoiceControl() {
     try {
       const heard = await listenOnce(setLastHeard);
       if (heard) {
-        toast(`“${heard}”`, { icon: "🎙️" });
+        toast(`“${heard}”`, { icon: <Mic className="size-5 text-indigo-600" aria-hidden /> });
         handleRef.current(heard);
       }
     } catch (e) {

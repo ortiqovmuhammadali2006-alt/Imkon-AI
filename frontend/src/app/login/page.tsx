@@ -49,9 +49,7 @@ export default function LoginPage() {
   return (
     <main className="grid flex-1 lg:grid-cols-[1.1fr_1fr]">
       {/* Chap tomon: platforma haqida */}
-      <section className="relative hidden overflow-hidden bg-gradient-to-br from-indigo-600 via-brand-700 to-grape-800 p-12 text-white lg:flex lg:flex-col">
-        <div className="absolute -top-24 -right-24 size-96 rounded-full bg-white/10 blur-3xl" aria-hidden />
-        <div className="absolute -bottom-32 -left-20 size-[28rem] rounded-full bg-violet-400/20 blur-3xl" aria-hidden />
+      <section className="relative hidden overflow-hidden bg-indigo-600 p-12 text-white lg:flex lg:flex-col">
         <div
           className="absolute inset-0 opacity-[0.07] [background-image:radial-gradient(white_1px,transparent_1px)] [background-size:22px_22px]"
           aria-hidden

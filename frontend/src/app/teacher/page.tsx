@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, BookOpen, CalendarCheck, ClipboardCheck, ClipboardList, Users } from "lucide-react";
+import { AlertTriangle, BookOpen, Coffee, CalendarCheck, ClipboardCheck, ClipboardList, Users } from "lucide-react";
 import StatCard from "@/components/ui/StatCard";
 import WelcomeBanner from "@/components/ui/WelcomeBanner";
 import Avatar from "@/components/ui/Avatar";
@@ -29,7 +29,7 @@ function TodaySchedule() {
         </Link>
       </div>
       {today.length === 0 ? (
-        <p className="rounded-xl bg-slate-50 px-4 py-6 text-center text-slate-500">Bugun darsingiz yo&apos;q — dam oling ☕</p>
+        <p className="rounded-xl bg-slate-50 px-4 py-6 text-center text-slate-500">Bugun darsingiz yo&apos;q — dam oling <Coffee className="mx-1 inline size-[1.1em] align-[-0.15em] text-indigo-600" aria-hidden /></p>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {today.map((s) => (
@@ -73,10 +73,10 @@ export default function TeacherHome() {
       </WelcomeBanner>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard icon={Users} label="O'quvchilarim" value={s.students.total} href="/teacher/grades" tone="sky" />
-        <StatCard icon={BookOpen} label="Darslar" value={s.lessons} href="/teacher/lessons" tone="indigo" />
-        <StatCard icon={ClipboardList} label="Faol vazifalar" value={s.open_assignments} href="/teacher/lessons" tone="violet" />
-        <StatCard icon={CalendarCheck} label="Bugun belgilangan" value={s.attendance_marked_today} href="/teacher/attendance" tone="emerald" />
+        <StatCard icon={Users} label="O'quvchilarim" value={s.students.total} href="/teacher/grades" />
+        <StatCard icon={BookOpen} label="Darslar" value={s.lessons} href="/teacher/lessons" />
+        <StatCard icon={ClipboardList} label="Faol vazifalar" value={s.open_assignments} href="/teacher/lessons" />
+        <StatCard icon={CalendarCheck} label="Bugun belgilangan" value={s.attendance_marked_today} href="/teacher/attendance" />
       </div>
 
       <TodaySchedule />

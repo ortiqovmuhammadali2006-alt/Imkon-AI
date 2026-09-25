@@ -20,10 +20,10 @@ const QUICK_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
 ];
 
 const CATEGORY_BAR: Record<Category, string> = {
-  general: "from-slate-400 to-slate-500",
-  visual: "from-amber-400 to-orange-500",
-  hearing: "from-sky-400 to-indigo-500",
-  physical: "from-emerald-400 to-teal-500",
+  general: "from-indigo-500 to-indigo-600",
+  visual: "from-indigo-500 to-indigo-600",
+  hearing: "from-indigo-500 to-indigo-600",
+  physical: "from-indigo-500 to-indigo-600",
 };
 
 export default function AdminHome() {
@@ -54,10 +54,10 @@ export default function AdminHome() {
       </WelcomeBanner>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard icon={UserCog} label="O'qituvchilar" value={teachers.total} hint={`${teachers.active} tasi faol`} href="/admin/teachers" tone="indigo" />
-        <StatCard icon={Users} label="O'quvchilar" value={students.total} hint={`${students.active} tasi faol`} href="/admin/students" tone="sky" />
-        <StatCard icon={Wallet} label={`${formatMonth(currentMonth())} oyliklari`} value={formatMoney(salary.paid)} hint={`${formatMoney(salary.expected)} dan`} href="/admin/salaries" tone="emerald" />
-        <StatCard icon={Activity} label="Nazorat" value="Faollik" hint="O'qituvchilar faoliyati" href="/admin/monitoring" tone="violet" />
+        <StatCard icon={UserCog} label="O'qituvchilar" value={teachers.total} hint={`${teachers.active} tasi faol`} href="/admin/teachers" />
+        <StatCard icon={Users} label="O'quvchilar" value={students.total} hint={`${students.active} tasi faol`} href="/admin/students" />
+        <StatCard icon={Wallet} label={`${formatMonth(currentMonth())} oyliklari`} value={formatMoney(salary.paid)} hint={`${formatMoney(salary.expected)} dan`} href="/admin/salaries" />
+        <StatCard icon={Activity} label="Nazorat" value="Faollik" hint="O'qituvchilar faoliyati" href="/admin/monitoring" />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

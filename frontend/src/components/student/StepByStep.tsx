@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Footprints, Loader2, Pause, Play, RotateCcw, Sparkles, Square } from "lucide-react";
+import { ChevronLeft, ChevronRight, Footprints, Loader2, Pause, Play, RotateCcw, Sparkles, Square, Turtle } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
 import { explainLesson } from "@/lib/student";
 import { onSpeakingChange, onVoiceAction, speak, stopSpeaking } from "@/lib/speech";
@@ -96,7 +96,7 @@ export default function StepByStep({ lessonId, text }: { lessonId: number; text:
     <section aria-label="Bosqichma-bosqich o'rganish" className="card overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
         <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 p-2 text-white shadow-md shadow-emerald-500/25">
+          <div className="rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 p-2 text-white shadow-md shadow-indigo-500/25">
             <Footprints className="size-5" aria-hidden />
           </div>
           <div>
@@ -105,7 +105,7 @@ export default function StepByStep({ lessonId, text }: { lessonId: number; text:
           </div>
         </div>
         <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
-          <input type="checkbox" checked={auto} onChange={(e) => setAuto(e.target.checked)} className="size-4 accent-emerald-600" />
+          <input type="checkbox" checked={auto} onChange={(e) => setAuto(e.target.checked)} className="size-4 accent-indigo-600" />
           O&apos;zi davom etsin
         </label>
       </div>
@@ -118,7 +118,7 @@ export default function StepByStep({ lessonId, text }: { lessonId: number; text:
           <span>{Math.round(progress)}%</span>
         </div>
         <div className="mb-5 h-2 overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-valuenow={index + 1} aria-valuemin={1} aria-valuemax={steps.length}>
-          <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500" style={{ width: `${progress}%` }} />
+          <div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-indigo-600 transition-all duration-500" style={{ width: `${progress}%` }} />
         </div>
 
         <p aria-live="polite" className="min-h-[6rem] rounded-2xl bg-slate-50 px-5 py-5 text-xl leading-9 text-slate-800 ring-1 ring-slate-100">
@@ -170,7 +170,7 @@ export default function StepByStep({ lessonId, text }: { lessonId: number; text:
         )}
 
         <p className="mt-5 text-sm text-slate-500">
-          Ovoz bilan: <b>“Keyingi”</b>, <b>“Oldingi”</b>, <b>“Qayta”</b>. Tezlikni yuqoridagi 🐢 tugmasi bilan o&apos;zgartiring.
+          Ovoz bilan: <b>“Keyingi”</b>, <b>“Oldingi”</b>, <b>“Qayta”</b>. Tezlikni yuqoridagi <Turtle className="mx-1 inline size-[1.1em] align-[-0.15em] text-indigo-600" aria-hidden /> tugmasi bilan o&apos;zgartiring.
         </p>
       </div>
     </section>

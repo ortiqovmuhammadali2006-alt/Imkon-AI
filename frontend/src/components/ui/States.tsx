@@ -54,7 +54,7 @@ export function EmptyState({
 }) {
   return (
     <div className="flex animate-fade-in flex-col items-center rounded-2xl border-2 border-dashed border-slate-200 bg-surface/60 px-6 py-16 text-center">
-      <div className="mb-4 rounded-2xl bg-gradient-to-br from-indigo-50 to-violet-100 p-4 text-indigo-500">
+      <div className="mb-4 rounded-2xl bg-indigo-50 p-4 text-indigo-500">
         <Icon className="size-9" aria-hidden />
       </div>
       <p className="max-w-sm text-slate-600">{message}</p>
@@ -78,7 +78,7 @@ export function PageHeader({
     <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-start gap-4">
         {Icon && (
-          <div className="hidden size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/25 sm:flex">
+          <div className="hidden size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/25 sm:flex">
             <Icon className="size-6" aria-hidden />
           </div>
         )}

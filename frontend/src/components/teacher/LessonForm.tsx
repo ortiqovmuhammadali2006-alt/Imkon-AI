@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Captions, FileUp, Loader2, Paperclip, Sparkles, X } from "lucide-react";
+import { Captions, Check, FileUp, Loader2, Paperclip, Sparkles, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { CATEGORIES } from "@/lib/format";
 import { useTeacherMutation, type Lesson } from "@/lib/teacher";
@@ -177,7 +177,7 @@ export default function LessonForm({
           <span className="label">Subtitr fayli (ixtiyoriy, .srt yoki .vtt)</span>
           {currentSubtitleName ? (
             <div className="flex items-center gap-3 rounded-lg border border-slate-300 px-3.5 py-2.5">
-              <Captions className="size-5 shrink-0 text-sky-600" aria-hidden />
+              <Captions className="size-5 shrink-0 text-indigo-600" aria-hidden />
               <span className="flex-1 truncate">{currentSubtitleName}</span>
               <button
                 type="button"
@@ -220,7 +220,7 @@ export default function LessonForm({
         <ul className="space-y-1 text-sm text-indigo-900/80">
           {autoFeatures(currentFileName, !!currentSubtitleName).map((f) => (
             <li key={f} className="flex gap-2">
-              <span aria-hidden>✓</span>
+              <Check className="mt-0.5 size-4 shrink-0 text-indigo-600" aria-hidden />
               {f}
             </li>
           ))}

@@ -32,7 +32,7 @@ function NavLinks({ nav, role, pathname, onNavigate }: { nav: NavItem[]; role: R
             aria-current={active ? "page" : undefined}
             className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 font-medium transition-colors ${
               active
-                ? "bg-gradient-to-r from-indigo-50 to-violet-50 text-indigo-700"
+                ? "bg-indigo-50 text-indigo-700"
                 : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900"
             }`}
           >

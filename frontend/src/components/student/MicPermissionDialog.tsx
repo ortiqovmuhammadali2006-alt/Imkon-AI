@@ -1,6 +1,6 @@
 "use client";
 
-import { Globe, Lock, MicOff, RefreshCw, Settings, type LucideIcon } from "lucide-react";
+import { Globe, Info, Lock, MicOff, RefreshCw, Settings, type LucideIcon } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 
 type Guide = { title: string; icon: LucideIcon; intro: string; steps: React.ReactNode[] };
@@ -41,7 +41,7 @@ function guideFor(code: string): Guide {
     intro: "Ovozli boshqaruv ishlashi uchun brauzer mikrofondan foydalanishiga ruxsat bering.",
     steps: [
       <>
-        Manzil satrining chap tomonidagi <b>🔒 qulf</b> (yoki <b>ⓘ</b>) belgisini bosing.
+        Manzil satrining chap tomonidagi <b><Lock className="mx-1 inline size-[1.1em] align-[-0.15em] text-indigo-600" aria-hidden />qulf</b> (yoki <b><Info className="mx-1 inline size-[1.1em] align-[-0.15em] text-indigo-600" aria-hidden /></b>) belgisini bosing.
       </>,
       <>
         <b>Mikrofon</b> yonidagi tanlovni <b>&quot;Ruxsat berish&quot;</b> ga o&apos;zgartiring.
@@ -70,7 +70,7 @@ export default function MicPermissionDialog({
   return (
     <Modal open title={guide.title} onClose={onClose}>
       <div className="flex flex-col items-center text-center">
-        <div className="mb-4 flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-orange-500/30">
+        <div className="mb-4 flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-amber-500 text-white shadow-lg shadow-amber-500/30">
           <Icon className="size-8" aria-hidden />
         </div>
         <p className="text-slate-600">{guide.intro}</p>

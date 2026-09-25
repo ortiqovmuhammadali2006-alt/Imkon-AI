@@ -1,8 +1,8 @@
 const COLORS: Record<number, string> = {
   1: "border-red-500 bg-red-500",
-  2: "border-orange-500 bg-orange-500",
+  2: "border-red-500 bg-red-500",
   3: "border-amber-500 bg-amber-500",
-  4: "border-lime-600 bg-lime-600",
+  4: "border-emerald-500 bg-emerald-500",
   5: "border-emerald-600 bg-emerald-600",
 };
 

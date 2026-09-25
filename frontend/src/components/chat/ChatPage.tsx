@@ -102,7 +102,7 @@ const MessageItem = memo(function MessageItem({
   if (m.role === "user") {
     return (
       <div className="flex justify-end gap-3">
-        <p className="max-w-[85%] rounded-3xl rounded-br-md bg-gradient-to-br from-indigo-500 to-violet-600 px-4 py-2.5 whitespace-pre-wrap text-white shadow-md shadow-indigo-500/20">
+        <p className="max-w-[85%] rounded-3xl rounded-br-md bg-gradient-to-br from-indigo-500 to-indigo-600 px-4 py-2.5 whitespace-pre-wrap text-white shadow-md shadow-indigo-500/20">
           {m.content}
         </p>
         <Avatar name={userName} size="sm" />
@@ -111,7 +111,7 @@ const MessageItem = memo(function MessageItem({
   }
   return (
     <div className="flex gap-3">
-      <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/25">
+      <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-md shadow-indigo-500/25">
         <Bot className="size-4" aria-hidden />
       </div>
       <div className="min-w-0 flex-1 pt-0.5">
@@ -427,11 +427,11 @@ export default function ChatPage() {
             </div>
           ) : messages.length === 0 ? (
             <div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center px-6 py-10 text-center">
-              <div className="mb-5 flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/30">
+              <div className="mb-5 flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/30">
                 <Sparkles className="size-8" aria-hidden />
               </div>
               <h2 className="text-2xl font-bold tracking-tight">Salom, {user?.full_name.split(" ")[0]}! Nima haqida gaplashamiz?</h2>
-              <p className="mt-2 text-slate-500">Savolingizni yozing yoki 🎙 <b>Ovozli suhbat</b> bilan gaplashing</p>
+              <p className="mt-2 text-slate-500">Savolingizni yozing yoki <AudioLines className="mx-1 inline size-[1.1em] align-[-0.15em] text-indigo-600" aria-hidden /><b>Ovozli suhbat</b> bilan gaplashing</p>
               <div className="mt-8 grid w-full gap-3 sm:grid-cols-2">
                 {SUGGESTIONS[role].map((s) => (
                   <button key={s} onClick={() => send(s)} className="card card-hover p-4 text-left text-sm font-medium text-slate-700">

@@ -92,7 +92,7 @@ export default function WeeklySchedule({
           <section
             key={day}
             aria-label={WEEKDAYS[day - 1]}
-            className={`rounded-2xl p-3 ${day === today ? "bg-gradient-to-b from-indigo-50 to-violet-50/60 ring-2 ring-indigo-300" : "border border-slate-200/70 bg-surface/60"}`}
+            className={`rounded-2xl p-3 ${day === today ? "bg-indigo-50 ring-2 ring-indigo-300" : "border border-slate-200/70 bg-surface/60"}`}
           >
             <h3 className="mb-2 flex items-center justify-between px-1 font-semibold">
               {WEEKDAYS[day - 1]}

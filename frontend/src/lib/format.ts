@@ -1,10 +1,10 @@
 import type { Category } from "./types";
 
 export const CATEGORIES: Record<Category, { label: string; className: string }> = {
-  general: { label: "Umumiy", className: "bg-slate-100 text-slate-700" },
-  visual: { label: "Ko'rish cheklangan", className: "bg-amber-100 text-amber-800" },
-  hearing: { label: "Eshitish cheklangan", className: "bg-sky-100 text-sky-800" },
-  physical: { label: "Harakat cheklangan", className: "bg-emerald-100 text-emerald-800" },
+  general: { label: "Umumiy", className: "bg-indigo-50 text-indigo-700" },
+  visual: { label: "Ko'rish cheklangan", className: "bg-indigo-50 text-indigo-700" },
+  hearing: { label: "Eshitish cheklangan", className: "bg-indigo-50 text-indigo-700" },
+  physical: { label: "Harakat cheklangan", className: "bg-indigo-50 text-indigo-700" },
 };
 
 const MONTHS = [
@@ -44,21 +44,10 @@ export function formatGrade(grade: string | null | undefined) {
   return g;
 }
 
-const SUBJECT_TONES = [
-  "from-indigo-500 to-violet-500",
-  "from-sky-500 to-cyan-400",
-  "from-emerald-500 to-teal-400",
-  "from-amber-400 to-orange-500",
-  "from-rose-500 to-pink-400",
-  "from-violet-500 to-fuchsia-400",
-];
 
-// Fanga qarab doim bir xil rang (dars kartochkalaridagi chiziq uchun)
-export function subjectTone(subject: string | null | undefined) {
-  if (!subject) return SUBJECT_TONES[0];
-  let hash = 0;
-  for (const ch of subject) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
-  return SUBJECT_TONES[hash % SUBJECT_TONES.length];
+// Dars kartochkalaridagi chiziq va sarlavha — barcha fanlar uchun bitta brend rangi, boshidan oxirigacha bir tekis
+export function subjectTone(_subject?: string | null) {
+  return "from-indigo-600 to-indigo-600";
 }
 
 // Nechchi kun oldin (nazorat sahifasi uchun)
