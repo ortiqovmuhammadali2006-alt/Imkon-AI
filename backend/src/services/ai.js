@@ -77,7 +77,7 @@ async function explainLesson(lesson, category, messages) {
 async function textToSpeech(text, speed = 0.85) {
   const response = await getClient().audio.speech.create({
     model: process.env.OPENAI_TTS_MODEL || "gpt-4o-mini-tts",
-    voice: process.env.OPENAI_TTS_VOICE || "alloy",
+    voice: process.env.OPENAI_TTS_VOICE || "nova", // ayol ovozi — asosiy Madina ovozi bilan bir xil bo'lsin
     input: text,
     speed,
     instructions:

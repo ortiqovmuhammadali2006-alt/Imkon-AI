@@ -12,6 +12,9 @@ type Handlers = {
   onFatal: (message: string, code: string) => void; // tinglashni davom ettirib bo'lmaydi (code: "not-allowed", "audio-capture"...)
 };
 
+const UTTERANCE_PAUSE_MS = 1300; // shuncha jimlikdan keyin gap tugagan hisoblanadi
+const AFTER_SPEECH_MS = 700; // AI gapirib bo'lgach mikrofonni qayta yoqishdan oldin kutish
+
 const FATAL = ["not-allowed", "service-not-allowed", "audio-capture", "language-not-supported"];
 
 // Doimiy tinglash ("Ovoz rejimi"). React'dan tashqarida — sahifa almashganda ham uzilmaydi.
@@ -23,6 +26,8 @@ class VoiceMode {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private handlers: Handlers | null = null;
   private subscribed = false;
+  private pending = ""; // hali yuborilmagan gap bo'laklari
+  private flushTimer: ReturnType<typeof setTimeout> | null = null;
 
   get enabled() {
     return this.on;
@@ -38,7 +43,7 @@ class VoiceMode {
       onSpeakingChange((speaking) => {
         this.speaking = speaking;
         if (speaking) this.stopRec();
-        else this.schedule();
+        else this.schedule(AFTER_SPEECH_MS); // ovozning oxiri mikrofonga tushmasin
       });
     }
     this.on = true;
@@ -62,12 +67,19 @@ class VoiceMode {
     if (!r) return this.fatal("Brauzeringiz ovozni tanishni qo'llab-quvvatlamaydi. Google Chrome yoki Microsoft Edge'dan foydalaning", "unsupported");
     this.rec = r;
 
+    // Brauzer gapni pauzalarda bo'lib-bo'lib beradi ("Nima uchun kun" + "va tun almashadi").
+    // Bo'laklarni yig'amiz va jimlikdan keyin bitta gap sifatida yuboramiz — aks holda chala savol ketadi
     r.onresult = (e) => {
+      let interim = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
-        const text = e.results[i][0].transcript;
-        this.handlers?.onHeard?.(text);
-        if (e.results[i].isFinal) this.handlers?.onCommand(text);
+        const text = e.results[i][0].transcript.trim();
+        if (e.results[i].isFinal) this.pending = `${this.pending} ${text}`.trim();
+        else interim += ` ${text}`;
       }
+      const shown = `${this.pending} ${interim}`.trim();
+      if (shown) this.handlers?.onHeard?.(shown);
+      if (this.flushTimer) clearTimeout(this.flushTimer);
+      this.flushTimer = setTimeout(() => this.flush(), UTTERANCE_PAUSE_MS);
     };
     r.onerror = (e) => {
       if (e.error === "language-not-supported" && fallbackLanguage()) return; // onend qayta ishga tushiradi
@@ -76,6 +88,7 @@ class VoiceMode {
     // Brauzer jimlikdan keyin tinglashni o'zi to'xtatadi — yoniq bo'lsa, qayta boshlaymiz
     r.onend = () => {
       if (this.rec === r) this.rec = null;
+      this.flush();
       if (this.on && !this.speaking) this.schedule();
     };
     try {
@@ -86,7 +99,18 @@ class VoiceMode {
     }
   }
 
+  private flush() {
+    if (this.flushTimer) clearTimeout(this.flushTimer);
+    this.flushTimer = null;
+    const text = this.pending.trim();
+    this.pending = "";
+    if (text && this.on && !this.speaking) this.handlers?.onCommand(text);
+  }
+
   private stopRec() {
+    if (this.flushTimer) clearTimeout(this.flushTimer);
+    this.flushTimer = null;
+    this.pending = "";
     if (this.timer) clearTimeout(this.timer);
     this.timer = null;
     const r = this.rec;

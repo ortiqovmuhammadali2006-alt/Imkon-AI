@@ -168,11 +168,16 @@ export function uzLatinToCyrillic(text: string) {
 
 type VoiceChoice = { voice: SpeechSynthesisVoice | null; lang: string; transform: (t: string) => string; label: string };
 
+const FEMALE_VOICE = /madina|female|woman|zira|svetlana|dariya|irina|milena|ekaterina|elena|anna|tatyana|filiz|emel|seda|google русский|google türkçe/i;
+const MALE_VOICE = /sardor|(?<!fe)male|pavel|dmitr|ahmet|tolga|david|mark|guy|yuri|maxim/i;
+
 function pickVoice(voices: SpeechSynthesisVoice[]): VoiceChoice {
-  const byLang = (prefix: string) => {
-    const list = voices.filter((v) => v.lang.toLowerCase().startsWith(prefix));
-    return list.find((v) => /natural|online/i.test(v.name)) ?? list[0];
-  };
+  // Butun tizimda bitta ayol ovozi eshitilsin (asosiy server ovozi — Madina): ayol ovozlari birinchi,
+  // erkak ovozlari oxirgi navbatda. Tabiiy (Natural/Online) ovozlar sifatliroq
+  const score = (v: SpeechSynthesisVoice) =>
+    (FEMALE_VOICE.test(v.name) ? 4 : 0) + (MALE_VOICE.test(v.name) ? -4 : 0) + (/natural|online/i.test(v.name) ? 1 : 0);
+  const byLang = (prefix: string) =>
+    voices.filter((v) => v.lang.toLowerCase().startsWith(prefix)).sort((a, b) => score(b) - score(a))[0];
   const same = (t: string) => t;
   const uz = byLang("uz");
   if (uz) return { voice: uz, lang: uz.lang, transform: same, label: "o'zbekcha" };
@@ -180,7 +185,7 @@ function pickVoice(voices: SpeechSynthesisVoice[]): VoiceChoice {
   if (ru) return { voice: ru, lang: ru.lang, transform: uzLatinToCyrillic, label: "ruscha" };
   const tr = byLang("tr");
   if (tr) return { voice: tr, lang: tr.lang, transform: same, label: "turkcha" };
-  const any = voices.find((v) => v.default) ?? voices[0] ?? null;
+  const any = [...voices].sort((a, b) => score(b) - score(a))[0] ?? null;
   return { voice: any, lang: any?.lang ?? "en-US", transform: same, label: "standart" };
 }
 
@@ -530,10 +535,17 @@ export const MIC_SETUP_ERRORS = ["not-allowed", "service-not-allowed", "audio-ca
 // Bir marta tinglab, aytilgan matnni qaytaradi (buyruq, savol yoki javobni ovoz bilan yozish uchun).
 // onInterim — gapirayotgan paytda eshitilayotgan matn (ekranda ko'rsatish uchun)
 // signal — tinglashni tashqaridan to'xtatish (masalan, ovozli suhbatni yopganda); to'xtatilsa "aborted" xatosi qaytadi
-export function listenOnce(onInterim?: (text: string) => void, signal?: AbortSignal): Promise<string> {
+// pauseMs — o'quvchi gap orasida to'xtab o'ylasa ham tinglash uzilmasin: shuncha jimlikdan keyin tugaydi
+// (berilmasa — brauzer birinchi pauzadayoq to'xtatadi, qisqa buyruqlar uchun yetarli)
+export function listenOnce(
+  onInterim?: (text: string) => void,
+  signal?: AbortSignal,
+  opts: { pauseMs?: number } = {}
+): Promise<string> {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) return reject(new RecognitionError("To'xtatildi", "aborted"));
-    const r = createRecognition(false, true);
+    const continuous = Boolean(opts.pauseMs);
+    const r = createRecognition(continuous, true);
     if (!r) {
       return reject(
         new RecognitionError("Brauzeringiz ovozni tanishni qo'llab-quvvatlamaydi. Google Chrome yoki Microsoft Edge'dan foydalaning", "unsupported")
@@ -543,8 +555,20 @@ export function listenOnce(onInterim?: (text: string) => void, signal?: AbortSig
     let finalText = "";
     let latest = "";
     let settled = false;
+    let silenceTimer: ReturnType<typeof setTimeout> | undefined;
+    // Uzluksiz rejimda tinglashni o'zimiz tugatamiz: gap boshlanmasa — 8 s, gapirgandan keyin — pauseMs jimlik
+    const armSilence = (ms: number) => {
+      clearTimeout(silenceTimer);
+      silenceTimer = setTimeout(() => {
+        try {
+          r.stop();
+        } catch {}
+      }, ms);
+    };
+    if (continuous) armSilence(8000);
     const fail = (message: string, code: string) => {
       settled = true;
+      clearTimeout(silenceTimer);
       reject(new RecognitionError(message, code));
     };
 
@@ -552,17 +576,19 @@ export function listenOnce(onInterim?: (text: string) => void, signal?: AbortSig
       let interim = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const t = e.results[i][0].transcript;
-        if (e.results[i].isFinal) finalText += t;
+        if (e.results[i].isFinal) finalText += (finalText ? " " : "") + t.trim();
         else interim += t;
       }
-      latest = (finalText + interim).trim();
+      latest = `${finalText} ${interim}`.trim();
       onInterim?.(latest);
+      if (continuous && latest) armSilence(opts.pauseMs!);
     };
     r.onerror = (e) => {
       if (settled) return;
       if (e.error === "language-not-supported" && fallbackLanguage()) {
         settled = true;
-        listenOnce(onInterim, signal).then(resolve, reject);
+        clearTimeout(silenceTimer);
+        listenOnce(onInterim, signal, opts).then(resolve, reject);
         return;
       }
       if (e.error === "no-speech") return fail("Ovoz eshitilmadi. Mikrofonga yaqinroq gapiring", "no-speech");
@@ -572,6 +598,7 @@ export function listenOnce(onInterim?: (text: string) => void, signal?: AbortSig
     r.onend = () => {
       if (settled) return;
       settled = true;
+      clearTimeout(silenceTimer);
       const text = (finalText || latest).trim();
       if (text) resolve(text);
       else reject(new RecognitionError("Ovoz eshitilmadi. Mikrofonga yaqinroq gapiring", "no-speech"));

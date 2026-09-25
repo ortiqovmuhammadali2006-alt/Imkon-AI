@@ -277,7 +277,7 @@ export default function ChatPage() {
   const dictate = async () => {
     setDictating(true);
     try {
-      const heard = await listenOnce((t) => setInput(t));
+      const heard = await listenOnce((t) => setInput(t), undefined, { pauseMs: 1800 });
       setInput(heard);
       inputRef.current?.focus();
     } catch (e) {

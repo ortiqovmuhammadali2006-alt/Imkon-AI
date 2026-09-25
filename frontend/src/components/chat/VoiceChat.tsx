@@ -56,7 +56,8 @@ export default function VoiceChat({
       setHeard("");
       let text = "";
       try {
-        text = await listenOnce(setHeard, ctrl.signal);
+        // O'quvchi o'ylab, gap orasida to'xtasa ham savol bo'linib ketmasin — 1.8 s jimlikdan keyin tugaydi
+        text = await listenOnce(setHeard, ctrl.signal, { pauseMs: 1800 });
       } catch (e) {
         if (!activeRef.current) return;
         const code = e instanceof RecognitionError ? e.code : "";
@@ -109,6 +110,8 @@ export default function VoiceChat({
       setPhase("speaking");
       const result = await voice.end(reply);
       if (!result.ok && result.error) setError(result.error);
+      // Karnaydan chiqqan ovozning oxiri mikrofonga tushib, AI o'z gapini savol deb olmasin
+      await new Promise((r) => setTimeout(r, 600));
     }
   }, [onSend]);
 
