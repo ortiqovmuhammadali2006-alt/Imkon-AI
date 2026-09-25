@@ -71,7 +71,7 @@ export default function StudentGradesPage() {
         </div>
         <div className="card p-5">
           <p className="text-sm text-slate-500">Davomat (30 kun)</p>
-          <p className="mt-1 text-3xl font-bold text-emerald-600">
+          <p className="mt-1 text-3xl font-bold text-emerald-700">
             {stats.data?.attendance_rate != null ? `${stats.data.attendance_rate}%` : "—"}
           </p>
         </div>

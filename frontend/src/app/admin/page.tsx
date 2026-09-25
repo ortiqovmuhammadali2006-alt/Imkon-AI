@@ -109,7 +109,7 @@ export default function AdminHome() {
                       {formatMonth(p.month)} · {formatDate(p.paid_at)}
                     </p>
                   </div>
-                  <p className="font-semibold whitespace-nowrap text-emerald-600">+{formatMoney(p.amount)}</p>
+                  <p className="font-semibold whitespace-nowrap text-emerald-700">+{formatMoney(p.amount)}</p>
                 </li>
               ))}
             </ul>

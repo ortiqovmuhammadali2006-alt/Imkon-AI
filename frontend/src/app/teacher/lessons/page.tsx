@@ -97,7 +97,7 @@ export default function LessonsPage() {
                   <div className="flex flex-1 flex-col p-5">
                     <div className="mb-3 flex items-start justify-between gap-2">
                       <CategoryBadge category={l.category} />
-                      <span className="text-sm text-slate-400">{formatDate(l.created_at)}</span>
+                      <span className="text-sm text-slate-500">{formatDate(l.created_at)}</span>
                     </div>
                     <h2 className="text-lg font-semibold tracking-tight text-slate-900">{l.title}</h2>
                     {l.description && <p className="mt-1 mb-5 line-clamp-2 text-slate-500">{l.description}</p>}

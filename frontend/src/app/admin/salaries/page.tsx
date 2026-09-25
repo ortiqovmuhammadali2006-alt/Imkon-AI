@@ -63,7 +63,7 @@ export default function SalariesPage() {
         </div>
         <div className="card p-5">
           <p className="text-sm text-slate-500">To&apos;langan</p>
-          <p className="mt-1 text-2xl font-bold text-emerald-600">{formatMoney(paid)}</p>
+          <p className="mt-1 text-2xl font-bold text-emerald-700">{formatMoney(paid)}</p>
         </div>
         <div className="card p-5">
           <p className="text-sm text-slate-500">Qolgan</p>

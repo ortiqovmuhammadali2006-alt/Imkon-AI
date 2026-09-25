@@ -53,7 +53,7 @@ export function EmptyState({
   icon?: LucideIcon;
 }) {
   return (
-    <div className="flex animate-fade-in flex-col items-center rounded-2xl border-2 border-dashed border-slate-200 bg-white/60 px-6 py-16 text-center">
+    <div className="flex animate-fade-in flex-col items-center rounded-2xl border-2 border-dashed border-slate-200 bg-surface/60 px-6 py-16 text-center">
       <div className="mb-4 rounded-2xl bg-gradient-to-br from-indigo-50 to-violet-100 p-4 text-indigo-500">
         <Icon className="size-9" aria-hidden />
       </div>

@@ -128,7 +128,7 @@ export default function MonitoringPage() {
           <div className="mb-6 grid gap-4 sm:grid-cols-2">
             <div className="card p-5">
               <p className="text-sm text-slate-500">Oxirgi 7 kunda faol</p>
-              <p className="mt-1 text-2xl font-bold text-emerald-600">
+              <p className="mt-1 text-2xl font-bold text-emerald-700">
                 {activeCount} / {data!.length}
               </p>
             </div>

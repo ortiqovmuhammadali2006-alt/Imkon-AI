@@ -70,6 +70,8 @@ const COMMANDS: Command[] = [
 const FONT_KEY = "imkon_font_scale";
 const MODE_KEY = "imkon_voice_mode";
 const FONT_SCALES = [100, 115, 130];
+const ROUND_BTN =
+  "flex size-11 items-center justify-center rounded-full border border-slate-200 bg-surface text-slate-600 shadow-sm transition-colors hover:border-slate-300 hover:text-indigo-600";
 
 function readStorage(key: string) {
   try {
@@ -238,17 +240,18 @@ export default function VoiceControl() {
       {(mode || listening) && (
         <div
           role="status"
-          className="fixed bottom-20 right-4 z-40 max-w-xs rounded-xl bg-slate-900/90 px-4 py-2 text-sm text-white shadow-lg"
+          className="fixed top-20 right-4 z-40 max-w-xs animate-pop rounded-xl bg-gray-900/90 px-4 py-2 text-sm text-white shadow-lg sm:right-6 lg:right-10"
         >
           <span className="mr-2 inline-block size-2 animate-pulse rounded-full bg-red-500" aria-hidden />
-          Tinglayapman{lastHeard && <span className="text-slate-300"> · “{lastHeard}”</span>}
+          Tinglayapman{lastHeard && <span className="text-gray-300"> · “{lastHeard}”</span>}
         </div>
       )}
 
-      <div className="fixed right-4 bottom-4 z-40 flex items-center gap-2">
+      {/* Yuqori paneldagi tugmalar: yordam, shrift, bitta buyruq, ovoz rejimi */}
+      <div className="flex items-center gap-2">
         <button
           onClick={() => setHelpOpen(true)}
-          className="rounded-full bg-white p-3 text-slate-600 shadow-lg ring-1 ring-slate-200 hover:text-indigo-700"
+          className={`${ROUND_BTN} max-sm:hidden`}
           aria-label="Ovozli buyruqlar ro'yxati"
           title="Ovozli buyruqlar"
         >
@@ -256,7 +259,7 @@ export default function VoiceControl() {
         </button>
         <button
           onClick={cycleFont}
-          className="rounded-full bg-white p-3 text-slate-600 shadow-lg ring-1 ring-slate-200 hover:text-indigo-700"
+          className={ROUND_BTN}
           aria-label={`Shrift o'lchami: ${FONT_SCALES[fontIndex]}%. Kattalashtirish`}
           title="Shriftni kattalashtirish"
         >
@@ -265,9 +268,7 @@ export default function VoiceControl() {
         {!mode && (
           <button
             onClick={listenOnceForCommand}
-            className={`rounded-full p-3 shadow-lg ring-1 ${
-              listening ? "animate-pulse bg-red-600 text-white ring-red-600" : "bg-white text-slate-600 ring-slate-200 hover:text-indigo-700"
-            }`}
+            className={listening ? "flex size-11 animate-pulse items-center justify-center rounded-full bg-red-600 text-white" : ROUND_BTN}
             aria-label="Bitta ovozli buyruq berish (Alt + V)"
             title="Bitta buyruq (Alt + V)"
           >
@@ -277,13 +278,14 @@ export default function VoiceControl() {
         <button
           onClick={() => setMode(!mode)}
           aria-pressed={mode}
-          className={`flex items-center gap-2 rounded-full px-5 py-4 font-semibold text-white shadow-lg ${
-            mode ? "bg-red-600 hover:bg-red-700" : "bg-indigo-600 hover:bg-indigo-700"
+          aria-label={mode ? "Ovoz rejimini o'chirish (Alt + O)" : "Ovoz rejimini yoqish (Alt + O)"}
+          className={`flex h-11 items-center gap-2 rounded-full px-3 font-semibold text-white shadow-md transition-colors sm:px-5 ${
+            mode ? "bg-red-600 shadow-red-600/25 hover:bg-red-700" : "bg-gradient-to-b from-indigo-500 to-indigo-600 shadow-indigo-600/25 hover:to-indigo-700"
           }`}
           title="Ovoz rejimi (Alt + O)"
         >
-          <Headphones className="size-6" aria-hidden />
-          <span>{mode ? "Ovoz rejimi: yoniq" : "Ovoz rejimi"}</span>
+          <Headphones className="size-5" aria-hidden />
+          <span className="max-sm:hidden">{mode ? "Ovoz rejimi: yoniq" : "Ovoz rejimi"}</span>
         </button>
       </div>
 

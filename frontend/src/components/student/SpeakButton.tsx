@@ -34,7 +34,7 @@ export default function SpeakButton({
       }}
       className={
         variant === "hero"
-          ? "inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 font-semibold text-indigo-700 shadow-lg shadow-black/10 transition-all hover:bg-indigo-50 active:scale-[0.98]"
+          ? "inline-flex items-center gap-2 rounded-xl bg-surface px-5 py-3 font-semibold text-indigo-700 shadow-lg shadow-black/10 transition-all hover:bg-indigo-50 active:scale-[0.98]"
           : "btn-secondary px-3 py-1.5 text-sm"
       }
       aria-pressed={active}

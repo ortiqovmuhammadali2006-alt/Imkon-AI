@@ -8,6 +8,7 @@ import { Loader2, LogOut, Menu, X, type LucideIcon } from "lucide-react";
 import { ROLE_HOME, useAuth, type Role, type User } from "@/lib/auth";
 import Logo from "@/components/ui/Logo";
 import Avatar from "@/components/ui/Avatar";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 
 export type NavItem = { href: string; label: string; icon: LucideIcon };
 
@@ -38,7 +39,7 @@ function NavLinks({ nav, role, pathname, onNavigate }: { nav: NavItem[]; role: R
             {active && <span className="absolute top-2 bottom-2 left-0 w-1 rounded-r-full bg-indigo-600" aria-hidden />}
             <span
               className={`flex size-8 items-center justify-center rounded-lg transition-colors ${
-                active ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 group-hover:text-slate-700"
+                active ? "bg-surface text-indigo-600 shadow-sm" : "text-slate-500 group-hover:text-slate-700"
               }`}
             >
               <Icon className="size-[18px]" aria-hidden />
@@ -70,7 +71,17 @@ function UserCard({ user, role, onLogout }: { user: User; role: Role; onLogout: 
 }
 
 // Rolga qarab himoyalangan panel: yon menyu (kompyuterda) / ochiladigan menyu (telefonda) + kontent
-export default function DashboardShell({ role, nav, children }: { role: Role; nav: NavItem[]; children: React.ReactNode }) {
+export default function DashboardShell({
+  role,
+  nav,
+  toolbar,
+  children,
+}: {
+  role: Role;
+  nav: NavItem[];
+  toolbar?: React.ReactNode; // yuqori panelning o'ng tomonidagi qo'shimcha tugmalar
+  children: React.ReactNode;
+}) {
   const { user, loading, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -113,7 +124,7 @@ export default function DashboardShell({ role, nav, children }: { role: Role; na
       </a>
 
       {/* Kompyuter: doimiy yon menyu */}
-      <aside className="sticky top-0 hidden h-screen w-72 shrink-0 flex-col border-r border-slate-200/70 bg-white/80 backdrop-blur-xl lg:flex">
+      <aside className="sticky top-0 hidden h-screen w-72 shrink-0 flex-col border-r border-slate-200/70 bg-surface/80 backdrop-blur-xl lg:flex">
         <div className="px-6 py-6">
           <Logo />
         </div>
@@ -127,19 +138,25 @@ export default function DashboardShell({ role, nav, children }: { role: Role; na
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Telefon/planshet: yuqori panel */}
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200/70 bg-white/85 px-4 py-3 backdrop-blur-xl lg:hidden">
-          <button onClick={() => setDrawerOpen(true)} className="icon-btn -ml-1" aria-label="Menyuni ochish" aria-expanded={drawerOpen}>
+        {/* Yuqori panel: telefonda menyu tugmasi, o'ngda panel asboblari (ovoz, tungi rejim) */}
+        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-slate-200/70 bg-surface/85 px-4 py-3 backdrop-blur-xl sm:px-6 lg:px-10">
+          <button onClick={() => setDrawerOpen(true)} className="icon-btn -ml-1 lg:hidden" aria-label="Menyuni ochish" aria-expanded={drawerOpen}>
             <Menu className="size-6" />
           </button>
-          <Logo />
-          <Avatar name={user.full_name} size="sm" />
+          <div className="hidden sm:block lg:hidden">
+            <Logo />
+          </div>
+          <p className="hidden text-sm font-medium text-slate-500 lg:block">{ROLE_LABEL[role]} paneli</p>
+          <div className="ml-auto flex items-center gap-2">
+            {toolbar}
+            <ThemeToggle />
+          </div>
         </header>
 
         {drawerOpen && (
           <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Menyu">
-            <div className="absolute inset-0 animate-fade-in bg-slate-900/40 backdrop-blur-sm" onClick={() => setDrawerOpen(false)} />
-            <div className="absolute inset-y-0 left-0 flex w-80 max-w-[85vw] animate-slide-up flex-col bg-white shadow-2xl">
+            <div className="absolute inset-0 animate-fade-in bg-black/50 backdrop-blur-sm" onClick={() => setDrawerOpen(false)} />
+            <div className="absolute inset-y-0 left-0 flex w-80 max-w-[85vw] animate-slide-up flex-col bg-surface shadow-2xl">
               <div className="flex items-center justify-between px-5 py-5">
                 <Logo />
                 <button onClick={() => setDrawerOpen(false)} className="icon-btn" aria-label="Menyuni yopish">

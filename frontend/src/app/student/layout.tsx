@@ -14,9 +14,8 @@ const nav: NavItem[] = [
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   return (
-    <DashboardShell role="student" nav={nav}>
-      <div className="pb-24">{children}</div>
-      <VoiceControl />
+    <DashboardShell role="student" nav={nav} toolbar={<VoiceControl />}>
+      {children}
     </DashboardShell>
   );
 }

@@ -44,7 +44,7 @@ export default function StudentLessonPage({ params }: { params: Promise<{ id: st
 
   return (
     <section className="space-y-6">
-      <Link href="/student/lessons" className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 -ml-2 font-medium text-slate-500 hover:bg-white hover:text-indigo-700">
+      <Link href="/student/lessons" className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 -ml-2 font-medium text-slate-500 hover:bg-surface hover:text-indigo-700">
         <ArrowLeft className="size-4" aria-hidden /> Darslarim
       </Link>
 

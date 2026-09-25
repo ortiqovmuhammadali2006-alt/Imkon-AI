@@ -249,7 +249,7 @@ export default function AttendancePage() {
             role="tab"
             aria-selected={tab === t.key}
             onClick={() => setTab(t.key as typeof tab)}
-            className={`rounded-md px-4 py-2 font-medium ${tab === t.key ? "bg-white shadow-sm" : "text-slate-600"}`}
+            className={`rounded-md px-4 py-2 font-medium ${tab === t.key ? "bg-surface shadow-sm" : "text-slate-600"}`}
           >
             {t.label}
           </button>

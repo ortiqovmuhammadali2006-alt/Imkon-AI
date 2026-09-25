@@ -117,7 +117,7 @@ export default function StudentLessonsPage() {
                         </span>
                         {l.subject || "Dars"}
                       </span>
-                      <span className="text-slate-400">{formatDate(l.created_at)}</span>
+                      <span className="text-slate-500">{formatDate(l.created_at)}</span>
                     </div>
                     <h2 className="text-lg font-semibold tracking-tight text-slate-900">{l.title}</h2>
                     {l.description && <p className="mt-1 mb-5 line-clamp-2 text-slate-500">{l.description}</p>}

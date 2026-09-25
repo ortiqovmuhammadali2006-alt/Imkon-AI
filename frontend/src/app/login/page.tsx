@@ -8,6 +8,7 @@ import { Accessibility, Eye, EyeOff, Headphones, Loader2, LockKeyhole, LogIn, Sp
 import { api, getErrorMessage } from "@/lib/api";
 import { ROLE_HOME, useAuth, type User } from "@/lib/auth";
 import Logo from "@/components/ui/Logo";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 
 const FEATURES = [
   { icon: Sparkles, title: "AI o'qituvchi yordamchisi", text: "Har bir darsni o'quvchiga mos, sodda tilda tushuntiradi" },
@@ -80,7 +81,10 @@ export default function LoginPage() {
       </section>
 
       {/* O'ng tomon: kirish formasi */}
-      <section className="flex items-center justify-center px-4 py-12 sm:px-8">
+      <section className="relative flex items-center justify-center px-4 py-12 sm:px-8">
+        <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
+          <ThemeToggle />
+        </div>
         <div className="w-full max-w-md animate-pop">
           <div className="mb-8 lg:hidden">
             <Logo size="lg" />
