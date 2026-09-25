@@ -12,6 +12,7 @@ import {
   setSpeechRate,
   SPEECH_RATES,
   type SpeechRateKey,
+  askChat,
   dispatchVoiceAction,
   extractNumber,
   isRecognitionSupported,
@@ -53,7 +54,7 @@ function pageName(pathname: string) {
   if (pathname.startsWith("/student/lessons/")) return "Dars sahifasi. O'qib ber yoki tushuntir deb ayting";
   if (pathname === "/student/assignments") return "Vazifalar";
   if (pathname === "/student/grades") return "Baholarim";
-  if (pathname === "/student/chat") return "AI suhbat";
+  if (pathname === "/student/chat") return "AI suhbat. Savolingizni ayting, men javob beraman";
   return "";
 }
 
@@ -99,7 +100,7 @@ const COMMANDS: Command[] = [
     },
   },
   { label: "“O'qib ber” — sahifadagi ma'lumotni o'qiydi", match: (t) => has(t, "oqi", "tingla"), run: () => dispatchVoiceAction("read") },
-  { label: "“Suhbat” — AI bilan suhbat", match: (t) => has(t, "suhbat", "chat", "чат"), run: ({ go }) => go("/student/chat"), reply: "AI suhbat ochildi. Ovozli suhbat tugmasini bosing yoki savolingizni yozing" },
+  { label: "“Suhbat” — AI bilan suhbat", match: (t) => has(t, "suhbat", "chat", "чат"), run: ({ go }) => go("/student/chat"), reply: "AI suhbat ochildi. Savolingizni ayting" },
   { label: "“Jadval” — dars jadvali", match: (t) => has(t, "jadval"), run: ({ go }) => go("/student/schedule"), reply: "Dars jadvali ochildi" },
   { label: "“Vazifalar” — uy vazifalari", match: (t) => has(t, "vazifa", "uy ishi"), run: ({ go }) => go("/student/assignments"), reply: "Vazifalar ochildi" },
   { label: "“Baholar” — baholarim", match: (t) => has(t, "baho"), run: ({ go }) => go("/student/grades"), reply: "Baholar ochildi" },
@@ -111,7 +112,7 @@ const COMMANDS: Command[] = [
     label: "“Yordam” — buyruqlarni aytib beradi",
     match: (t) => has(t, "yordam"),
     run: () =>
-      "Buyruqlar: darslar, vazifalar, jadval, suhbat, baholar, bosh sahifa, ikkinchi darsni och, o'qib ber, tushuntir, keyingi, qayta, " +
+      "Buyruqlar: darslar, vazifalar, jadval, suhbat, yangi suhbat, baholar, bosh sahifa, ikkinchi darsni och, o'qib ber, tushuntir, keyingi, qayta, " +
       "sekinroq, kattalashtir, kichraytir, tungi rejim, to'xta, orqaga, ovoz rejimini o'chir, chiqish.",
   },
   {
@@ -196,6 +197,26 @@ export default function VoiceControl() {
       const text = normalizeSpeech(heard);
       if (!text) return;
       setLastHeard(heard);
+
+      // AI suhbat sahifasida: savollar to'g'ridan-to'g'ri AI'ga yuboriladi, javob ovoz bilan aytiladi
+      if (pathname === "/student/chat") {
+        if (has(text, "yangi suhbat")) {
+          dispatchVoiceAction("new-chat");
+          speak("Yangi suhbat boshlandi. Savolingizni ayting", { quick: true });
+          return;
+        }
+        if (has(text, "ovozli suhbat")) {
+          dispatchVoiceAction("voice-chat");
+          return;
+        }
+        // Uzun gap — buyruq emas, savol ("darslar haqida gapirib ber" darslar sahifasini ochmasin)
+        const chatCommand = text.split(" ").length <= 3 ? COMMANDS.find((c) => c.match(text)) : undefined;
+        if (!chatCommand) {
+          askChat(heard.trim());
+          return;
+        }
+      }
+
       const command = COMMANDS.find((c) => c.match(text));
       if (!command) {
         speak("Tushunmadim. Yordam deb ayting", { quick: true });

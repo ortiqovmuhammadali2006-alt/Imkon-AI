@@ -4,7 +4,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f6f7fb;
+  --background: #ffffff;
   --foreground: #0f172a;
   --surface: #ffffff; /* kartalar, formalar, menyu foni */
 }
@@ -174,79 +174,6 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
-}
-
-/* ---------- Animatsiyali fon (components/ui/AnimatedBackground.tsx) ---------- */
-
-/* Rangli "bulutlar": katta, xira, sekin suzadi va shaklini o'zgartiradi */
-.bg-blob {
-  position: absolute;
-  border-radius: 9999px;
-  filter: blur(80px);
-  will-change: transform;
-  animation: blob-drift 28s ease-in-out infinite;
-}
-.dark .bg-blob {
-  opacity: 0.55;
-}
-
-/* Suzib yuruvchi belgilar: pastdan yuqoriga sekin ko'tariladi, biroz chayqaladi va aylanadi */
-.bg-floater {
-  position: absolute;
-  bottom: 0;
-  opacity: 0;
-  will-change: transform, opacity;
-  animation: float-up 36s linear infinite;
-  --floater-opacity: 0.16;
-}
-.dark .bg-floater {
-  --floater-opacity: 0.22;
-}
-
-@keyframes blob-drift {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  33% {
-    transform: translate(6%, 8%) scale(1.12);
-  }
-  66% {
-    transform: translate(-5%, 4%) scale(0.94);
-  }
-}
-
-@keyframes float-up {
-  0% {
-    transform: translate(0, 10vh) rotate(0deg);
-    opacity: 0;
-  }
-  10% {
-    opacity: var(--floater-opacity);
-  }
-  25% {
-    transform: translate(18px, -18vh) rotate(8deg);
-  }
-  50% {
-    transform: translate(-14px, -48vh) rotate(-6deg);
-  }
-  75% {
-    transform: translate(16px, -78vh) rotate(10deg);
-  }
-  90% {
-    opacity: var(--floater-opacity);
-  }
-  100% {
-    transform: translate(0, -110vh) rotate(0deg);
-    opacity: 0;
-  }
-}
-
-/* Harakatni kamaytirish yoqilgan bo'lsa: belgilar yashiriladi, bulutlar joyida turadi */
-@media (prefers-reduced-motion: reduce) {
-  .bg-floater {
-    display: none;
-  }
 }
 
 /* Klaviatura bilan ishlaganda fokus aniq ko'rinsin (ekran o'qigich va klaviatura foydalanuvchilari uchun) */

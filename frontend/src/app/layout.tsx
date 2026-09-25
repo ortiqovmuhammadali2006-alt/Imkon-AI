@@ -4,7 +4,6 @@ import Script from "next/script";
 import { cookies } from "next/headers";
 import "./globals.css";
 import Providers from "./providers";
-import AnimatedBackground from "@/components/ui/AnimatedBackground";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,7 +32,6 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <Script id="theme-init" src="/theme-init.js" strategy="beforeInteractive" />
-        <AnimatedBackground />
         <Providers>{children}</Providers>
       </body>
     </html>

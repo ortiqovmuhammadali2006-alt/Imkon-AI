@@ -270,8 +270,20 @@ function takeSegment(buf: string, first: boolean, final: boolean): [string, stri
   return [buf.slice(0, cut), buf.slice(cut)];
 }
 
+// Qisqa, takrorlanadigan iboralar ("Darslar ochildi", "Tushunmadim") brauzerda saqlanadi — ikkinchi marta darhol aytiladi
+const audioCache = new Map<string, Blob>();
+const AUDIO_CACHE_LIMIT = 60;
+
 async function fetchAudio(text: string): Promise<Blob> {
-  const { data } = await api.post<Blob>("/tts", { text, speed: currentRate().server }, { responseType: "blob" });
+  const speed = currentRate().server;
+  const key = `${speed}|${text}`;
+  const cached = audioCache.get(key);
+  if (cached) return cached;
+  const { data } = await api.post<Blob>("/tts", { text, speed }, { responseType: "blob" });
+  if (text.length <= 200) {
+    audioCache.set(key, data);
+    if (audioCache.size > AUDIO_CACHE_LIMIT) audioCache.delete(audioCache.keys().next().value!);
+  }
   return data;
 }
 
@@ -308,7 +320,7 @@ function primeBrowserVoice() {
   synth.speak(warm);
 }
 
-// quick=true — qisqa xabarlar uchun darhol brauzer ovozi (server kutilmaydi)
+// quick=true — qisqa xabarlar (buyruq javoblari)
 export function createSpeechStream({ quick = false }: { quick?: boolean } = {}): SpeechStream {
   stopSpeaking();
   const mySession = session;
@@ -320,7 +332,9 @@ export function createSpeechStream({ quick = false }: { quick?: boolean } = {}):
   let ended = false;
   const segments: string[] = [];
   const audios: (Promise<Blob> | undefined)[] = [];
-  let useServer = !quick && serverTtsOk !== false;
+  // quick (qisqa javoblar): server haqiqiy o'zbekcha ovoz bersa — u (brauzerdagi ruscha ovoz tushunarsiz),
+  // aks holda tezroq bo'lgani uchun brauzer ovozi
+  let useServer = serverTtsOk !== false && (!quick || serverUzbek);
   let wake: (() => void) | null = null;
   const signal = () => {
     wake?.();
@@ -588,7 +602,22 @@ export function extractNumber(normalized: string): number | null {
 export const OPEN_LESSON_EVENT = "imkon:open-lesson";
 
 // next / prev / repeat — bosqichma-bosqich o'rganish rejimi uchun
-export type VoiceAction = { action: "read" | "explain" | "stop" | "next" | "prev" | "repeat" };
+export type VoiceAction = {
+  action: "read" | "explain" | "stop" | "next" | "prev" | "repeat" | "new-chat" | "voice-chat";
+};
+
+// AI suhbat sahifasida ovoz bilan aytilgan savol (buyruq bo'lmagan gap) — chatga yuboriladi
+export const CHAT_ASK_EVENT = "imkon:chat-ask";
+
+export function askChat(text: string) {
+  window.dispatchEvent(new CustomEvent<string>(CHAT_ASK_EVENT, { detail: text }));
+}
+
+export function onChatAsk(handler: (text: string) => void) {
+  const listener = (e: Event) => handler((e as CustomEvent<string>).detail);
+  window.addEventListener(CHAT_ASK_EVENT, listener);
+  return () => window.removeEventListener(CHAT_ASK_EVENT, listener);
+}
 export const VOICE_EVENT = "imkon:voice";
 
 export function dispatchVoiceAction(action: VoiceAction["action"]) {

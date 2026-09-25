@@ -29,7 +29,15 @@ import {
   useConversations,
   type ChatMessage,
 } from "@/lib/chat";
-import { listenOnce, RecognitionError } from "@/lib/speech";
+import {
+  createSpeechStream,
+  listenOnce,
+  onChatAsk,
+  onVoiceAction,
+  RecognitionError,
+  speak,
+  stopSpeaking,
+} from "@/lib/speech";
 import Avatar from "@/components/ui/Avatar";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import SpeakButton from "@/components/student/SpeakButton";
@@ -157,6 +165,7 @@ export default function ChatPage() {
   const [loadingConv, setLoadingConv] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
+  const streamingRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const activeIdRef = useRef<number | null>(null);
@@ -226,6 +235,7 @@ export default function ChatPage() {
         opts.retry ? [...m.filter((x, i) => !(i === m.length - 1 && x.error)), pending] : [...m, { role: "user", content }, pending]
       );
       setStreaming(true);
+      streamingRef.current = true;
       const ctrl = new AbortController();
       abortRef.current = ctrl;
       opts.signal?.addEventListener("abort", () => ctrl.abort(), { once: true });
@@ -250,6 +260,7 @@ export default function ChatPage() {
       else if (aborted) updateLast({ content: "Javob to'xtatildi.", error: true, retryOf: content, streaming: false });
       else updateLast({ content: error ?? "AI javob bermadi.", error: true, retryOf: content, streaming: false });
       setStreaming(false);
+      streamingRef.current = false;
       refreshList();
       return answer;
     },
@@ -287,6 +298,38 @@ export default function ChatPage() {
   );
   const closeVoice = useCallback(() => setVoiceOpen(false), []);
   const retry = useCallback((text: string) => sendRef.current(text, { retry: true }), []);
+
+  // ---------- Ovozli boshqaruv (VoiceControl "Ovoz rejimi") ----------
+  // Aytilgan savol chatga yuboriladi va javob yozilayotgan paytdayoq ovoz bilan o'qiladi
+  const messagesRef = useRef(messages);
+  const newChatRef = useRef(newChat);
+  useEffect(() => {
+    messagesRef.current = messages;
+    newChatRef.current = newChat;
+  });
+  useEffect(() => {
+    const offAsk = onChatAsk((text) => {
+      if (streamingRef.current) return; // oldingi javob hali kelmoqda
+      const voice = createSpeechStream();
+      sendRef.current(text, { voice: true, onDelta: (t) => voice.push(t) }).then((answer) =>
+        answer ? voice.end(answer) : (voice.stop(), speak("Javob olinmadi. Savolni qayta ayting", { quick: true }))
+      );
+    });
+    const offAction = onVoiceAction((action) => {
+      if (action === "stop") {
+        abortRef.current?.abort();
+        stopSpeaking();
+      } else if (action === "read") {
+        const last = [...messagesRef.current].reverse().find((m) => m.role === "assistant" && !m.error && m.content);
+        speak(last ? last.content : "Hali javob yo'q. Savolingizni ayting");
+      } else if (action === "new-chat") newChatRef.current();
+      else if (action === "voice-chat") setVoiceOpen(true);
+    });
+    return () => {
+      offAsk();
+      offAction();
+    };
+  }, []);
 
   const removeConversation = async (id: number) => {
     try {
