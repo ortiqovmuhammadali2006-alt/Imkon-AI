@@ -1,5 +1,6 @@
 import { Clock, DoorOpen, UserRound, Users } from "lucide-react";
 import type { ScheduleSlot } from "@/lib/types";
+import { formatGrade } from "@/lib/format";
 
 export const WEEKDAYS = ["Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba", "Yakshanba"];
 
@@ -44,7 +45,7 @@ export function SlotCard({
         )}
         {slot.group_name && (
           <p className="flex items-center gap-1.5">
-            <Users className="size-3.5 shrink-0" aria-hidden /> {slot.group_name}
+            <Users className="size-3.5 shrink-0" aria-hidden /> {formatGrade(slot.group_name)}
           </p>
         )}
         {slot.room && (

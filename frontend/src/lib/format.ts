@@ -34,6 +34,16 @@ export function currentMonth() {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
+// Sinf/guruhni tushunarli ko'rsatish: "9" -> "9-sinf", "5-A" / "5a" -> "5-A sinf", boshqasi o'zgarmaydi
+export function formatGrade(grade: string | null | undefined) {
+  const g = grade?.trim();
+  if (!g) return "";
+  if (/^\d{1,2}$/.test(g)) return `${g}-sinf`;
+  const m = g.match(/^(\d{1,2})\s*-?\s*([a-zA-Zа-яА-Я])$/);
+  if (m) return `${m[1]}-${m[2].toUpperCase()} sinf`;
+  return g;
+}
+
 const SUBJECT_TONES = [
   "from-indigo-500 to-violet-500",
   "from-sky-500 to-cyan-400",

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { BookOpen, CalendarCheck, ClipboardList, Headphones, Star } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { CATEGORIES } from "@/lib/format";
+import { CATEGORIES, formatGrade } from "@/lib/format";
 import { useStudentAssignments, useStudentProfile, useStudentSchedule, useStudentStats } from "@/lib/student";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { SlotCard, WEEKDAYS, todayWeekday } from "@/components/ui/WeeklySchedule";
@@ -45,7 +45,7 @@ export default function StudentHome() {
     <section className="space-y-8">
       <WelcomeBanner
         name={user?.full_name ?? ""}
-        subtitle={[profile.data?.grade, profile.data && CATEGORIES[profile.data.category].label].filter(Boolean).join(" · ") || undefined}
+        subtitle={[formatGrade(profile.data?.grade), profile.data && profile.data.category !== "general" && CATEGORIES[profile.data.category].label].filter(Boolean).join(" · ") || undefined}
       >
         <div className="max-w-sm rounded-2xl bg-white/15 p-4 ring-1 ring-white/20 backdrop-blur-sm">
           <p className="flex items-center gap-2 font-semibold">

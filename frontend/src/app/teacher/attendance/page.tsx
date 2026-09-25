@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { CalendarCheck, CheckCheck, Clock, Loader2, Save, UserCheck, UserX, type LucideIcon } from "lucide-react";
 import { api, getErrorMessage } from "@/lib/api";
-import { currentMonth, formatMonth } from "@/lib/format";
+import { currentMonth, formatMonth, formatGrade } from "@/lib/format";
 import {
   today,
   useAttendance,
@@ -119,7 +119,7 @@ function DailyAttendance() {
                       <p className="font-medium text-slate-900">{r.full_name}</p>
                       <div className="mt-1 flex items-center gap-2 text-sm text-slate-500">
                         <CategoryBadge category={r.category} />
-                        {r.grade}
+                        {formatGrade(r.grade)}
                       </div>
                     </div>
                   </div>

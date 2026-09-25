@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLessons, useMyStudents, useTeacherMutation, type Grade } from "@/lib/teacher";
 import ScorePicker from "./ScorePicker";
+import { formatGrade } from "@/lib/format";
 
 // grade berilsa — tahrirlash; studentId berilsa — o'sha o'quvchi oldindan tanlanadi
 export default function GradeForm({
@@ -56,7 +57,7 @@ export default function GradeForm({
           {students?.map((s) => (
             <option key={s.id} value={s.id}>
               {s.full_name}
-              {s.grade ? ` (${s.grade})` : ""}
+              {s.grade ? ` (${formatGrade(s.grade)})` : ""}
             </option>
           ))}
         </select>

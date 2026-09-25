@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Users, Lock, LockOpen, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { api, getErrorMessage } from "@/lib/api";
 import { useAdminMutation, useStudents } from "@/lib/admin";
-import { CATEGORIES, formatDate } from "@/lib/format";
+import { CATEGORIES, formatDate, formatGrade } from "@/lib/format";
 import type { Category, Student } from "@/lib/types";
 import Modal from "@/components/ui/Modal";
 import Avatar from "@/components/ui/Avatar";
@@ -118,7 +118,7 @@ export default function StudentsPage() {
                         {CATEGORIES[s.category].label}
                       </span>
                     </td>
-                    <td className="px-4 py-3">{s.grade || "—"}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">{formatGrade(s.grade) || "—"}</td>
                     <td className="px-4 py-3 whitespace-nowrap">{formatDate(s.birth_date)}</td>
                     <td className="px-4 py-3">
                       {s.teachers.length ? (

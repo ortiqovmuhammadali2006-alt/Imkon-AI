@@ -7,7 +7,7 @@ import WelcomeBanner from "@/components/ui/WelcomeBanner";
 import Avatar from "@/components/ui/Avatar";
 import { getErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { CATEGORIES, formatDate } from "@/lib/format";
+import { CATEGORIES, formatDate, formatGrade } from "@/lib/format";
 import { useMySchedule, useMyStudents, useTeacherStats } from "@/lib/teacher";
 import { SlotCard, WEEKDAYS, todayWeekday } from "@/components/ui/WeeklySchedule";
 import type { Category } from "@/lib/types";
@@ -107,7 +107,7 @@ export default function TeacherHome() {
                           <Avatar name={st.full_name} size="sm" />
                           <div>
                             <p className="font-medium">{st.full_name}</p>
-                            <p className="text-slate-500">{st.grade || "—"}</p>
+                            <p className="text-slate-500">{formatGrade(st.grade) || "—"}</p>
                           </div>
                         </div>
                       </td>

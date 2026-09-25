@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Dasturlash rejimidagi "N" belgisi pastki chap burchakda foydalanuvchi kartasini to'sib qo'yadi
+  devIndicators: false,
 };
 
 export default nextConfig;

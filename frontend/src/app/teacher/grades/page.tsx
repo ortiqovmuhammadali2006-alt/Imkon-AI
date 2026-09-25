@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Star, Pencil, Plus, Trash2 } from "lucide-react";
 import { api, getErrorMessage } from "@/lib/api";
-import { currentMonth, formatDate, formatMonth } from "@/lib/format";
+import { currentMonth, formatDate, formatMonth, formatGrade } from "@/lib/format";
 import { useGradeSummary, useGrades, useTeacherMutation, type Grade } from "@/lib/teacher";
 import Modal from "@/components/ui/Modal";
 import ConfirmModal from "@/components/ui/ConfirmModal";
@@ -72,7 +72,7 @@ export default function GradesPage() {
                           <p className="font-medium text-slate-900">{s.full_name}</p>
                           <div className="mt-0.5 flex items-center gap-2 text-slate-500">
                             <CategoryBadge category={s.category} />
-                            {s.grade}
+                            {formatGrade(s.grade)}
                           </div>
                         </div>
                       </div>
