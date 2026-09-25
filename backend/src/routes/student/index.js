@@ -175,6 +175,14 @@ router.post("/lessons/:id/explain", async (req, res) => {
   }
 });
 
+// Server (OpenAI) ovozi ishlamay qolsa, 10 daqiqa davomida "mavjud emas" deymiz —
+// brauzer har safar kutib o'tirmasdan darhol o'z ovoziga o'tadi
+let ttsBlockedUntil = 0;
+
+router.get("/tts/status", (req, res) => {
+  res.json({ available: Boolean(process.env.OPENAI_API_KEY) && Date.now() > ttsBlockedUntil });
+});
+
 // Matnni ovoz bilan o'qib berish (mp3)
 router.post("/tts", async (req, res) => {
   const text = typeof req.body?.text === "string" ? req.body.text.trim() : "";
@@ -182,9 +190,12 @@ router.post("/tts", async (req, res) => {
   checkAiLimit(req.user.id);
   try {
     const audio = await textToSpeech(text.slice(0, 4000));
+    ttsBlockedUntil = 0;
     res.set("Content-Type", "audio/mpeg").send(audio);
   } catch (err) {
-    throw toHttpError(err);
+    const httpErr = toHttpError(err);
+    if (httpErr.status === 503) ttsBlockedUntil = Date.now() + 10 * 60 * 1000; // kalit yo'q / mablag' tugagan
+    throw httpErr;
   }
 });
 

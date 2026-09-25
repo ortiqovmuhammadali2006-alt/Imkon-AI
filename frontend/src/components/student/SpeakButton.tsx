@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Square, Volume2 } from "lucide-react";
+import toast from "react-hot-toast";
 import { onSpeakingChange, speak, stopSpeaking } from "@/lib/speech";
 
 // Matnni ovoz bilan o'qib berish / to'xtatish
@@ -30,7 +31,11 @@ export default function SpeakButton({
           return;
         }
         setMine(true);
-        speak(text).finally(() => setMine(false));
+        speak(text)
+          .then((r) => {
+            if (!r.ok && r.error) toast.error(r.error);
+          })
+          .finally(() => setMine(false));
       }}
       className={
         variant === "hero"

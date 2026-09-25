@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { Bot, Mic, Send, Sparkles } from "lucide-react";
+import { AlertTriangle, Bot, Mic, Send, Sparkles } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
 import { explainLesson, type ChatMessage } from "@/lib/student";
 import { listenOnce, onVoiceAction, speak } from "@/lib/speech";
@@ -10,12 +10,22 @@ import SpeakButton from "./SpeakButton";
 
 const QUICK_QUESTIONS = ["Oddiyroq tushuntir", "Misol keltir", "Asosiy fikrlarni qisqacha ayt", "Menga savol ber"];
 
-// Dars bo'yicha AI yordamchi. autoSpeak — javoblarni avtomatik ovoz bilan o'qish (ko'rish cheklanganlar uchun)
-export default function AiTutor({ lessonId, autoSpeak }: { lessonId: number; autoSpeak: boolean }) {
+// Dars bo'yicha AI yordamchi. autoSpeak — javoblarni avtomatik ovoz bilan o'qish (ko'rish cheklanganlar uchun).
+// fallbackText — AI ishlamay qolsa, o'rniga ovoz bilan o'qib beriladigan dars matni
+export default function AiTutor({
+  lessonId,
+  autoSpeak,
+  fallbackText,
+}: {
+  lessonId: number;
+  autoSpeak: boolean;
+  fallbackText: string;
+}) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [listening, setListening] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const ask = async (question?: string) => {
@@ -24,6 +34,7 @@ export default function AiTutor({ lessonId, autoSpeak }: { lessonId: number; aut
     setMessages(history);
     setInput("");
     setLoading(true);
+    setAiError(null);
     try {
       // Birinchi so'rov bo'sh tarix bilan — backend darsni to'liq tushuntiradi
       const answer = await explainLesson(lessonId, history);
@@ -34,8 +45,11 @@ export default function AiTutor({ lessonId, autoSpeak }: { lessonId: number; aut
       setMessages(next);
       if (autoSpeak) speak(answer);
     } catch (error) {
-      toast.error(getErrorMessage(error));
+      const message = getErrorMessage(error);
+      setAiError(message);
       setMessages(messages);
+      // Ko'rishi cheklangan o'quvchi ekrandagi xabarni ko'rmaydi — ovoz bilan aytib, dars matnini o'qib beramiz
+      if (autoSpeak && fallbackText) speak(`AI hozircha ishlamayapti. Dars matnini o'qib beraman. ${fallbackText}`);
     } finally {
       setLoading(false);
     }
@@ -79,6 +93,21 @@ export default function AiTutor({ lessonId, autoSpeak }: { lessonId: number; aut
       </div>
 
       <div ref={scrollRef} className="max-h-[32rem] space-y-4 overflow-y-auto p-5" aria-live="polite">
+        {aiError && (
+          <div role="alert" className="rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-200">
+            <p className="flex items-start gap-2 font-medium text-amber-900">
+              <AlertTriangle className="mt-0.5 size-5 shrink-0" aria-hidden />
+              {aiError}
+            </p>
+            {fallbackText && (
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-amber-900/80">
+                Hozircha darsni o&apos;zingiz tinglashingiz mumkin:
+                <SpeakButton text={fallbackText} label="Dars matnini ovoz bilan tinglash" />
+              </div>
+            )}
+          </div>
+        )}
+
         {messages.length === 0 && !loading && (
           <div className="flex flex-col items-center py-6 text-center">
             <button onClick={() => ask()} className="btn-primary rounded-full px-7 py-3.5 text-lg shadow-lg shadow-indigo-500/30">

@@ -1,14 +1,19 @@
 import { api } from "./api";
 
 // ---------- Matnni ovoz bilan o'qish ----------
+// Tartib: 1) OpenAI ovozi (server) — mavjud bo'lsa; 2) brauzerning o'zbekcha ovozi (Edge: Madina/Sardor);
+// 3) o'zbekcha ovoz yo'q bo'lsa — ruscha ovoz, matn kirillchaga o'girilib o'qiladi; 4) turkcha; 5) har qanday ovoz.
+
+export type SpeakResult = { ok: boolean; error?: string };
 
 let audio: HTMLAudioElement | null = null;
 let audioUrl: string | null = null;
 let session = 0; // har bir yangi speak() oldingisini bekor qiladi
 const listeners = new Set<(speaking: boolean) => void>();
 
-// Server (OpenAI) ovozi ishlamasa, keyingi 5 daqiqa davomida uni qayta so'ramaymiz — kechikish bo'lmasin
-let serverTtsBlockedUntil = 0;
+// Server ovozi holati: null — hali tekshirilmagan. Mavjud bo'lmasa, 10 daqiqa qayta so'ramaymiz
+let serverTtsOk: boolean | null = null;
+let serverCheckedAt = 0;
 
 function notify(speaking: boolean) {
   listeners.forEach((fn) => fn(speaking));
@@ -20,6 +25,19 @@ export function onSpeakingChange(fn: (speaking: boolean) => void) {
   return () => {
     listeners.delete(fn);
   };
+}
+
+// Sahifa ochilganda oldindan tekshirib qo'yamiz — tugma bosilganda kutish bo'lmasin
+export async function checkServerTts() {
+  if (Date.now() - serverCheckedAt < 10 * 60 * 1000 && serverTtsOk !== null) return serverTtsOk;
+  serverCheckedAt = Date.now();
+  try {
+    const { data } = await api.get<{ available: boolean }>("/student/tts/status");
+    serverTtsOk = data.available;
+  } catch {
+    serverTtsOk = false;
+  }
+  return serverTtsOk;
 }
 
 // Markdown belgilarini olib tashlash — ovozda "yulduzcha" deb o'qilmasin
@@ -54,13 +72,45 @@ function loadVoices(): Promise<SpeechSynthesisVoice[]> {
   });
 }
 
-// O'zbekcha ovoz (Edge'da "Madina/Sardor Online"), bo'lmasa turkcha — lotin yozuvini yaxshi o'qiydi
-function pickVoice(voices: SpeechSynthesisVoice[]) {
+// O'zbek lotin yozuvi -> kirill (ruscha ovoz uchun: "o'simlik" -> "осимлик", "shahar" -> "шахар")
+export function uzLatinToCyrillic(text: string) {
+  // Tartib muhim: so'z boshidagi "e" birinchi (\b faqat lotin harflarini "so'z" deb biladi)
+  const digraphs: [RegExp, string][] = [
+    [/\be/gi, "э"],
+    [/o[''ʻʼ`‘’]/gi, "о"],
+    [/g[''ʻʼ`‘’]/gi, "г"],
+    [/sh/gi, "ш"],
+    [/ch/gi, "ч"],
+    [/yo/gi, "ё"],
+    [/yu/gi, "ю"],
+    [/ya/gi, "я"],
+    [/ye/gi, "е"],
+  ];
+  const single: Record<string, string> = {
+    a: "а", b: "б", c: "ц", d: "д", e: "е", f: "ф", g: "г", h: "х", i: "и", j: "ж", k: "к", l: "л", m: "м",
+    n: "н", o: "о", p: "п", q: "к", r: "р", s: "с", t: "т", u: "у", v: "в", w: "в", x: "х", y: "й", z: "з",
+  };
+  let out = text.toLowerCase();
+  for (const [re, to] of digraphs) out = out.replace(re, to);
+  return out.replace(/[a-z]/g, (ch) => single[ch] ?? ch).replace(/[''ʻʼ`‘’]/g, "");
+}
+
+type VoiceChoice = { voice: SpeechSynthesisVoice | null; lang: string; transform: (t: string) => string; label: string };
+
+function pickVoice(voices: SpeechSynthesisVoice[]): VoiceChoice {
   const byLang = (prefix: string) => {
     const list = voices.filter((v) => v.lang.toLowerCase().startsWith(prefix));
     return list.find((v) => /natural|online/i.test(v.name)) ?? list[0];
   };
-  return byLang("uz") ?? byLang("tr") ?? null;
+  const same = (t: string) => t;
+  const uz = byLang("uz");
+  if (uz) return { voice: uz, lang: uz.lang, transform: same, label: "o'zbekcha" };
+  const ru = byLang("ru");
+  if (ru) return { voice: ru, lang: ru.lang, transform: uzLatinToCyrillic, label: "ruscha" };
+  const tr = byLang("tr");
+  if (tr) return { voice: tr, lang: tr.lang, transform: same, label: "turkcha" };
+  const any = voices.find((v) => v.default) ?? voices[0] ?? null;
+  return { voice: any, lang: any?.lang ?? "en-US", transform: same, label: "standart" };
 }
 
 export async function hasUzbekVoice() {
@@ -86,22 +136,35 @@ function chunks(text: string, max = 180) {
   return result.filter(Boolean);
 }
 
-async function speakWithBrowser(text: string, mySession: number) {
+async function speakWithBrowser(text: string, mySession: number): Promise<SpeakResult> {
   const synth = window.speechSynthesis;
-  if (!synth) return;
-  const voice = pickVoice(await loadVoices());
-  for (const part of chunks(text)) {
-    if (mySession !== session) return;
-    await new Promise<void>((resolve) => {
+  if (!synth) return { ok: false, error: "Brauzeringiz ovozli o'qishni qo'llab-quvvatlamaydi" };
+  const choice = pickVoice(await loadVoices());
+  if (!choice.voice && !synth.getVoices().length) {
+    return { ok: false, error: "Kompyuterda birorta ham ovoz o'rnatilmagan. Microsoft Edge'dan foydalanib ko'ring" };
+  }
+  let spoke = false;
+  for (const part of chunks(choice.transform(text))) {
+    if (mySession !== session) return { ok: true };
+    const error = await new Promise<string | null>((resolve) => {
       const u = new SpeechSynthesisUtterance(part);
-      u.voice = voice;
-      u.lang = voice?.lang ?? "uz-UZ";
+      u.voice = choice.voice;
+      u.lang = choice.lang;
       u.rate = 0.95;
-      u.onend = () => resolve();
-      u.onerror = () => resolve();
+      u.onstart = () => (spoke = true);
+      u.onend = () => resolve(null);
+      u.onerror = (e) => resolve(e.error === "interrupted" || e.error === "canceled" ? null : e.error);
+      synth.resume(); // Chrome ba'zan "pauza" holatida qotib qoladi
       synth.speak(u);
     });
+    if (error) {
+      return {
+        ok: false,
+        error: error === "not-allowed" ? "Brauzer ovozni blokladi. Tugmani yana bir marta bosing" : `Ovozni ijro etib bo'lmadi (${error})`,
+      };
+    }
   }
+  return spoke || mySession !== session ? { ok: true } : { ok: false, error: "Ovoz chiqmadi. Kompyuter ovozi yoqilganini tekshiring" };
 }
 
 async function speakWithServer(text: string, mySession: number) {
@@ -109,36 +172,50 @@ async function speakWithServer(text: string, mySession: number) {
   if (mySession !== session) return;
   audioUrl = URL.createObjectURL(data);
   audio = new Audio(audioUrl);
-  await new Promise<void>((resolve) => {
+  await new Promise<void>((resolve, reject) => {
     audio!.onended = () => resolve();
-    audio!.onerror = () => resolve();
-    audio!.play().catch(() => resolve());
+    audio!.onerror = () => reject(new Error("audio"));
+    audio!.play().catch(reject);
   });
 }
 
+// Tugma bosilgan zahoti (hali await'dan oldin) brauzer ovozini "uyg'otamiz" —
+// aks holda Chrome kechikib kelgan ovozni foydalanuvchi bosmagan deb bloklaydi
+function primeBrowserVoice() {
+  const synth = window.speechSynthesis;
+  if (!synth) return;
+  synth.cancel();
+  const warm = new SpeechSynthesisUtterance(" ");
+  warm.volume = 0;
+  synth.speak(warm);
+}
+
 // quick=true — qisqa xabarlar (sahifa nomi, javob) uchun darhol brauzer ovozi.
-// Aks holda avval AI ovozi (OpenAI), ishlamasa — brauzer ovozi.
-export async function speak(text: string, { quick = false }: { quick?: boolean } = {}) {
+// Aks holda: server ovozi mavjud bo'lsa — u, bo'lmasa yoki xato bersa — brauzer ovozi.
+export async function speak(text: string, { quick = false }: { quick?: boolean } = {}): Promise<SpeakResult> {
   stopSpeaking();
   const clean = plain(text);
-  if (!clean || typeof window === "undefined") return;
+  if (!clean || typeof window === "undefined") return { ok: false, error: "O'qiladigan matn yo'q" };
   const mySession = session;
+  primeBrowserVoice();
   notify(true);
   try {
-    if (!quick && Date.now() > serverTtsBlockedUntil) {
+    if (!quick && serverTtsOk !== false) {
       try {
         await speakWithServer(clean, mySession);
-        return;
+        serverTtsOk = true;
+        return { ok: true };
       } catch {
-        serverTtsBlockedUntil = Date.now() + 5 * 60 * 1000;
+        serverTtsOk = false;
+        serverCheckedAt = Date.now();
+        if (mySession !== session) return { ok: true };
       }
     }
-    await speakWithBrowser(clean, mySession);
+    return await speakWithBrowser(clean, mySession);
   } finally {
     if (mySession === session) notify(false);
   }
 }
-
 // ---------- Nutqni tanib olish ----------
 
 type RecognitionResult = { isFinal: boolean; 0: { transcript: string } };

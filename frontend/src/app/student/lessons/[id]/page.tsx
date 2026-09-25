@@ -91,7 +91,7 @@ export default function StudentLessonPage({ params }: { params: Promise<{ id: st
           )}
         </div>
       </article>
-      <AiTutor lessonId={lessonId} autoSpeak={profile?.category === "visual"} />
+      <AiTutor lessonId={lessonId} autoSpeak={profile?.category === "visual"} fallbackText={lessonText} />
 
       {lesson.assignments.length > 0 && (
         <div>

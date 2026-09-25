@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { Headphones, HelpCircle, Loader2, Mic, Type } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import {
+  checkServerTts,
   dispatchVoiceAction,
   extractNumber,
   isRecognitionSupported,
@@ -155,8 +156,10 @@ export default function VoiceControl() {
     setModeRef.current = setMode;
   }, [setMode]);
 
-  // Saqlangan sozlamalar: shrift va ovoz rejimi
+  // Saqlangan sozlamalar: shrift va ovoz rejimi. Server ovozi holatini oldindan bilib olamiz —
+  // "O'qib ber" bosilganda kutib o'tirmasin (aks holda brauzer kechikkan ovozni bloklaydi)
   useEffect(() => {
+    checkServerTts();
     const savedFont = Number(readStorage(FONT_KEY)) || 0;
     document.documentElement.style.fontSize = `${FONT_SCALES[savedFont] ?? 100}%`;
     const savedMode = readStorage(MODE_KEY) === "1" && isRecognitionSupported();
