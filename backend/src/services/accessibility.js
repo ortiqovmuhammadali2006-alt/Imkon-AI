@@ -281,4 +281,15 @@ function removeGeneratedFiles(a11y) {
   if (a11y?.auto_subtitle_url) removeFile(a11y.auto_subtitle_url);
 }
 
-module.exports = { enqueueLesson, processLesson, removeGeneratedFiles, parseSubtitles, segmentsToVtt };
+// Server ishga tushganda: oldingi ishga tushirishda tugallanmay qolgan darslar ("pending" / "processing") navbatga qaytadi.
+// Aks holda ular abadiy "Tayyorlanmoqda" holatida qotib qolardi
+async function resumePendingLessons() {
+  const { rows } = await pool.query(
+    "SELECT id FROM lessons WHERE a11y->>'status' IN ('pending', 'processing') ORDER BY id"
+  );
+  for (const { id } of rows) enqueueLesson(id);
+  if (rows.length) console.log(`Qulaylik to'plami: ${rows.length} ta tugallanmagan dars navbatga qaytarildi`);
+  return rows.length;
+}
+
+module.exports = { enqueueLesson, processLesson, removeGeneratedFiles, parseSubtitles, segmentsToVtt, resumePendingLessons };

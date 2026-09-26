@@ -100,7 +100,8 @@ CREATE TABLE IF NOT EXISTS grades (
 -- 3-bosqich: o'qituvchi topshirilgan vazifani baholaydi
 ALTER TABLE submissions ADD COLUMN IF NOT EXISTS score     SMALLINT CHECK (score BETWEEN 1 AND 5);
 ALTER TABLE submissions ADD COLUMN IF NOT EXISTS feedback  TEXT;
-ALTER TABLE submissions ADD COLUMN IF NOT EXISTS graded_at TIMESTAMPTZ;ALTER TABLE lessons     ADD COLUMN IF NOT EXISTS file_name TEXT;
+ALTER TABLE submissions ADD COLUMN IF NOT EXISTS graded_at TIMESTAMPTZ;
+ALTER TABLE lessons     ADD COLUMN IF NOT EXISTS file_name TEXT;
 ALTER TABLE submissions ADD COLUMN IF NOT EXISTS file_name TEXT;
 
 -- Dars jadvali (admin tuzadi). day_of_week: 1 — Dushanba ... 7 — Yakshanba
@@ -181,3 +182,16 @@ ALTER TABLE lessons ADD COLUMN IF NOT EXISTS youtube_url TEXT;
 -- Vazifa fayli (o'qituvchi topshiriq varag'i, PDF, rasm va h.k. biriktiradi)
 ALTER TABLE assignments ADD COLUMN IF NOT EXISTS file_url  TEXT;
 ALTER TABLE assignments ADD COLUMN IF NOT EXISTS file_name TEXT;
+
+-- So'rovlar limiti va sarf hisobi (AI, ovoz, login urinishlari). key — foydalanuvchi ID yoki "ip|login"
+CREATE TABLE IF NOT EXISTS usage_log (
+  id         BIGSERIAL PRIMARY KEY,
+  key        TEXT        NOT NULL,
+  kind       VARCHAR(20) NOT NULL,
+  amount     INTEGER     NOT NULL DEFAULT 1,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS usage_log_key_kind_time_idx ON usage_log (key, kind, created_at);
+
+-- Parol o'zgartirilgan vaqt (eski tokenlar bekor qilinadi)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_changed_at TIMESTAMPTZ;

@@ -99,7 +99,7 @@ router.put("/:id", async (req, res) => {
     );
     if (user.password) {
       const hash = await bcrypt.hash(user.password, 10);
-      await client.query("UPDATE users SET password_hash = $1 WHERE id = $2", [hash, id]);
+      await client.query("UPDATE users SET password_hash = $1, password_changed_at = NOW() WHERE id = $2", [hash, id]);
     }
     await client.query(
       "UPDATE students SET category = $1, grade = $2, birth_date = $3 WHERE user_id = $4",

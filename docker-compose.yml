@@ -1,0 +1,58 @@
+# Butun loyihani bitta buyruq bilan ishga tushirish:
+#   1) cp .env.example .env   va qiymatlarni to'ldiring (JWT_SECRET, ADMIN_PASSWORD, POSTGRES_PASSWORD, OPENAI_API_KEY)
+#   2) docker compose up --build
+#   3) (ixtiyoriy) namoyish ma'lumotlari: docker compose exec backend npm run seed
+# Frontend: http://localhost:3000   Backend: http://localhost:5000/api/health
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: imkon
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?.env da POSTGRES_PASSWORD ni kiriting}
+      POSTGRES_DB: imkon_ai
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U imkon -d imkon_ai"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 5000
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:3000}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: imkon
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: imkon_ai
+      JWT_SECRET: ${JWT_SECRET:?.env da JWT_SECRET ni kiriting (kamida 32 belgi)}
+      JWT_EXPIRES_IN: 7d
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?.env da ADMIN_PASSWORD ni kiriting (kamida 8 belgi)}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      AZURE_SPEECH_KEY: ${AZURE_SPEECH_KEY:-}
+      AZURE_SPEECH_REGION: ${AZURE_SPEECH_REGION:-}
+    volumes:
+      - uploads:/app/uploads
+    ports:
+      - "5000:5000"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:5000/api}
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+
+volumes:
+  db-data:
+  uploads:

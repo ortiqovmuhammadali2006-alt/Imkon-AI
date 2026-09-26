@@ -8,6 +8,17 @@ const multer = require("multer");
 const { authenticate } = require("../middleware/auth");
 const { UPLOAD_DIR, removeFile } = require("../middleware/upload");
 const { HttpError } = require("../utils/validation");
+const { createLimiter, cleanupUsage } = require("../utils/rateLimit");
+const { config } = require("../config");
+
+// Parolni taxmin qilishdan himoya: bir IP + login bo'yicha muvaffaqiyatsiz urinishlar soni cheklanadi
+const loginLimit = createLimiter("login", {
+  max: config.loginMaxAttempts,
+  windowMs: config.loginWindowMin * 60 * 1000,
+  message: `Juda ko'p noto'g'ri urinish. ${config.loginWindowMin} daqiqadan so'ng qayta urinib ko'ring`,
+});
+const COMMON_PASSWORDS = new Set(["admin123", "12345678", "password", "123456789", "qwerty123", "11111111"]);
+const isWeak = (password) => password.length < config.passwordMinLength || COMMON_PASSWORDS.has(password.toLowerCase());
 
 const router = Router();
 
@@ -16,6 +27,11 @@ router.post("/login", async (req, res) => {
   if (!username || !password) {
     return res.status(400).json({ message: "Login va parolni kiriting" });
   }
+  const attemptKey = `${req.ip}|${String(username).trim().toLowerCase()}`;
+  if ((await loginLimit.used(attemptKey)) >= config.loginMaxAttempts) {
+    throw new HttpError(429, `Juda ko'p noto'g'ri urinish. ${config.loginWindowMin} daqiqadan so'ng qayta urinib ko'ring`);
+  }
+  void cleanupUsage();
 
   const { rows } = await pool.query(
     `SELECT u.id, u.full_name, u.username, u.password_hash, u.role, u.is_active, u.avatar_url, t.subject
@@ -26,8 +42,10 @@ router.post("/login", async (req, res) => {
   const user = rows[0];
 
   if (!user || !(await bcrypt.compare(password, user.password_hash))) {
+    await loginLimit.hit(attemptKey).catch(() => {});
     return res.status(401).json({ message: "Login yoki parol noto'g'ri" });
   }
+  await loginLimit.reset(attemptKey);
   if (!user.is_active) {
     return res.status(403).json({ message: "Hisobingiz bloklangan. Admin bilan bog'laning" });
   }
@@ -46,7 +64,29 @@ router.post("/login", async (req, res) => {
       subject: user.subject,
       avatar_url: user.avatar_url,
     },
+    // Zaif parol (qisqa yoki keng tarqalgan) — interfeys uni o'zgartirishni taklif qiladi
+    weak_password: isWeak(password),
   });
+});
+
+// O'z parolini o'zgartirish: joriy parol tekshiriladi. Boshqa qurilmalardagi eski sessiyalar bekor bo'ladi
+router.post("/password", authenticate, async (req, res) => {
+  const current = String(req.body?.current_password || "");
+  const next = String(req.body?.new_password || "");
+  const { rows } = await pool.query("SELECT password_hash FROM users WHERE id = $1", [req.user.id]);
+  if (!rows[0] || !(await bcrypt.compare(current, rows[0].password_hash))) {
+    throw new HttpError(400, "Joriy parol noto'g'ri");
+  }
+  if (next.length < config.passwordMinLength) throw new HttpError(400, `Yangi parol kamida ${config.passwordMinLength} ta belgidan iborat bo'lsin`);
+  if (COMMON_PASSWORDS.has(next.toLowerCase())) throw new HttpError(400, "Bu parol juda oddiy. Boshqasini tanlang");
+  if (next === current) throw new HttpError(400, "Yangi parol eskisidan farq qilishi kerak");
+  const hash = await bcrypt.hash(next, 10);
+  await pool.query("UPDATE users SET password_hash = $1, password_changed_at = NOW() WHERE id = $2", [hash, req.user.id]);
+  // Yangi token — joriy qurilmada tizimdan chiqib ketmaslik uchun
+  const token = jwt.sign({ id: req.user.id, role: req.user.role }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN || "7d",
+  });
+  res.json({ token });
 });
 
 router.get("/me", authenticate, async (req, res) => {
@@ -116,7 +156,7 @@ const avatarUpload = multer({
     destination: UPLOAD_DIR,
     filename: (req, file, cb) => cb(null, `avatar-${Date.now()}-${crypto.randomBytes(6).toString("hex")}${IMAGE_TYPES[file.mimetype]}`),
   }),
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: config.avatarMaxMb * 1024 * 1024 },
   fileFilter: (req, file, cb) =>
     IMAGE_TYPES[file.mimetype] ? cb(null, true) : cb(new HttpError(400, "Faqat rasm yuklang (JPG, PNG, WEBP yoki GIF)")),
 });
@@ -124,7 +164,7 @@ const avatarUpload = multer({
 router.post("/avatar", authenticate, (req, res, next) => {
   avatarUpload.single("avatar")(req, res, async (err) => {
     try {
-      if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") throw new HttpError(400, "Rasm hajmi 5 MB dan oshmasligi kerak");
+      if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") throw new HttpError(400, `Rasm hajmi ${config.avatarMaxMb} MB dan oshmasligi kerak`);
       if (err) throw err;
       if (!req.file) throw new HttpError(400, "Rasm tanlanmadi");
       const avatar_url = `/uploads/${path.basename(req.file.filename)}`;

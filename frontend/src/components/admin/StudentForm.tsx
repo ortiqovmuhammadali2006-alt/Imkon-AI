@@ -69,11 +69,11 @@ export default function StudentForm({ student, onDone }: { student?: Student; on
           type="password"
           autoComplete="new-password"
           required={!student}
-          minLength={6}
+          minLength={8}
           className="input"
           value={form.password}
           onChange={set("password")}
-          placeholder={student ? "O'zgarmaydi" : "Kamida 6 ta belgi"}
+          placeholder={student ? "O'zgarmaydi" : "Kamida 8 ta belgi"}
         />
       </div>
 

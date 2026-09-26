@@ -60,11 +60,11 @@ export default function TeacherForm({ teacher, onDone }: { teacher?: Teacher; on
           type="password"
           autoComplete="new-password"
           required={!teacher}
-          minLength={6}
+          minLength={8}
           className="input"
           value={form.password}
           onChange={set("password")}
-          placeholder={teacher ? "O'zgarmaydi" : "Kamida 6 ta belgi"}
+          placeholder={teacher ? "O'zgarmaydi" : "Kamida 8 ta belgi"}
         />
       </div>
       <div>

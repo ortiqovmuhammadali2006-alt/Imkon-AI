@@ -6,6 +6,8 @@ const pool = require("../config/db");
 const { authenticate } = require("../middleware/auth");
 const { HttpError, parseId } = require("../utils/validation");
 const { getClient, chatParams, toHttpError } = require("../services/ai");
+const { createLimiter } = require("../utils/rateLimit");
+const { config } = require("../config");
 
 const router = Router();
 router.use(authenticate);
@@ -154,15 +156,8 @@ async function getMyConversation(userId, id) {
   return rows[0];
 }
 
-// Har bir foydalanuvchiga 10 daqiqada 40 ta xabar
-const usage = new Map();
-function checkLimit(userId) {
-  const now = Date.now();
-  const recent = (usage.get(userId) || []).filter((t) => now - t < 10 * 60 * 1000);
-  if (recent.length >= 40) throw new HttpError(429, "Juda ko'p xabar. Birozdan so'ng davom eting");
-  recent.push(now);
-  usage.set(userId, recent);
-}
+// Har bir foydalanuvchiga 10 daqiqada LIMIT_CHAT_REQUESTS ta xabar (bazada hisoblanadi)
+const chatLimit = createLimiter("chat", { max: config.limits.chatRequests, message: "Juda ko'p xabar. Birozdan so'ng davom eting" });
 
 // ---------- Suhbatlar ----------
 
@@ -216,7 +211,7 @@ router.post("/conversations/:id/messages", async (req, res) => {
   if (!content) throw new HttpError(400, "Xabar bo'sh");
   if (content.length > 6000) throw new HttpError(400, "Xabar juda uzun (6000 belgidan oshmasin)");
   const voice = Boolean(req.body?.voice);
-  checkLimit(req.user.id);
+  await chatLimit.hit(req.user.id);
 
   // "Qayta yuborish": oxirgi xabar shu savolning o'zi bo'lsa (javob olinmay qolgan), uni takror saqlamaymiz
   const { rows: last } = await pool.query(

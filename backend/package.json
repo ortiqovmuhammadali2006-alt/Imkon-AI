@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
-    "migrate": "node src/db/migrate.js"
+    "migrate": "node src/db/migrate.js",
+    "test": "node test/run.js",
+    "test:ai": "node test/run.js --ai",
+    "seed": "node src/db/seed.js"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +22,7 @@
     "edge-tts-universal": "^1.4.0",
     "express": "^5.2.1",
     "ffmpeg-static": "^5.3.0",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "jszip": "^3.10.2",
     "mammoth": "^1.12.3",

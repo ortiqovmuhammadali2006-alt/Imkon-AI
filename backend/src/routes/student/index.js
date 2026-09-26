@@ -6,6 +6,8 @@ const { HttpError, parseId } = require("../../utils/validation");
 const { SELECT_SQL, ORDER_SQL } = require("../schedule");
 const { explainLesson, getClient, chatParams, toHttpError } = require("../../services/ai");
 const tutor = require("../../services/tutor");
+const { createLimiter } = require("../../utils/rateLimit");
+const { config } = require("../../config");
 
 const router = Router();
 router.use(authenticate, requireRole("student"));
@@ -41,15 +43,8 @@ async function getLesson(studentId, lessonId) {
   return rows[0];
 }
 
-// AI so'rovlari uchun oddiy limit: har bir o'quvchiga 10 daqiqada 30 ta
-const aiUsage = new Map();
-function checkAiLimit(userId) {
-  const now = Date.now();
-  const recent = (aiUsage.get(userId) || []).filter((t) => now - t < 10 * 60 * 1000);
-  if (recent.length >= 30) throw new HttpError(429, "Juda ko'p so'rov. Birozdan so'ng urinib ko'ring");
-  recent.push(now);
-  aiUsage.set(userId, recent);
-}
+// AI so'rovlari limiti (bazada): .env LIMIT_AI_REQUESTS, 10 daqiqada
+const aiLimit = createLimiter("ai", { max: config.limits.aiRequests });
 
 // ---------- Profil va bosh sahifa ----------
 
@@ -167,7 +162,7 @@ router.post("/lessons/:id/explain", async (req, res) => {
     });
   }
 
-  checkAiLimit(req.user.id);
+  await aiLimit.hit(req.user.id);
   try {
     res.json({ answer: await explainLesson(lesson, category, messages) });
   } catch (err) {
@@ -177,14 +172,7 @@ router.post("/lessons/:id/explain", async (req, res) => {
 
 // ---------- AI Tutor: dars bo'yicha interaktiv seans ----------
 
-const tutorUsage = new Map();
-function checkTutorLimit(userId) {
-  const now = Date.now();
-  const recent = (tutorUsage.get(userId) || []).filter((t) => now - t < 10 * 60 * 1000);
-  if (recent.length >= 60) throw new HttpError(429, "Juda ko'p so'rov. Birozdan so'ng davom eting");
-  recent.push(now);
-  tutorUsage.set(userId, recent);
-}
+const tutorLimit = createLimiter("tutor", { max: config.limits.aiRequests * 2, message: "Juda ko'p so'rov. Birozdan so'ng davom eting" });
 
 async function activeSession(studentId, lessonId) {
   const { rows } = await pool.query(
@@ -222,7 +210,7 @@ router.post("/lessons/:id/tutor", async (req, res) => {
   const message = typeof req.body?.message === "string" ? req.body.message.trim().slice(0, 2000) : "";
   const mode = typeof req.body?.mode === "string" && tutor.MODES[req.body.mode] ? req.body.mode : null;
   const voice = Boolean(req.body?.voice);
-  checkTutorLimit(req.user.id);
+  await tutorLimit.hit(req.user.id);
 
   let plan;
   try {
@@ -364,7 +352,7 @@ router.post("/assistant", async (req, res) => {
   // Ovoz rejimidan kelgan buyruq ("Imkon, ..."): savol yoki suhbat bo'lsa javob berilmaydi, faqat platforma amali
   const commandOnly = Boolean(req.body?.command_only);
   if (!text) throw new HttpError(400, "Nima yordam kerakligini yozing yoki ayting");
-  checkAiLimit(req.user.id);
+  await aiLimit.hit(req.user.id);
 
   const [{ rows: lessons }, { rows: slots }, { rows: tasks }, { rows: lastTutor }, { rows: me }] = await Promise.all([
     pool.query(`SELECT l.id, l.title, t.subject, l.created_at ${ACCESSIBLE_LESSONS} ORDER BY l.created_at DESC LIMIT 40`, [req.user.id]),

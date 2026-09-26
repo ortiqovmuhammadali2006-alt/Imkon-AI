@@ -12,6 +12,7 @@ import Modal from "@/components/ui/Modal";
 import Avatar from "@/components/ui/Avatar";
 import CategoryBadge from "@/components/ui/CategoryBadge";
 import { ErrorState } from "@/components/ui/States";
+import ChangePasswordForm from "@/components/ChangePasswordForm";
 
 type Profile = {
   full_name: string;
@@ -236,6 +237,10 @@ export default function ProfileModal({ open, onClose, onLogout }: { open: boolea
               )}
             </section>
           )}
+
+          <div className="mt-5">
+            <ChangePasswordForm />
+          </div>
 
           <div className="mt-6 flex justify-end gap-3">
             <button onClick={onClose} className="btn-secondary">

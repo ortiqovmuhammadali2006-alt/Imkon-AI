@@ -3,6 +3,7 @@ const path = require("path");
 const crypto = require("crypto");
 const multer = require("multer");
 const { HttpError } = require("../utils/validation");
+const { config } = require("../config");
 
 const UPLOAD_DIR = path.join(__dirname, "..", "..", "uploads");
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -16,7 +17,7 @@ const ALLOWED_EXTENSIONS = new Set([
   ".zip",
 ]);
 
-const MAX_SIZE_MB = 100;
+const MAX_SIZE_MB = config.uploadMaxMb; // .env: UPLOAD_MAX_MB
 
 const upload = multer({
   storage: multer.diskStorage({

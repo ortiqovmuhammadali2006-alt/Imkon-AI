@@ -37,6 +37,11 @@ async function run() {
   const { ADMIN_USERNAME, ADMIN_PASSWORD } = process.env;
   const { rowCount } = await client.query("SELECT 1 FROM users WHERE role = 'admin'");
   if (rowCount === 0) {
+    // Birinchi admin — .env dagi ADMIN_PASSWORD bilan; zaif yoki namuna parol qabul qilinmaydi
+    if (!ADMIN_USERNAME || !ADMIN_PASSWORD || ADMIN_PASSWORD.length < 8 || ["admin123", "password", "12345678"].includes(ADMIN_PASSWORD)) {
+      console.error("ADMIN_USERNAME va kamida 8 belgili, taxmin qilib bo'lmaydigan ADMIN_PASSWORD ni backend/.env ga yozing");
+      process.exit(1);
+    }
     const hash = await bcrypt.hash(ADMIN_PASSWORD, 10);
     await client.query(
       "INSERT INTO users (full_name, username, password_hash, role) VALUES ($1, $2, $3, 'admin')",

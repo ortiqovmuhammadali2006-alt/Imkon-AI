@@ -23,10 +23,10 @@ export default function LoginPage() {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const { data } = await api.post<{ token: string; user: User }>("/auth/login", { username, password });
+      const { data } = await api.post<{ token: string; user: User; weak_password?: boolean }>("/auth/login", { username, password });
       return data;
     },
-    onSuccess: ({ token, user }) => {
+    onSuccess: ({ token, user, weak_password }) => {
       // O'quvchi panelida ovoz rejimi o'zi yoqiladi va "qayerdasiz" aytiladi (components/student/VoiceControl)
       if (user.role === "student") {
         try {
@@ -35,6 +35,12 @@ export default function LoginPage() {
       }
       login(token, user);
       toast.success(`Xush kelibsiz, ${user.full_name}!`);
+      // Zaif parol — profil oynasida (chap pastdagi ism) o'zgartirishni taklif qilamiz
+      if (weak_password)
+        toast("Parolingiz zaif. Profilingizni oching va \"Parolni o'zgartirish\" orqali kamida 8 belgili parol qo'ying", {
+          icon: "⚠️",
+          duration: 9000,
+        });
     },
     onError: (error) => toast.error(getErrorMessage(error)),
   });

@@ -20,7 +20,8 @@ function validateUserFields(body, { requirePassword }) {
     throw new HttpError(400, "Login kamida 3 ta belgi: faqat lotin harflari, raqam, _ yoki .");
   }
   if (requirePassword || password) {
-    if (password.length < 6) throw new HttpError(400, "Parol kamida 6 ta belgidan iborat bo'lsin");
+    const min = require("../config").config.passwordMinLength;
+    if (password.length < min) throw new HttpError(400, `Parol kamida ${min} ta belgidan iborat bo'lsin`);
   }
 
   return { full_name, username, password, phone };

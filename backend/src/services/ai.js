@@ -12,7 +12,7 @@ function getClient() {
 
 // Model va javob uzunligi. GPT-5 oilasi (va o-seriya) "fikrlovchi" modellar: max_tokens o'rniga
 // max_completion_tokens talab qiladi, fikrlash qisqa bo'lsin (tezroq javob) — reasoning_effort: low
-const DEFAULT_MODEL = "gpt-5.4-mini";
+const DEFAULT_MODEL = require("../config").config.openai.model; // .env: OPENAI_MODEL
 function chatParams(maxTokens) {
   const model = process.env.OPENAI_MODEL || DEFAULT_MODEL;
   const reasoning = /^(gpt-5|o\d)/.test(model);
@@ -101,7 +101,7 @@ async function transcribe(filePath) {
   const [timed, accurate] = await Promise.all([
     client.audio.transcriptions.create({
       file: fs.createReadStream(filePath),
-      model: "whisper-1",
+      model: require("../config").config.openai.transcribeModel, // .env: OPENAI_TRANSCRIBE_MODEL
       response_format: "verbose_json",
       prompt: UZ_PROMPT,
     }),
