@@ -73,7 +73,13 @@ export default function ImkonRobot() {
   useEffect(
     () =>
       onSpokenText((text) => {
-        setSpoken(text.replace(/[*#`>|_]/g, "").replace(/\s+/g, " ").trim());
+        setSpoken(
+          text
+            .replace(/\(\s*\[[^\]]*\]\([^)]*\)\s*\)/g, "") // internet manbasi havolasi
+            .replace(/[*#`>|_]/g, "")
+            .replace(/\s+/g, " ")
+            .trim()
+        );
         setBubble(true);
         setHint(false);
       }),
@@ -217,7 +223,7 @@ export default function ImkonRobot() {
   const raised = TUTOR_OR_CHAT.test(pathname); // yozish maydoni bor sahifalarda robot biroz yuqorida — tugmalarni to'smasin
 
   return (
-    <div className={`fixed right-4 z-40 flex flex-col items-end gap-3 sm:right-6 ${raised ? "bottom-28" : "bottom-5 sm:bottom-6"}`}>
+    <div className={`fixed right-4 z-40 flex flex-col items-end gap-3 sm:right-6 ${raised ? "bottom-40" : "bottom-5 sm:bottom-6"}`}>
       {open && (
         <div
           ref={panelRef}

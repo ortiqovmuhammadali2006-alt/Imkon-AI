@@ -41,10 +41,60 @@ function rowsHint(info) {
   return VOICE_CATEGORY_HINT[info?.category] || "";
 }
 
+// Ovozli rejim: qidiruv vositasi javob ichiga qo'yadigan "([sayt](url))" havolalarini oqim davomida olib tashlash
+// (havola bir necha bo'lakka bo'linib kelishi mumkin — to'liq yopilguncha ushlab turiladi)
+function citationStripper() {
+  let buf = "";
+  const CITATION = /\(\s*\[[^\]]*\]\([^)]*\)\s*\)/g;
+  return {
+    feed(delta) {
+      buf += delta;
+      buf = buf.replace(CITATION, "");
+      // Yopilmagan "([" — havola boshlanishi, yopilguncha kutamiz; oxiridagi yakka "(" ham shunday bo'lishi mumkin
+      let hold = buf.lastIndexOf("([");
+      if (hold === -1 && buf.endsWith("(")) hold = buf.length - 1;
+      if (hold !== -1 && buf.length - hold < 600) {
+        const out = buf.slice(0, hold);
+        buf = buf.slice(hold);
+        return out;
+      }
+      const out = buf;
+      buf = "";
+      return out;
+    },
+    flush() {
+      const out = buf.replace(CITATION, "");
+      buf = "";
+      return out;
+    },
+  };
+}
+
+// Internet manbasi: takrorlanmasin, kuzatuv parametrlari (utm_*) olib tashlansin, 6 tadan oshmasin
+function addSource(list, annotation) {
+  let url;
+  try {
+    const u = new URL(annotation.url);
+    [...u.searchParams.keys()].filter((k) => k.startsWith("utm_")).forEach((k) => u.searchParams.delete(k));
+    url = u.toString();
+  } catch {
+    return;
+  }
+  if (list.length >= 6 || list.some((s) => s.url === url)) return;
+  const title = String(annotation.title || "").split("\n").map((l) => l.trim()).filter(Boolean)[0] || new URL(url).hostname;
+  list.push({ title: title.slice(0, 120), url });
+}
+
 async function systemPrompt(user, voice) {
   const base = [
     "Sen Imkon AI — imkoniyati cheklangan o'quvchilar uchun ta'lim platformasining mehribon AI yordamchisisan.",
     "Faqat o'zbek tilida (lotin yozuvida) javob ber. Sodda, tushunarli, shoshilmasdan tushuntir, qiyin so'zlarni izohla.",
+    // Internet qidiruvi: har bir savol bo'yicha eng yangi va ishonchli ma'lumot
+    "INTERNET: har qanday savolga javob berishdan oldin web_search bilan internetdan qidir va topilgan eng yangi, ishonchli " +
+      "ma'lumotga tayan (rasmiy saytlar, ta'lim manbalari, ensiklopediyalar). Faqat salomlashish yoki oddiy suhbatda qidirish shart emas. " +
+      "Manbalar turlicha bo'lsa — buni ayt. Ma'lumotni o'quvchi tushunadigan qilib o'zbek tilida qayta bayon qil, ko'chirib qo'yma.",
+    "XAVFSIZLIK: suhbatdoshing bola. Faqat yoshiga mos ma'lumot ber; zo'ravonlik, kattalar mavzusi, xavfli harakatlar, " +
+      "shaxsiy ma'lumotlarni so'rash kabi mavzularda mehribonlik bilan rad et va ota-ona yoki o'qituvchiga murojaat qilishni maslahat ber.",
   ];
   let studentInfo = null;
   if (user.role === "student") {
@@ -89,7 +139,7 @@ async function systemPrompt(user, voice) {
     );
   } else if (voice) {
     base.push(
-      "Bu OVOZLI suhbat: javobing ovoz bilan o'qiladi. 3-6 ta aniq gap bilan, jonli suhbat ohangida javob ber. " +
+      "Bu OVOZLI suhbat: javobing ovoz bilan o'qiladi (manba havolalarini gap ichida yozma). 3-6 ta aniq gap bilan, jonli suhbat ohangida javob ber. " +
         "Markdown belgilari (*, #, -, |, `), ro'yxat va kod ishlatma. Kerak bo'lsa, oxirida qisqa savol ber."
     );
   } else {
@@ -135,7 +185,7 @@ router.post("/conversations", async (req, res) => {
 router.get("/conversations/:id", async (req, res) => {
   const conversation = await getMyConversation(req.user.id, parseId(req.params.id));
   const { rows: messages } = await pool.query(
-    "SELECT id, role, content, created_at FROM chat_messages WHERE conversation_id = $1 ORDER BY id",
+    "SELECT id, role, content, sources, created_at FROM chat_messages WHERE conversation_id = $1 ORDER BY id",
     [conversation.id]
   );
   res.json({ conversation, messages });
@@ -204,11 +254,17 @@ router.post("/conversations/:id/messages", async (req, res) => {
   res.on("close", () => controller.abort());
 
   let answer = "";
+  const sources = [];
   try {
-    const stream = await getClient().chat.completions.create(
+    // Internet qidiruvi bilan (OpenAI web_search): har bir savol bo'yicha eng yangi ma'lumot va manbalar
+    const params = chatParams(voice ? (req.user.role === "student" ? 900 : 450) : 1800);
+    const stream = await getClient().responses.create(
       {
-        ...chatParams(voice ? (req.user.role === "student" ? 900 : 450) : 1800),
-        messages: [
+        model: params.model,
+        max_output_tokens: params.max_completion_tokens,
+        ...(params.reasoning_effort && { reasoning: { effort: params.reasoning_effort } }),
+        tools: [{ type: "web_search", user_location: { type: "approximate", country: "UZ" } }],
+        input: [
           { role: "system", content: await systemPrompt(req.user, voice) },
           ...history,
           // Tarixdagi oldingi (markdownli) javoblarga taqlid qilmasin — ovozli qoida eng oxirgi ko'rsatma bo'lsin
@@ -218,19 +274,31 @@ router.post("/conversations/:id/messages", async (req, res) => {
       },
       { signal: controller.signal }
     );
-    let finish = null;
-    for await (const chunk of stream) {
-      const choice = chunk.choices[0];
-      // Model rad etsa, matn "refusal" maydonida keladi — uni ham oddiy javob sifatida ko'rsatamiz
-      const delta = choice?.delta?.content || choice?.delta?.refusal;
-      if (delta) {
-        answer += delta;
-        send({ delta });
+    let searching = false;
+    let status = null;
+    const stripper = voice ? citationStripper() : null;
+    const emit = (text) => {
+      if (!text) return;
+      answer += text;
+      send({ delta: text });
+    };
+    for await (const event of stream) {
+      if (event.type === "response.web_search_call.searching" && !searching) {
+        searching = true;
+        send({ status: "searching" });
+      } else if (event.type === "response.output_text.delta" || event.type === "response.refusal.delta") {
+        emit(stripper ? stripper.feed(event.delta) : event.delta);
+      } else if (event.type === "response.output_text.annotation.added" && event.annotation?.type === "url_citation") {
+        addSource(sources, event.annotation);
+      } else if (event.type === "response.completed" || event.type === "response.incomplete" || event.type === "response.failed") {
+        status = event.response?.status;
+      } else if (event.type === "error") {
+        throw new Error(event.message || "AI xatosi");
       }
-      if (choice?.finish_reason) finish = choice.finish_reason;
     }
+    if (stripper) emit(stripper.flush());
     if (!answer.trim() && !controller.signal.aborted) {
-      console.error(`[chat] bo'sh javob (conversation ${conversation.id}, finish_reason: ${finish})`);
+      console.error(`[chat] bo'sh javob (conversation ${conversation.id}, status: ${status})`);
       send({ error: "AI javob bermadi. Qayta yuborib ko'ring." });
     }
   } catch (err) {
@@ -244,14 +312,14 @@ router.post("/conversations/:id/messages", async (req, res) => {
   let messageId = null;
   if (answer.trim()) {
     const { rows } = await pool.query(
-      "INSERT INTO chat_messages (conversation_id, role, content) VALUES ($1, 'assistant', $2) RETURNING id",
-      [conversation.id, answer]
+      "INSERT INTO chat_messages (conversation_id, role, content, sources) VALUES ($1, 'assistant', $2, $3) RETURNING id",
+      [conversation.id, answer, sources.length ? JSON.stringify(sources) : null]
     );
     messageId = rows[0].id;
   }
   await pool.query("UPDATE chat_conversations SET updated_at = NOW() WHERE id = $1", [conversation.id]);
   if (!res.writableEnded) {
-    send({ done: true, message_id: messageId });
+    send({ done: true, message_id: messageId, sources });
     res.end();
   }
 });

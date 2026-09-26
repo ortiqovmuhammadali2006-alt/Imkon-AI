@@ -129,6 +129,8 @@ export async function hasClearUzbekVoice() {
 function plain(text: string) {
   return text
     .replace(/```[\s\S]*?```/g, " ")
+    .replace(/\(\s*\[[^\]]*\]\([^)]*\)\s*\)/g, "") // internet manbasi havolasi: "([sayt](url))" — o'qilmaydi
+    .replace(/https?:\/\/\S+/g, "")
     .replace(/[*_#`>|]/g, "")
     .replace(/\[(.*?)\]\(.*?\)/g, "$1")
     .replace(/\s+/g, " ")

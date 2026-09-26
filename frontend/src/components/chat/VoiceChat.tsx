@@ -227,7 +227,7 @@ export default function VoiceChat({
           {answer && phase !== "listening" && (
             // Tushuntirish uzun bo'lishi mumkin — to'liq ko'rinadi, yangi gaplar kelganda pastga suriladi
             <div ref={answerRef} className="max-h-[38vh] overflow-y-auto rounded-2xl bg-white/5 px-5 py-4 text-left ring-1 ring-white/10">
-              <p className="text-lg leading-8 whitespace-pre-line text-white/85">{answer.replace(/[*#`>|]/g, "")}</p>
+              <p className="text-lg leading-8 whitespace-pre-line text-white/85">{answer.replace(/\(\s*\[[^\]]*\]\([^)]*\)\s*\)/g, "").replace(/[*#`>|]/g, "")}</p>
             </div>
           )}
           {error && <p className="rounded-xl bg-red-500/15 px-4 py-3 text-red-200">{error}</p>}

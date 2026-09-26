@@ -168,3 +168,6 @@ CREATE TABLE IF NOT EXISTS tutor_turns (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS tutor_turns_session_idx ON tutor_turns (session_id, id);
+
+-- AI suhbat javobi internetdan qidirilgan bo'lsa — manbalar ro'yxati [{title, url}]
+ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS sources JSONB;

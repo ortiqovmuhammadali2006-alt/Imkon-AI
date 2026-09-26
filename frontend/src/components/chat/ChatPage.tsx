@@ -8,6 +8,7 @@ import {
   Bot,
   Check,
   Copy,
+  Globe,
   Loader2,
   MessageSquarePlus,
   Mic,
@@ -46,7 +47,7 @@ import VoiceChat from "./VoiceChat";
 import { OPEN_VOICE_KEY } from "@/lib/assistant";
 
 // retryOf — javob olinmagan savol matni ("Qayta yuborish" uchun)
-type UiMessage = ChatMessage & { error?: boolean; streaming?: boolean; retryOf?: string };
+type UiMessage = ChatMessage & { error?: boolean; streaming?: boolean; retryOf?: string; searching?: boolean };
 
 const SUGGESTIONS: Record<Role, string[]> = {
   student: [
@@ -131,11 +132,37 @@ const MessageItem = memo(function MessageItem({
             {m.streaming && <span className="ml-1 inline-block h-5 w-2 animate-pulse rounded-sm bg-indigo-500 align-middle" aria-hidden />}
           </div>
         ) : (
-          <div className="flex items-center gap-1.5 py-2" role="status">
-            {[0, 150, 300].map((d) => (
-              <span key={d} className="size-2 animate-bounce rounded-full bg-indigo-400" style={{ animationDelay: `${d}ms` }} />
-            ))}
-            <span className="sr-only">AI javob yozmoqda</span>
+          <div className="flex items-center gap-2 py-2" role="status">
+            {m.searching ? (
+              <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-700">
+                <Globe className="size-4 animate-spin [animation-duration:2s]" aria-hidden /> Internetda qidirilmoqda...
+              </span>
+            ) : (
+              <>
+                {[0, 150, 300].map((d) => (
+                  <span key={d} className="size-2 animate-bounce rounded-full bg-indigo-400" style={{ animationDelay: `${d}ms` }} />
+                ))}
+                <span className="sr-only">AI javob yozmoqda</span>
+              </>
+            )}
+          </div>
+        )}
+        {!m.streaming && !m.error && !!m.sources?.length && (
+          <div className="mt-3 rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-100">
+            <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-slate-500 uppercase">
+              <Globe className="size-3.5" aria-hidden /> Manbalar (internetdan)
+            </p>
+            <ol className="space-y-1.5">
+              {m.sources.map((src, i) => (
+                <li key={src.url} className="flex gap-2 text-sm">
+                  <span className="text-slate-400">{i + 1}.</span>
+                  <a href={src.url} target="_blank" rel="noopener noreferrer" className="min-w-0 truncate font-medium text-indigo-700 underline-offset-2 hover:underline">
+                    {src.title}
+                  </a>
+                  <span className="shrink-0 text-slate-400">{new URL(src.url).hostname.replace(/^www\./, "")}</span>
+                </li>
+              ))}
+            </ol>
           </div>
         )}
         {!m.streaming && !m.error && m.content && (
@@ -265,16 +292,17 @@ export default function ChatPage() {
           return copy;
         });
 
-      const { text: answer, error, aborted } = await streamMessage(convId, content, {
+      const { text: answer, error, aborted, sources } = await streamMessage(convId, content, {
         voice: opts.voice,
         retry: opts.retry,
         signal: ctrl.signal,
+        onSearching: () => updateLast({ searching: true }),
         onDelta: (t) => {
           updateLast({ content: t });
           opts.onDelta?.(t);
         },
       });
-      if (answer) updateLast({ streaming: false });
+      if (answer) updateLast({ streaming: false, searching: false, sources });
       else if (aborted) updateLast({ content: "Javob to'xtatildi.", error: true, retryOf: content, streaming: false });
       else updateLast({ content: error ?? "AI javob bermadi.", error: true, retryOf: content, streaming: false });
       setStreaming(false);

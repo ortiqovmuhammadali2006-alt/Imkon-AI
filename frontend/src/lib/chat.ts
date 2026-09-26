@@ -2,7 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { api, TOKEN_KEY } from "./api";
 
 export type Conversation = { id: number; title: string; updated_at: string };
-export type ChatMessage = { id?: number; role: "user" | "assistant"; content: string };
+export type ChatSource = { title: string; url: string };
+// sources — javob internetdan qidirilgan bo'lsa, manbalar
+export type ChatMessage = { id?: number; role: "user" | "assistant"; content: string; sources?: ChatSource[] | null };
 
 export const useConversations = () =>
   useQuery({
@@ -39,8 +41,9 @@ export async function streamMessage(
     retry = false,
     signal,
     onDelta,
-  }: { voice?: boolean; retry?: boolean; signal?: AbortSignal; onDelta: (text: string) => void }
-): Promise<{ text: string; error?: string; aborted?: boolean }> {
+    onSearching,
+  }: { voice?: boolean; retry?: boolean; signal?: AbortSignal; onDelta: (text: string) => void; onSearching?: () => void }
+): Promise<{ text: string; error?: string; aborted?: boolean; sources?: ChatSource[] }> {
   // Foydalanuvchi to'xtatishi yoki birinchi so'z juda uzoq kelmasligi (osilib qolish) — ikkalasi ham so'rovni uzadi
   const ctrl = new AbortController();
   let timedOut = false;
@@ -53,6 +56,7 @@ export async function streamMessage(
 
   let text = "";
   let error: string | undefined;
+  let sources: ChatSource[] | undefined;
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/conversations/${conversationId}/messages`, {
       method: "POST",
@@ -77,7 +81,9 @@ export async function streamMessage(
         const line = buffer.slice(0, i).replace(/^data: /, "");
         buffer = buffer.slice(i + 2);
         if (!line) continue;
-        const event = JSON.parse(line) as { delta?: string; done?: boolean; error?: string };
+        const event = JSON.parse(line) as { delta?: string; done?: boolean; error?: string; status?: string; sources?: ChatSource[] };
+        if (event.status === "searching") onSearching?.();
+        if (event.done && event.sources?.length) sources = event.sources;
         if (event.delta) {
           clearTimeout(timer);
           text += event.delta;
@@ -95,5 +101,5 @@ export async function streamMessage(
     signal?.removeEventListener("abort", onAbort);
   }
   if (!text && !error) error = "AI javob bermadi. Qayta yuborib ko'ring.";
-  return { text, error };
+  return { text, error, sources };
 }
