@@ -46,7 +46,8 @@ export function formatGrade(grade: string | null | undefined) {
 
 
 // Dars kartochkalaridagi chiziq va sarlavha — barcha fanlar uchun bitta brend rangi, boshidan oxirigacha bir tekis
-export function subjectTone(_subject?: string | null) {
+export function subjectTone(subject?: string | null) {
+  void subject; // fan bo'yicha rang olib tashlangan — parametr chaqiruvlar uchun qoldirilgan
   return "from-indigo-600 to-indigo-600";
 }
 

@@ -319,15 +319,50 @@ function takeSegment(buf: string, first: boolean, final: boolean): [string, stri
 const audioCache = new Map<string, Blob>();
 const AUDIO_CACHE_LIMIT = 60;
 
+// Qisqa iboralar sahifa yangilanganda ham saqlanib qoladi (Cache Storage) — har yangilashda qayta so'ralmaydi.
+// Ovoz o'zgarsa (boshqa ovoz/talaffuz qoidalari) — versiyani oshiring
+const TTS_CACHE = "imkon-tts-v1";
+const persistentKey = (key: string) => `/__imkon_tts/${encodeURIComponent(key)}`;
+
+async function readPersistent(key: string): Promise<Blob | null> {
+  try {
+    if (typeof caches === "undefined") return null;
+    const hit = await (await caches.open(TTS_CACHE)).match(persistentKey(key));
+    return hit ? await hit.blob() : null;
+  } catch {
+    return null;
+  }
+}
+
+async function writePersistent(key: string, data: Blob) {
+  try {
+    if (typeof caches === "undefined") return;
+    await (await caches.open(TTS_CACHE)).put(persistentKey(key), new Response(data, { headers: { "Content-Type": "audio/mpeg" } }));
+  } catch {}
+}
+
+function remember(key: string, data: Blob) {
+  audioCache.set(key, data);
+  if (audioCache.size > AUDIO_CACHE_LIMIT) audioCache.delete(audioCache.keys().next().value!);
+}
+
 async function fetchAudio(text: string): Promise<Blob> {
   const speed = currentRate().server;
   const key = `${speed}|${text}`;
   const cached = audioCache.get(key);
   if (cached) return cached;
+  const short = text.length <= 200;
+  if (short) {
+    const stored = await readPersistent(key);
+    if (stored) {
+      remember(key, stored);
+      return stored;
+    }
+  }
   const { data } = await api.post<Blob>("/tts", { text, speed }, { responseType: "blob" });
-  if (text.length <= 200) {
-    audioCache.set(key, data);
-    if (audioCache.size > AUDIO_CACHE_LIMIT) audioCache.delete(audioCache.keys().next().value!);
+  if (short) {
+    remember(key, data);
+    void writePersistent(key, data);
   }
   return data;
 }
@@ -388,7 +423,8 @@ function primeBrowserVoice() {
 }
 
 // quick — qisqa xabarlar (buyruq javoblari); endi ular ham Madina (server) ovozida aytiladi, parametr moslik uchun qoldirilgan
-export function createSpeechStream(_opts: { quick?: boolean } = {}): SpeechStream {
+export function createSpeechStream(opts: { quick?: boolean } = {}): SpeechStream {
+  void opts;
   stopSpeaking();
   spokenText = ""; // yangi ovoz — bir xil matn qayta aytilsa ham pufakcha yangilansin
   const mySession = session;

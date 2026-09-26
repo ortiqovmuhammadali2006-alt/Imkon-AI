@@ -17,6 +17,8 @@ api.interceptors.response.use(undefined, (error: AxiosError) => {
   const isLogin = error.config?.url?.startsWith("/auth/login");
   if (error.response?.status === 401 && !isLogin && typeof window !== "undefined") {
     localStorage.removeItem(TOKEN_KEY);
+    // Axios interseptori React tashqarisida — router yo'q; to'liq qayta yuklash eski holatni ham tozalaydi
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     if (window.location.pathname !== "/login") window.location.href = "/login";
   }
   return Promise.reject(error);
