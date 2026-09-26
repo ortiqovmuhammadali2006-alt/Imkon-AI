@@ -183,16 +183,26 @@ async function describeImage(buffer, mime) {
 // Dars matnidan: oddiy tildagi qisqa variant + atamalar lug'ati (JSON)
 async function simplifyLesson(title, sourceText) {
   const completion = await getClient().chat.completions.create({
-    ...chatParams(1800),
+    ...chatParams(2600),
     response_format: { type: "json_object" },
     messages: [
       {
         role: "system",
         content:
-          "Sen maktab o'qituvchisining yordamchisisan. O'zbek tilida (lotin) javob ber. Faqat JSON qaytar: " +
-          '{"simple_text": "...", "key_terms": [{"term": "...", "meaning": "..."}]}. ' +
-          "simple_text — darsning oddiy tildagi qisqa bayoni: qisqa gaplar, har bir fikr alohida qatorda, 8-12 qator, qiyin so'zlarsiz. " +
-          "key_terms — darsdagi 3-10 ta muhim atama va ularning bir gaplik sodda izohi. Markdown belgilar ishlatma.",
+          "Sen imkoniyati cheklangan o'quvchilar (ko'rish, eshitish, harakat, o'zlashtirish qiyinchiligi) bilan ishlaydigan " +
+          "tajribali maxsus pedagogsan. O'qituvchi bergan materialni o'quvchi OSON va SODDA o'rganishi uchun to'plam tayyorla. " +
+          "O'zbek tilida (lotin) javob ber. Faqat JSON qaytar: " +
+          '{"summary": "...", "simple_text": "...", "examples": ["..."], "key_terms": [{"term": "...", "meaning": "..."}], ' +
+          '"quiz": [{"question": "...", "options": ["...", "...", "..."], "answer": 0, "explanation": "..."}]}. ' +
+          "summary — darsning eng asosiy fikri, 1-2 qisqa gap. " +
+          "simple_text — darsning sodda bayoni: juda qisqa gaplar (8-10 so'zgacha), har bir fikr alohida qatorda, 6-12 qator, " +
+          "qiyin so'zlarsiz, o'quvchiga 'sen' deb murojaat qil; material juda qisqa bo'lsa (masalan faqat misollar) — mavzuni shu misollar asosida tushuntir. " +
+          "examples — hayotdan 2-4 ta oddiy misol (olma, qalam, o'yinchoq kabi tanish narsalar bilan), har biri 1-2 gap. " +
+          "key_terms — 2-8 ta muhim atama va bir gaplik sodda izohi. " +
+          "quiz — o'zini tekshirish uchun 3-5 ta oson savol, har birida aynan 3 ta javob varianti, answer — to'g'ri variant indeksi (0, 1 yoki 2), " +
+          "explanation — nega bu javob to'g'ri, 1 gap. Savollar faqat dars mazmunidan bo'lsin, to'g'ri javob o'rni har xil bo'lsin. " +
+          "Materialda xato bo'lsa (masalan noto'g'ri hisob), o'quvchiga to'g'risini o'rgat. Matn ovoz bilan ham o'qiladi: " +
+          "Markdown, jadval, emoji va maxsus belgilar ishlatma.",
       },
       { role: "user", content: `Dars mavzusi: ${title}\n\nDars materiali:\n${sourceText.slice(0, 14000)}` },
     ],
@@ -204,7 +214,20 @@ async function simplifyLesson(title, sourceText) {
         .slice(0, 12)
         .map((t) => ({ term: String(t.term), meaning: String(t.meaning) }))
     : [];
-  return { simple_text: String(data.simple_text || "").trim(), key_terms: keyTerms };
+  const examples = Array.isArray(data.examples) ? data.examples.map((e) => String(e || "").trim()).filter(Boolean).slice(0, 5) : [];
+  const quiz = Array.isArray(data.quiz)
+    ? data.quiz
+        .filter((q) => q && q.question && Array.isArray(q.options) && q.options.length >= 2)
+        .map((q) => ({
+          question: String(q.question),
+          options: q.options.slice(0, 4).map(String),
+          answer: Number(q.answer),
+          explanation: String(q.explanation || ""),
+        }))
+        .filter((q) => Number.isInteger(q.answer) && q.answer >= 0 && q.answer < q.options.length)
+        .slice(0, 5)
+    : [];
+  return { summary: String(data.summary || "").trim(), simple_text: String(data.simple_text || "").trim(), examples, key_terms: keyTerms, quiz };
 }
 
 // OpenAI xatolarini foydalanuvchiga tushunarli xabarga aylantirish

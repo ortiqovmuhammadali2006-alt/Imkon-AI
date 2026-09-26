@@ -45,14 +45,19 @@ export type LessonAssignment = {
 export type TranscriptSegment = { start: number; end: number; text: string };
 
 // Qulaylik to'plami: o'qituvchi materialidan avtomatik yaratilgan formatlar
+export type QuizQuestion = { question: string; options: string[]; answer: number; explanation: string };
+
 export type StudentA11y = {
   subtitle_vtt_url: string | null;
   segments: TranscriptSegment[];
   transcript: string | null;
   extracted_text: string | null;
   image_description: string | null;
+  summary: string | null; // asosiy fikr
   simple_text: string | null;
+  examples: string[]; // hayotiy misollar
   key_terms: { term: string; meaning: string }[];
+  quiz: QuizQuestion[]; // o'zini tekshirish
   processing: boolean;
 };
 

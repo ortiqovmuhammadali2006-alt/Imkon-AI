@@ -44,8 +44,11 @@ export type LessonA11y = {
   segments?: { start: number; end: number; text: string }[];
   extracted_text?: string;
   image_description?: string;
+  summary?: string;
   simple_text?: string;
+  examples?: string[];
   key_terms?: { term: string; meaning: string }[];
+  quiz?: { question: string; options: string[]; answer: number; explanation: string }[];
 };
 
 export type Lesson = {

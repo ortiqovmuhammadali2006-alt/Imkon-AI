@@ -148,8 +148,11 @@ router.get("/lessons/:id", async (req, res) => {
     transcript: a.transcript || null,
     extracted_text: a.extracted_text || null,
     image_description: a.image_description || null,
+    summary: a.summary || null,
     simple_text: a.simple_text || null,
+    examples: a.examples || [],
     key_terms: a.key_terms || [],
+    quiz: a.quiz || [],
     processing: ["pending", "processing"].includes(a.status),
   };
   res.json({ ...lesson, a11y, assignments });

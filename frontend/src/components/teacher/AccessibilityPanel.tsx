@@ -8,7 +8,7 @@ const STEP_LABELS: Record<string, string> = {
   subtitle: "Subtitr va nutq matni",
   text: "Fayldagi matn",
   image: "Rasm tavsifi",
-  simple: "Oddiy til va atamalar lug'ati",
+  simple: "Sodda o'rganish: asosiy fikr, oddiy til, misollar, atamalar, test",
 };
 
 // O'qituvchi uchun: qulaylik to'plami holati, natijalardan namuna va qayta yaratish
@@ -68,10 +68,16 @@ export default function AccessibilityPanel({ lessonId, a11y }: { lessonId: numbe
       )}
 
       {/* Natijalardan qisqa namuna */}
-      {(a11y?.simple_text || a11y?.transcript || a11y?.image_description || a11y?.key_terms?.length) && (
+      {(a11y?.simple_text || a11y?.transcript || a11y?.image_description || a11y?.extracted_text || a11y?.key_terms?.length) && (
         <details className="mt-4 rounded-xl ring-1 ring-line">
           <summary className="cursor-pointer px-4 py-3 font-medium">Natijani ko&apos;rish</summary>
           <div className="space-y-4 border-t border-line px-4 py-4 text-sm">
+            {a11y.summary && (
+              <div>
+                <p className="mb-1 font-semibold">Asosiy fikr</p>
+                <p className="text-slate-700">{a11y.summary}</p>
+              </div>
+            )}
             {a11y.simple_text && (
               <div>
                 <p className="mb-1 font-semibold">Oddiy tilda</p>
@@ -90,6 +96,34 @@ export default function AccessibilityPanel({ lessonId, a11y }: { lessonId: numbe
                 </ul>
               </div>
             ) : null}
+            {a11y.examples?.length ? (
+              <div>
+                <p className="mb-1 font-semibold">Misollar</p>
+                <ul className="list-disc space-y-1 pl-5 text-slate-700">
+                  {a11y.examples.map((e) => (
+                    <li key={e}>{e}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {a11y.quiz?.length ? (
+              <div>
+                <p className="mb-1 font-semibold">O&apos;zini tekshirish savollari ({a11y.quiz.length} ta)</p>
+                <ol className="list-decimal space-y-1 pl-5 text-slate-700">
+                  {a11y.quiz.map((q) => (
+                    <li key={q.question}>
+                      {q.question} <span className="text-emerald-700">— {q.options[q.answer]}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ) : null}
+            {a11y.extracted_text && (
+              <div>
+                <p className="mb-1 font-semibold">Fayldagi matn</p>
+                <p className="line-clamp-6 whitespace-pre-wrap text-slate-700">{a11y.extracted_text}</p>
+              </div>
+            )}
             {a11y.image_description && (
               <div>
                 <p className="mb-1 font-semibold">Rasm tavsifi</p>

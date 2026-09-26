@@ -1,8 +1,8 @@
 // "Qulaylik to'plami": o'qituvchi material yuklaganda o'quvchi uchun qo'shimcha formatlar yaratadi.
 //  - audio/video  -> subtitr (.vtt) + to'liq matn (Whisper); o'qituvchi bergan .srt/.vtt bo'lsa — o'shandan
-//  - PDF/Word/TXT -> fayl ichidagi matn (AI'siz)
+//  - PDF/Word/PowerPoint/TXT -> fayl ichidagi matn (AI'siz)
 //  - rasm         -> rasm tavsifi (AI)
-//  - hammasi      -> oddiy tildagi qisqa variant + atamalar lug'ati (AI)
+//  - hammasi      -> sodda o'rganish to'plami (AI): asosiy fikr, oddiy til, misollar, atamalar, o'zini tekshirish savollari
 // Natija lessons.a11y (JSONB) ga yoziladi. Har bir qadam alohida: biri xato bersa, qolganlari ishlayveradi.
 const fs = require("fs");
 const fsp = require("fs/promises");
@@ -81,6 +81,26 @@ async function extractText(fileUrl, fileName) {
     } finally {
       await parser.destroy();
     }
+  }
+  if (ext === ".pptx") {
+    // Taqdimot: har bir slayddagi matn (<a:t>) slayd tartibida, har bir paragraf alohida qatorda
+    const JSZip = require("jszip");
+    const zip = await JSZip.loadAsync(await fsp.readFile(full));
+    const slideNo = (n) => Number(n.match(/(\d+)\.xml$/)[1]);
+    const slides = Object.keys(zip.files)
+      .filter((n) => /^ppt\/slides\/slide\d+\.xml$/.test(n))
+      .sort((a, b) => slideNo(a) - slideNo(b));
+    const decode = (t) => t.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, "&");
+    const texts = [];
+    for (const [i, name] of slides.entries()) {
+      const xml = await zip.file(name).async("string");
+      const lines = xml
+        .split("</a:p>")
+        .map((p) => [...p.matchAll(/<a:t>([^<]*)<\/a:t>/g)].map((m) => decode(m[1])).join("").trim())
+        .filter(Boolean);
+      if (lines.length) texts.push(`${i + 1}-slayd:\n${lines.join("\n")}`);
+    }
+    return texts.join("\n\n").slice(0, MAX_TEXT);
   }
   if (ext === ".docx") {
     const mammoth = require("mammoth");
@@ -163,8 +183,8 @@ async function processLesson(lessonId) {
   }
   await saveA11y(lessonId, a11y);
 
-  // 2. Fayl ichidagi matn (PDF, Word, TXT)
-  if (lesson.file_url && [".pdf", ".docx", ".txt"].includes(ext)) {
+  // 2. Fayl ichidagi matn (PDF, Word, PowerPoint, TXT)
+  if (lesson.file_url && [".pdf", ".docx", ".pptx", ".txt"].includes(ext)) {
     try {
       a11y.extracted_text = await extractText(lesson.file_url, lesson.file_name);
       a11y.steps.text = a11y.extracted_text
@@ -187,11 +207,12 @@ async function processLesson(lessonId) {
     await saveA11y(lessonId, a11y);
   }
 
-  // 4. Oddiy til + atamalar lug'ati — barcha mavjud matn asosida
+  // 4. Sodda o'rganish to'plami — barcha mavjud matn asosida. Material qisqa bo'lsa ham ("1 + 2 = 3") tayyorlanadi:
+  // aynan shunday qisqa darslarni sodda tushuntirish va misollar bilan to'ldirish kerak
   const source = [lesson.description, lesson.content, a11y.extracted_text, a11y.transcript, a11y.image_description]
     .filter(Boolean)
     .join("\n\n");
-  if (source.trim().length >= 80) {
+  if (source.trim().length >= 3) {
     try {
       Object.assign(a11y, await simplifyLesson(lesson.title, source));
       a11y.steps.simple = { status: "done" };

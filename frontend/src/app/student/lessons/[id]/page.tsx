@@ -14,6 +14,7 @@ import FileTypeBadge from "@/components/ui/FileTypeBadge";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import AiTutor from "@/components/student/AiTutor";
 import AssignmentCard from "@/components/student/AssignmentCard";
+import LessonQuiz from "@/components/student/LessonQuiz";
 import SpeakButton from "@/components/student/SpeakButton";
 
 export default function StudentLessonPage({ params }: { params: Promise<{ id: string }> }) {
@@ -100,6 +101,7 @@ export default function StudentLessonPage({ params }: { params: Promise<{ id: st
           )}
         </div>
       </article>
+      <LessonQuiz quiz={lesson.a11y.quiz} />
       <StepByStep lessonId={lessonId} text={activeText} />
 
       <AiTutor lessonId={lessonId} autoSpeak={profile?.category === "visual"} fallbackText={lessonText} />

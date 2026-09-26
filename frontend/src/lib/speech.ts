@@ -808,8 +808,12 @@ export function extractNumber(normalized: string): number | null {
 export const OPEN_LESSON_EVENT = "imkon:open-lesson";
 
 // next / prev / repeat — bosqichma-bosqich o'rganish rejimi uchun
+// simple / examples / terms — dars sahifasida sodda o'rganish yorliqlari; quiz / answer (value — variant raqami) — o'zini tekshirish
 export type VoiceAction = {
-  action: "read" | "explain" | "stop" | "next" | "prev" | "repeat" | "new-chat" | "voice-chat";
+  action:
+    | "read" | "explain" | "stop" | "next" | "prev" | "repeat" | "new-chat" | "voice-chat"
+    | "simple" | "examples" | "terms" | "quiz" | "answer";
+  value?: number;
 };
 
 // AI suhbat sahifasida ovoz bilan aytilgan savol (buyruq bo'lmagan gap) — chatga yuboriladi
@@ -826,13 +830,13 @@ export function onChatAsk(handler: (text: string) => void) {
 }
 export const VOICE_EVENT = "imkon:voice";
 
-export function dispatchVoiceAction(action: VoiceAction["action"]) {
-  window.dispatchEvent(new CustomEvent<VoiceAction>(VOICE_EVENT, { detail: { action } }));
+export function dispatchVoiceAction(action: VoiceAction["action"], value?: number) {
+  window.dispatchEvent(new CustomEvent<VoiceAction>(VOICE_EVENT, { detail: { action, value } }));
 }
 
 // Sahifa ovozli buyruqqa ("o'qib ber", "tushuntir", "to'xta") javob berishi uchun
-export function onVoiceAction(handler: (action: VoiceAction["action"]) => void) {
-  const listener = (e: Event) => handler((e as CustomEvent<VoiceAction>).detail.action);
+export function onVoiceAction(handler: (action: VoiceAction["action"], value?: number) => void) {
+  const listener = (e: Event) => handler((e as CustomEvent<VoiceAction>).detail.action, (e as CustomEvent<VoiceAction>).detail.value);
   window.addEventListener(VOICE_EVENT, listener);
   return () => window.removeEventListener(VOICE_EVENT, listener);
 }

@@ -62,7 +62,8 @@ function pageName(pathname: string) {
   if (pathname === "/student/schedule") return "Dars jadvali";
   if (pathname === "/student/lessons") return "Darslarim. Ro'yxatni eshitish uchun o'qib ber deb ayting";
   if (TUTOR_PATH.test(pathname)) return "Sun'iy intellekt o'qituvchisi bilan dars. Ovoz bilan javob berish uchun Imkon, mikrofonni yoq deng";
-  if (pathname.startsWith("/student/lessons/")) return "Dars sahifasi. Imkon, o'rgat desangiz, sun'iy intellekt o'qituvchisi dars o'tadi";
+  if (pathname.startsWith("/student/lessons/"))
+    return "Dars sahifasi. Sodda tushuntirish uchun: Imkon, sodda. Misollar uchun: Imkon, misol. O'zingizni tekshirish uchun: Imkon, test";
   if (pathname === "/student/assignments") return "Vazifalar";
   if (pathname === "/student/grades") return "Baholarim";
   if (pathname === "/student/knowledge") return "Mening bilimim. Qaysi mavzuni qanchalik bilishingizni eshitish uchun o'qib ber deb ayting";
@@ -97,6 +98,32 @@ const COMMANDS: Command[] = [
         go("/student/chat");
       }
     },
+  },
+  // Dars sahifasidagi sodda o'rganish: yorliq ochiladi va o'qiladi ("sodda" — "tushuntir"dan oldin: "sodda qilib tushuntir")
+  {
+    label: "“Sodda” — darsni sodda tilda tinglash",
+    match: (t) => has(t, "sodda", "oddiy til"),
+    run: ({ pathname }) => (TUTOR_HREF.test(pathname) ? dispatchVoiceAction("simple") : "Avval darsni oching. Masalan: Imkon, birinchi darsni och"),
+  },
+  {
+    label: "“Misol” — hayotiy misollar",
+    match: (t) => has(t, "misol"),
+    run: ({ pathname }) => (TUTOR_HREF.test(pathname) ? dispatchVoiceAction("examples") : "Avval darsni oching"),
+  },
+  {
+    label: "“Atamalar” — muhim so'zlar izohi",
+    match: (t) => has(t, "atama"),
+    run: ({ pathname }) => (TUTOR_HREF.test(pathname) ? dispatchVoiceAction("terms") : "Avval darsni oching"),
+  },
+  {
+    label: "“Test” — o'zini tekshirish savollari",
+    match: (t) => has(t, "test", "tekshir", "sinov"),
+    run: ({ pathname }) => (TUTOR_HREF.test(pathname) ? dispatchVoiceAction("quiz") : "Avval darsni oching, keyin test deng"),
+  },
+  {
+    label: "“Birinchi javob” — testdagi javob varianti",
+    match: (t) => has(t, "javob") && extractNumber(t) !== null,
+    run: (_, t) => dispatchVoiceAction("answer", extractNumber(t) ?? undefined),
   },
   {
     label: "“O'rgat” — ochiq darsni sun'iy intellekt o'qituvchisi bilan o'rganish",
@@ -166,7 +193,7 @@ const COMMANDS: Command[] = [
     label: "“Yordam” — buyruqlarni aytib beradi",
     match: (t) => has(t, "yordam"),
     run: () =>
-      "Buyruqdan oldin Imkon deng. Buyruqlar: darslar, vazifalar, jadval, suhbat, mikrofonni yoq, yangi suhbat, profil, baholar, bilimim, bosh sahifa, ikkinchi darsni och, o'qib ber, tushuntir, keyingi, qayta, " +
+      "Buyruqdan oldin Imkon deng. Buyruqlar: darslar, vazifalar, jadval, suhbat, mikrofonni yoq, yangi suhbat, profil, baholar, bilimim, sodda, misol, test, birinchi javob, bosh sahifa, ikkinchi darsni och, o'qib ber, tushuntir, keyingi, qayta, " +
       "sekinroq, kattalashtir, kichraytir, tungi rejim, to'xta, orqaga, ovoz rejimini o'chir, chiqish.",
   },
   {
