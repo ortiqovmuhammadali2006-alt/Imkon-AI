@@ -26,6 +26,7 @@ app.use("/api/teacher", require("./routes/teacher"));
 app.use("/api/student", require("./routes/student"));
 app.use("/api/chat", require("./routes/chat"));
 app.use("/api/tts", require("./routes/tts"));
+app.use("/api/stt", require("./routes/stt"));
 
 // Yuklangan dars materiallari va vazifa fayllari
 app.use("/uploads", express.static(UPLOAD_DIR));

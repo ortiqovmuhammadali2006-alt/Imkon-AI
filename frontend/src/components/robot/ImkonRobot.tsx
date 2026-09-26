@@ -20,7 +20,8 @@ import { useAuth } from "@/lib/auth";
 import { useStudentProfile } from "@/lib/student";
 import { actionHref, askAssistant, requestVoiceChat, ROBOT_ASK_EVENT, type RobotAsk } from "@/lib/assistant";
 import { getErrorMessage } from "@/lib/api";
-import { listenOnce, onSpeakingChange, onSpokenText, RecognitionError, speak, stopSpeaking, WAKE_EVENT } from "@/lib/speech";
+import { listenAccurate } from "@/lib/recorder";
+import { onSpeakingChange, onSpokenText, RecognitionError, speak, stopSpeaking, WAKE_EVENT } from "@/lib/speech";
 import { voiceMode } from "@/lib/voiceMode";
 import RobotFace, { type RobotState } from "./RobotFace";
 
@@ -220,7 +221,7 @@ export default function ImkonRobot() {
     stopSpeaking();
     setListening(true);
     try {
-      const heard = await listenOnce((t) => setInput(t), undefined, { pauseMs: 1500 });
+      const heard = await listenAccurate((state) => setInput(state === "transcribing" ? "Tanilmoqda..." : ""));
       setInput("");
       setListening(false);
       await run(heard, true);

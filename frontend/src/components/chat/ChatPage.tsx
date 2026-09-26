@@ -32,13 +32,13 @@ import {
 } from "@/lib/chat";
 import {
   createSpeechStream,
-  listenOnce,
   onChatAsk,
   onVoiceAction,
   RecognitionError,
   speak,
   stopSpeaking,
 } from "@/lib/speech";
+import { listenAccurate } from "@/lib/recorder";
 import Avatar from "@/components/ui/Avatar";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import SpeakButton from "@/components/student/SpeakButton";
@@ -323,7 +323,8 @@ export default function ChatPage() {
   const dictate = async () => {
     setDictating(true);
     try {
-      const heard = await listenOnce((t) => setInput(t), undefined, { pauseMs: 1800 });
+      // Ovoz yozib olinib, serverda aniq tanitiladi (brauzerning o'zbekcha tanishi sifatsiz)
+      const heard = await listenAccurate((state) => setInput(state === "transcribing" ? "Tanilmoqda..." : ""));
       setInput(heard);
       inputRef.current?.focus();
     } catch (e) {

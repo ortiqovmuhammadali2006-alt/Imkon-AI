@@ -6,11 +6,11 @@ import { Keyboard, Loader2, Mic, MicOff, Square, X } from "lucide-react";
 import {
   createSpeechStream,
   listenForBargeIn,
-  listenOnce,
   RecognitionError,
   stopSpeaking,
   VOICE_COMMAND_EVENT,
 } from "@/lib/speech";
+import { listenAccurate } from "@/lib/recorder";
 import { voiceMode } from "@/lib/voiceMode";
 
 type Phase = "listening" | "thinking" | "speaking" | "paused" | "error";
@@ -83,8 +83,15 @@ export default function VoiceChat({
       setHeard("");
       let text = "";
       try {
-        // O'quvchi o'ylab, gap orasida to'xtasa ham savol bo'linib ketmasin — 1.8 s jimlikdan keyin tugaydi
-        text = await listenOnce(setHeard, ctrl.signal, { pauseMs: 1800 });
+        // Ovoz yozib olinadi va serverda aniq tanitiladi (brauzerning o'zbekcha tanishi sifatsiz).
+        // Gap 1.2 s jimlikdan keyin tugaydi — o'quvchi o'ylab to'xtasa ham savol bo'linib ketmaydi
+        text = await listenAccurate(
+          (state) => {
+            setPhase(state === "transcribing" ? "thinking" : "listening");
+            setHeard(state === "transcribing" ? "…" : "");
+          },
+          ctrl.signal
+        );
       } catch (e) {
         if (!activeRef.current) return;
         const code = e instanceof RecognitionError ? e.code : "";
@@ -97,8 +104,9 @@ export default function VoiceChat({
           }
           continue;
         }
+        // Tanish xizmati bir martalik ishlamadi — to'xtab, qayta bosishni kutamiz (mikrofon xatosi emas)
         activeRef.current = false;
-        setPhase("error");
+        setPhase(code === "network" ? "paused" : "error");
         setError((e as Error).message);
         return;
       }

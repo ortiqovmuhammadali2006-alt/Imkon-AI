@@ -24,7 +24,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useStudentProfile } from "@/lib/student";
-import { createSpeechStream, listenOnce, onChatAsk, RecognitionError, stopSpeaking, type SpeechStream } from "@/lib/speech";
+import { createSpeechStream, onChatAsk, RecognitionError, stopSpeaking, type SpeechStream } from "@/lib/speech";
+import { listenAccurate } from "@/lib/recorder";
 import { streamTutor, useTutor, type Evaluation, type TutorPlan, type TutorState, type TutorTurn } from "@/lib/tutor";
 import { getErrorMessage } from "@/lib/api";
 import Avatar from "@/components/ui/Avatar";
@@ -319,7 +320,8 @@ function TutorView({ lessonId, data }: { lessonId: number; data: TutorState }) {
   const dictate = async () => {
     setDictating(true);
     try {
-      const heard = await listenOnce((t) => setInput(t), undefined, { pauseMs: 1800 });
+      // Ovoz yozib olinib, serverda aniq tanitiladi (brauzerning o'zbekcha tanishi sifatsiz)
+      const heard = await listenAccurate((state) => setInput(state === "transcribing" ? "Tanilmoqda..." : ""));
       setInput(heard);
       inputRef.current?.focus();
     } catch (e) {
