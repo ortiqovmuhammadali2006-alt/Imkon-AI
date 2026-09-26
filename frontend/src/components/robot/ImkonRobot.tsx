@@ -369,8 +369,9 @@ export default function ImkonRobot() {
         className="robot-float group relative rounded-full focus-visible:outline-offset-4"
       >
         <span className="absolute inset-1 rounded-full bg-indigo-500/30 blur-xl transition-opacity group-hover:opacity-100" aria-hidden />
-        <span className="relative flex size-[88px] items-center justify-center rounded-full bg-surface shadow-2xl shadow-indigo-600/30 ring-2 ring-indigo-100 transition-transform group-hover:scale-105 sm:size-[104px]">
-          <RobotFace state={state} className="size-[70px] sm:size-[84px]" />
+        {/* Telefonda ixchamroq (kontentni to'smasin), kompyuterda katta */}
+        <span className="relative flex size-16 items-center justify-center rounded-full bg-surface shadow-2xl shadow-indigo-600/30 ring-2 ring-indigo-100 transition-transform group-hover:scale-105 sm:size-[104px]">
+          <RobotFace state={state} className="size-[52px] sm:size-[84px]" />
         </span>
       </button>
     </div>

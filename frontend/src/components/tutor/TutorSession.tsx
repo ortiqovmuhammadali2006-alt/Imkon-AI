@@ -351,7 +351,8 @@ function TutorView({ lessonId, data }: { lessonId: number; data: TutorState }) {
 
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
         {/* Dars rejasi */}
-        <aside className="card h-fit p-5 lg:sticky lg:top-24" aria-label="Dars rejasi">
+        {/* Kompyuter: reja yon tomonda doim ochiq */}
+        <aside className="card hidden h-fit p-5 lg:sticky lg:top-24 lg:block" aria-label="Dars rejasi">
           <p className="mb-1 flex items-center gap-2 text-sm font-semibold text-indigo-700">
             <Sparkles className="size-4" aria-hidden /> AI Tutor
           </p>
@@ -359,8 +360,36 @@ function TutorView({ lessonId, data }: { lessonId: number; data: TutorState }) {
           <PlanPanel plan={plan} current={current} finished={finished} />
         </aside>
 
+        {/* Telefon va planshet: reja ixcham qatorda (bosilsa ochiladi) — dars darhol ko'rinsin */}
+        <details className="card group p-4 lg:hidden">
+          <summary className="flex cursor-pointer list-none items-center gap-3 [&::-webkit-details-marker]:hidden">
+            <Sparkles className="size-5 shrink-0 text-indigo-600" aria-hidden />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate font-bold text-slate-900">{data.lesson.title}</span>
+              {plan && (
+                <span className="mt-1.5 flex items-center gap-2">
+                  <span className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
+                    <span
+                      className="block h-full rounded-full bg-indigo-600 transition-all duration-500"
+                      style={{ width: `${Math.round(((finished ? plan.parts.length : current - 1) / plan.parts.length) * 100)}%` }}
+                    />
+                  </span>
+                  <span className="text-sm font-semibold text-slate-700">
+                    {finished ? plan.parts.length : current - 1}/{plan.parts.length}
+                  </span>
+                </span>
+              )}
+            </span>
+            <span className="shrink-0 rounded-lg bg-indigo-50 px-2.5 py-1 text-sm font-medium text-indigo-700 group-open:hidden">Reja</span>
+            <span className="hidden shrink-0 rounded-lg bg-indigo-50 px-2.5 py-1 text-sm font-medium text-indigo-700 group-open:inline">Yopish</span>
+          </summary>
+          <div className="mt-4">
+            <PlanPanel plan={plan} current={current} finished={finished} />
+          </div>
+        </details>
+
         {/* Dars jarayoni */}
-        <div className="card flex h-[calc(100dvh-10rem)] min-h-[520px] flex-col overflow-hidden">
+        <div className="card flex h-[calc(100dvh-13rem)] min-h-[460px] flex-col overflow-hidden lg:h-[calc(100dvh-10rem)] lg:min-h-[520px]">
           <header className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-4 py-3">
             <p className="min-w-0 flex-1 truncate text-sm text-slate-500">
               {data.lesson.subject && <span className="font-semibold text-slate-700">{data.lesson.subject} · </span>}
