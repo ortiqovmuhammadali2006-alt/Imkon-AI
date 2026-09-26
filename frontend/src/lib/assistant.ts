@@ -9,7 +9,6 @@ export type AssistantAction =
   | "open_assignments"
   | "open_schedule"
   | "open_grades"
-  | "open_knowledge"
   | "open_chat"
   | "voice_chat"
   | "answer"
@@ -39,8 +38,6 @@ export function actionHref(r: AssistantResult): string | null {
       return "/student/schedule";
     case "open_grades":
       return "/student/grades";
-    case "open_knowledge":
-      return "/student/knowledge";
     case "open_chat":
       return "/student/chat";
     case "voice_chat":

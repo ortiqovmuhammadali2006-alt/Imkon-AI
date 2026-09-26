@@ -189,31 +189,3 @@ export function isOverdue(due: string | null) {
   return due !== null && due < new Date().toLocaleDateString("sv-SE");
 }
 
-// ---------- Mening bilimim ----------
-export type KnowledgeStatus = "not_started" | "learning" | "review" | "mastered";
-export type KnowledgeLevel = "new" | "weak" | "medium" | "strong";
-
-export type KnowledgeLesson = {
-  lesson_id: number;
-  title: string;
-  subject: string | null;
-  teacher_name: string;
-  status: KnowledgeStatus;
-  mastery: number | null; // 0..100, javob bo'lmasa null
-  progress: number; // o'tilgan qismlar, 0..100
-  answered: number;
-  correct: number;
-  partial: number;
-  wrong: number;
-  parts: { title: string; correct: number; partial: number; wrong: number; mastery: number | null; level: KnowledgeLevel }[];
-  weak_parts: string[];
-  last_activity: string | null;
-};
-
-export type Knowledge = {
-  summary: { total: number; mastered: number; learning: number; review: number; not_started: number; mastery: number | null };
-  lessons: KnowledgeLesson[];
-};
-
-export const useStudentKnowledge = () =>
-  useQuery({ queryKey: ["student", "knowledge"], queryFn: () => get<Knowledge>("/student/knowledge") });
