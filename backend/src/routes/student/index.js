@@ -352,6 +352,114 @@ router.post("/lessons/:id/tutor", async (req, res) => {
   }
 });
 
+// ---------- Imkon robot-yordamchi: erkin gapni tushunib, platformadagi amalni bajaradi ----------
+
+const ASSISTANT_ACTIONS = [
+  "open_home", // bosh sahifa
+  "open_lessons", // darslar ro'yxati
+  "open_lesson", // aniq dars sahifasi (lesson_id)
+  "tutor", // AI Tutor bilan darsni o'rganish (lesson_id)
+  "open_assignments",
+  "open_schedule",
+  "open_grades",
+  "open_chat", // AI suhbat (savol berish, shunchaki suhbat)
+  "voice_chat", // ovozli suhbat
+  "answer", // faqat javob (bugungi reja, oddiy savol) — sahifa o'zgarmaydi
+];
+const WEEKDAY_NAMES = ["", "dushanba", "seshanba", "chorshanba", "payshanba", "juma", "shanba", "yakshanba"];
+
+router.post("/assistant", async (req, res) => {
+  const text = typeof req.body?.text === "string" ? req.body.text.trim().slice(0, 500) : "";
+  const pathname = typeof req.body?.pathname === "string" ? req.body.pathname.slice(0, 200) : "";
+  if (!text) throw new HttpError(400, "Nima yordam kerakligini yozing yoki ayting");
+  checkAiLimit(req.user.id);
+
+  const [{ rows: lessons }, { rows: slots }, { rows: tasks }, { rows: lastTutor }, { rows: me }] = await Promise.all([
+    pool.query(`SELECT l.id, l.title, t.subject, l.created_at ${ACCESSIBLE_LESSONS} ORDER BY l.created_at DESC LIMIT 40`, [req.user.id]),
+    pool.query(
+      `${SELECT_SQL}
+       JOIN teacher_students ts ON ts.teacher_id = sc.teacher_id AND ts.student_id = $1
+       JOIN students st ON st.user_id = ts.student_id
+       WHERE sc.group_name IS NULL OR st.grade IS NULL OR LOWER(sc.group_name) = LOWER(st.grade)
+       ${ORDER_SQL}`,
+      [req.user.id]
+    ),
+    pool.query(
+      `SELECT a.title, a.due_date, l.title AS lesson_title
+       FROM assignments a
+       JOIN lessons l ON l.id = a.lesson_id
+       JOIN teacher_students ts ON ts.teacher_id = l.teacher_id AND ts.student_id = $1
+       LEFT JOIN submissions s ON s.assignment_id = a.id AND s.student_id = $1
+       WHERE s.id IS NULL
+       ORDER BY a.due_date NULLS LAST LIMIT 8`,
+      [req.user.id]
+    ),
+    pool.query(
+      `SELECT ts.lesson_id, l.title FROM tutor_sessions ts JOIN lessons l ON l.id = ts.lesson_id
+       WHERE ts.student_id = $1 ORDER BY ts.updated_at DESC LIMIT 1`,
+      [req.user.id]
+    ),
+    pool.query("SELECT u.full_name FROM users u WHERE u.id = $1", [req.user.id]),
+  ]);
+
+  const now = new Date();
+  const today = ((now.getDay() + 6) % 7) + 1; // 1 = dushanba
+  const tomorrow = (today % 7) + 1;
+  const daySlots = (d) =>
+    slots
+      .filter((s) => s.day_of_week === d)
+      .map((s) => `${String(s.start_time).slice(0, 5)} ${s.subject || "dars"} (${s.teacher_name})`)
+      .join("; ") || "dars yo'q";
+  const openLessonId = Number((pathname.match(/^\/student\/lessons\/(\d+)/) || [])[1]) || null;
+
+  const context = [
+    `O'quvchi: ${me[0]?.full_name}. Bugun: ${WEEKDAY_NAMES[today]}, ${now.toISOString().slice(0, 10)}.`,
+    `Hozirgi sahifa: ${pathname || "noma'lum"}${openLessonId ? ` (ochiq dars id=${openLessonId})` : ""}.`,
+    `Bugungi jadval: ${daySlots(today)}.`,
+    `Ertangi jadval (${WEEKDAY_NAMES[tomorrow]}): ${daySlots(tomorrow)}.`,
+    `Topshirilmagan vazifalar: ${tasks.map((t) => `"${t.title}" (${t.lesson_title}${t.due_date ? `, muddat ${String(t.due_date).slice(0, 10)}` : ""})`).join("; ") || "yo'q"}.`,
+    lastTutor[0] ? `Oxirgi AI Tutor darsi: id=${lastTutor[0].lesson_id} "${lastTutor[0].title}".` : "AI Tutor bilan hali dars o'tilmagan.",
+    `Darslar (yangidan eskiga): ${lessons.map((l) => `id=${l.id} "${l.title}" [${l.subject || "fan"}]`).join("; ") || "yo'q"}.`,
+  ].join("\n");
+
+  let result;
+  try {
+    const completion = await getClient().chat.completions.create({
+      ...chatParams(400),
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content:
+            "Sen 'Imkon' — imkoniyati cheklangan o'quvchilar platformasidagi mehribon robot-yordamchisan. O'quvchining gapini tushunib, " +
+            "platformadagi bitta amalni tanla va qisqa (1-2 gap) iliq javob yoz. Faqat o'zbek tilida (lotin). Faqat JSON qaytar: " +
+            `{"action": "${ASSISTANT_ACTIONS.join("|")}", "lesson_id": son yoki null, "reply": "..."}.\n` +
+            "Qoidalar: darsni tushuntirish/o'rganish/qayta tushuntirish/'tushunmayapman' — action=tutor (ochiq dars yoki mos dars, " +
+            "bo'lmasa oxirgi Tutor darsi). Aniq darsni ochish — open_lesson (fan va sana bo'yicha eng mos darsni tanla; ertangi fan so'ralsa — shu fanning eng yangi darsi). " +
+            "Bugungi reja so'ralsa — answer: jadval va topshirilmagan vazifalarni qisqa ayt. Mos dars topilmasa — open_lessons va buni ayt. " +
+            "Savol bermoqchi yoki suhbatlashmoqchi bo'lsa — open_chat; ovozli suhbat — voice_chat. lesson_id faqat ro'yxatdagi id bo'lsin.",
+        },
+        { role: "user", content: `${context}\n\nO'quvchi: "${text}"` },
+      ],
+    });
+    result = JSON.parse(completion.choices[0]?.message?.content || "{}");
+  } catch (err) {
+    throw toHttpError(err);
+  }
+
+  let action = ASSISTANT_ACTIONS.includes(result.action) ? result.action : "answer";
+  let lessonId = lessons.some((l) => l.id === Number(result.lesson_id)) ? Number(result.lesson_id) : null;
+  if (["open_lesson", "tutor"].includes(action) && !lessonId) {
+    lessonId = action === "tutor" ? openLessonId || lastTutor[0]?.lesson_id || null : null;
+    if (!lessonId) action = "open_lessons";
+  }
+  res.json({
+    action,
+    lesson_id: lessonId,
+    reply: String(result.reply || "").trim().slice(0, 400) || "Bajarildi!",
+  });
+});
+
 // ---------- Uy vazifalari ----------
 
 router.get("/assignments", async (req, res) => {

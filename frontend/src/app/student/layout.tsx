@@ -4,6 +4,7 @@ import { LayoutDashboard, BookOpen, CalendarDays, ClipboardList, Star, MessagesS
 import DashboardShell, { type NavItem } from "@/components/DashboardShell";
 import VoiceControl from "@/components/student/VoiceControl";
 import VoiceQualityHint from "@/components/student/VoiceQualityHint";
+import ImkonRobot from "@/components/robot/ImkonRobot";
 
 const nav: NavItem[] = [
   { href: "/student", label: "Bosh sahifa", icon: LayoutDashboard },
@@ -19,6 +20,8 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
     <DashboardShell role="student" nav={nav} toolbar={<VoiceControl />}>
       <VoiceQualityHint />
       {children}
+      {/* Imkon robot-yordamchi — o'quvchi panelining har bir sahifasida pastki o'ng burchakda */}
+      <ImkonRobot />
     </DashboardShell>
   );
 }

@@ -43,6 +43,7 @@ import ConfirmModal from "@/components/ui/ConfirmModal";
 import SpeakButton from "@/components/student/SpeakButton";
 import Markdown from "./Markdown";
 import VoiceChat from "./VoiceChat";
+import { OPEN_VOICE_KEY } from "@/lib/assistant";
 
 // retryOf — javob olinmagan savol matni ("Qayta yuborish" uchun)
 type UiMessage = ChatMessage & { error?: boolean; streaming?: boolean; retryOf?: string };
@@ -161,6 +162,23 @@ export default function ChatPage() {
   const [dictating, setDictating] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
+
+  // Imkon robotdagi "Ovozli suhbat" — sahifa ochilishi bilan ovozli suhbat boshlanadi.
+  // Belgi oyna haqiqatan ochilganda o'chiriladi (dasturlash rejimida effekt ikki marta ishlaydi)
+  useEffect(() => {
+    let wanted = false;
+    try {
+      wanted = sessionStorage.getItem(OPEN_VOICE_KEY) === "1";
+    } catch {}
+    if (!wanted) return;
+    const id = setTimeout(() => {
+      try {
+        sessionStorage.removeItem(OPEN_VOICE_KEY);
+      } catch {}
+      setVoiceOpen(true);
+    }, 0);
+    return () => clearTimeout(id);
+  }, []);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [loadingConv, setLoadingConv] = useState(false);
 

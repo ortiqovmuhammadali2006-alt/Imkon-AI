@@ -27,6 +27,7 @@ import {
   stopSpeaking,
   VOICE_COMMAND_EVENT,
 } from "@/lib/speech";
+import { askRobot } from "@/lib/assistant";
 import { LOGIN_WELCOME_KEY, SESSION_STARTED_KEY, voiceMode } from "@/lib/voiceMode";
 import { OPEN_PROFILE_EVENT } from "@/components/DashboardShell";
 import { setTheme } from "@/lib/theme";
@@ -281,7 +282,8 @@ export default function VoiceControl() {
 
       const command = COMMANDS.find((c) => c.match(text));
       if (!command) {
-        speak("Tushunmadim. Yordam deb ayting", { quick: true });
+        // Oddiy buyruq emas ("Ertangi matematika darsimni och") — Imkon robot AI bilan tushunib bajaradi
+        askRobot(heard.trim());
         return;
       }
       const reply =

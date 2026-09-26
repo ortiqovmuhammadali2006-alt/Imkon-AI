@@ -360,3 +360,65 @@ video::cue {
     animation: shimmer 1.4s linear infinite;
   }
 }
+
+/* ---------- Imkon robotchasi (components/robot) ---------- */
+.robot-float {
+  animation: robot-float 3.2s ease-in-out infinite;
+}
+.robot-blink {
+  animation: robot-blink 4.5s ease-in-out infinite;
+}
+.robot-antenna {
+  animation: robot-glow 2.4s ease-in-out infinite;
+}
+.robot-antenna-fast {
+  animation: robot-glow 0.7s ease-in-out infinite;
+}
+.robot-talk {
+  animation: robot-talk 0.32s ease-in-out infinite alternate;
+}
+@keyframes robot-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+@keyframes robot-blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.1);
+  }
+}
+@keyframes robot-glow {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+@keyframes robot-talk {
+  from {
+    transform: scaleY(0.35);
+  }
+  to {
+    transform: scaleY(1.25);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .robot-float,
+  .robot-blink,
+  .robot-antenna,
+  .robot-antenna-fast,
+  .robot-talk {
+    animation: none;
+  }
+}
