@@ -121,7 +121,7 @@ export default function StudentLessonsPage() {
                     </div>
                     <h2 className="text-lg font-semibold tracking-tight text-slate-900">{l.title}</h2>
                     {l.description && <p className="mt-1 mb-5 line-clamp-2 text-slate-500">{l.description}</p>}
-                    <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-slate-100 pt-4 text-sm text-slate-500">
+                    <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line pt-4 text-sm text-slate-500">
                       <span className="flex items-center gap-1.5">
                         <UserRound className="size-4" aria-hidden /> {l.teacher_name}
                       </span>

@@ -78,7 +78,7 @@ export default function MicPermissionDialog({
 
       <ol className="mt-6 space-y-3">
         {guide.steps.map((step, i) => (
-          <li key={i} className="flex gap-3 rounded-xl bg-slate-50 px-4 py-3 ring-1 ring-slate-100">
+          <li key={i} className="flex gap-3 rounded-xl bg-slate-50 px-4 py-3 ring-1 ring-line">
             <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white">{i + 1}</span>
             <span className="pt-0.5 text-slate-700">{step}</span>
           </li>

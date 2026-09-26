@@ -82,7 +82,7 @@ export default function AiTutor({
 
   return (
     <section aria-label="AI yordamchi" className="card overflow-hidden">
-      <div className="flex items-center gap-3 border-b border-slate-100 bg-indigo-50 px-5 py-4">
+      <div className="flex items-center gap-3 border-b border-line bg-indigo-50 px-5 py-4">
         <div className="rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 p-2.5 text-white shadow-md shadow-indigo-500/30">
           <Bot className="size-5" aria-hidden />
         </div>
@@ -130,7 +130,7 @@ export default function AiTutor({
                 <Bot className="size-4" aria-hidden />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="rounded-3xl rounded-tl-md bg-slate-50 px-5 py-3.5 text-[1.05rem] leading-relaxed whitespace-pre-wrap text-slate-800 ring-1 ring-slate-100">
+                <div className="rounded-3xl rounded-tl-md bg-slate-50 px-5 py-3.5 text-[1.05rem] leading-relaxed whitespace-pre-wrap text-slate-800 ring-1 ring-line">
                   {m.content}
                 </div>
                 <div className="mt-2">
@@ -146,7 +146,7 @@ export default function AiTutor({
             <div className="flex size-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 text-white">
               <Bot className="size-4" aria-hidden />
             </div>
-            <div className="flex items-center gap-1.5 rounded-3xl rounded-tl-md bg-slate-50 px-5 py-4 ring-1 ring-slate-100">
+            <div className="flex items-center gap-1.5 rounded-3xl rounded-tl-md bg-slate-50 px-5 py-4 ring-1 ring-line">
               {[0, 150, 300].map((delay) => (
                 <span key={delay} className="size-2 animate-bounce rounded-full bg-indigo-400" style={{ animationDelay: `${delay}ms` }} />
               ))}
@@ -176,7 +176,7 @@ export default function AiTutor({
           e.preventDefault();
           if (input.trim()) ask(input.trim());
         }}
-        className="flex items-center gap-2 border-t border-slate-100 bg-slate-50/50 p-4"
+        className="flex items-center gap-2 border-t border-line bg-slate-50/50 p-4"
       >
         <button
           type="button"

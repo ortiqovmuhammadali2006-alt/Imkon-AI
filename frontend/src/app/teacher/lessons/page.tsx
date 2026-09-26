@@ -101,7 +101,7 @@ export default function LessonsPage() {
                     </div>
                     <h2 className="text-lg font-semibold tracking-tight text-slate-900">{l.title}</h2>
                     {l.description && <p className="mt-1 mb-5 line-clamp-2 text-slate-500">{l.description}</p>}
-                    <div className="mt-auto flex items-center gap-3 border-t border-slate-100 pt-4 text-sm text-slate-500">
+                    <div className="mt-auto flex items-center gap-3 border-t border-line pt-4 text-sm text-slate-500">
                       <span className="flex items-center gap-1.5">
                         <ClipboardList className="size-4" aria-hidden /> {l.assignments_count} ta vazifa
                       </span>

@@ -33,7 +33,7 @@ export function LoadingState({ rows = 3 }: { rows?: number }) {
 
 export function ErrorState({ message }: { message: string }) {
   return (
-    <div role="alert" className="flex animate-fade-in flex-col items-center rounded-2xl border border-red-100 bg-red-50/70 px-6 py-12 text-center">
+    <div role="alert" className="flex animate-fade-in flex-col items-center rounded-2xl border border-red-200 bg-red-50/70 px-6 py-12 text-center">
       <div className="mb-3 rounded-2xl bg-red-100 p-3 text-red-600">
         <AlertCircle className="size-7" aria-hidden />
       </div>
@@ -53,7 +53,7 @@ export function EmptyState({
   icon?: LucideIcon;
 }) {
   return (
-    <div className="flex animate-fade-in flex-col items-center rounded-2xl border-2 border-dashed border-slate-200 bg-surface/60 px-6 py-16 text-center">
+    <div className="flex animate-fade-in flex-col items-center rounded-2xl border-2 border-dashed border-line bg-surface/60 px-6 py-16 text-center">
       <div className="mb-4 rounded-2xl bg-indigo-50 p-4 text-indigo-500">
         <Icon className="size-9" aria-hidden />
       </div>

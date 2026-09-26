@@ -15,7 +15,7 @@ export default function ThemeToggle({ withLabel = false }: { withLabel?: boolean
       onClick={toggle}
       aria-label={label}
       title={label}
-      className={`flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-surface text-slate-600 shadow-sm transition-colors hover:border-slate-300 hover:text-indigo-600 ${
+      className={`flex items-center justify-center gap-2 rounded-full border border-line bg-surface text-slate-600 shadow-sm transition-colors hover:border-slate-300 hover:text-indigo-600 ${
         withLabel ? "px-4 py-2.5 font-medium" : "size-11"
       }`}
     >

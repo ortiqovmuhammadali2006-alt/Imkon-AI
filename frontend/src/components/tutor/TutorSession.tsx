@@ -143,11 +143,11 @@ const TurnItem = memo(function TurnItem({ t, userName }: { t: UiTurn; userName: 
           </span>
         )}
         {t.error ? (
-          <p role="alert" className="rounded-2xl bg-red-50 px-4 py-3 text-red-800 ring-1 ring-red-100">
+          <p role="alert" className="rounded-2xl bg-red-50 px-4 py-3 text-red-800 ring-1 ring-red-200">
             {t.content}
           </p>
         ) : t.content ? (
-          <div className="rounded-3xl rounded-tl-md bg-surface px-5 py-4 text-lg leading-8 text-slate-800 shadow-sm ring-1 ring-slate-200/70">
+          <div className="rounded-3xl rounded-tl-md bg-surface px-5 py-4 text-lg leading-8 text-slate-800 shadow-sm ring-1 ring-line">
             <Markdown>{t.content}</Markdown>
             {t.streaming && <span className="ml-1 inline-block h-5 w-2 animate-pulse rounded-sm bg-indigo-500 align-middle" aria-hidden />}
           </div>
@@ -392,7 +392,7 @@ function TutorView({ lessonId, data }: { lessonId: number; data: TutorState }) {
 
         {/* Dars jarayoni */}
         <div className="card flex h-[calc(100dvh-13rem)] min-h-[460px] flex-col overflow-hidden lg:h-[calc(100dvh-10rem)] lg:min-h-[520px]">
-          <header className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-4 py-3">
+          <header className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3">
             <p className="min-w-0 flex-1 truncate text-sm text-slate-500">
               {data.lesson.subject && <span className="font-semibold text-slate-700">{data.lesson.subject} · </span>}
               {data.lesson.teacher_name}
@@ -401,7 +401,7 @@ function TutorView({ lessonId, data }: { lessonId: number; data: TutorState }) {
               onClick={toggleAutoRead}
               aria-pressed={!!autoRead}
               className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium ring-1 transition-colors ${
-                autoRead ? "bg-indigo-50 text-indigo-700 ring-indigo-200" : "text-slate-600 ring-slate-200 hover:bg-slate-50"
+                autoRead ? "bg-indigo-50 text-indigo-700 ring-indigo-200" : "text-slate-600 ring-line hover:bg-slate-50"
               }`}
             >
               {autoRead ? <Volume2 className="size-4" aria-hidden /> : <VolumeX className="size-4" aria-hidden />}
@@ -466,10 +466,10 @@ function TutorView({ lessonId, data }: { lessonId: number; data: TutorState }) {
 
           {/* Javob berish */}
           {started && !finished && (
-            <div className="border-t border-slate-100 bg-surface p-3 sm:p-4">
+            <div className="border-t border-line bg-surface p-3 sm:p-4">
               <div ref={modesRef} className="relative mx-auto max-w-3xl">
                 {modesOpen && (
-                  <div role="menu" aria-label="Qanday tushuntiray?" className="absolute bottom-full left-0 z-10 mb-2 w-72 animate-pop rounded-2xl bg-surface p-2 shadow-2xl ring-1 ring-slate-200">
+                  <div role="menu" aria-label="Qanday tushuntiray?" className="absolute bottom-full left-0 z-10 mb-2 w-72 animate-pop rounded-2xl bg-surface p-2 shadow-2xl ring-1 ring-line">
                     <p className="px-3 py-2 text-sm font-semibold text-slate-900">Qanday tushuntiray?</p>
                     {data.modes.map((m) => (
                       <button
@@ -503,7 +503,7 @@ function TutorView({ lessonId, data }: { lessonId: number; data: TutorState }) {
                     e.preventDefault();
                     submit();
                   }}
-                  className="flex items-end gap-2 rounded-3xl border border-slate-200 bg-surface p-2 shadow-sm focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-100"
+                  className="flex items-end gap-2 rounded-3xl border border-line bg-surface p-2 shadow-sm focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-200"
                 >
                   <button
                     type="button"

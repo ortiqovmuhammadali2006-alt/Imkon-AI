@@ -40,7 +40,7 @@ export default function LessonTextTabs({
       body: (
         <dl className="grid gap-3 sm:grid-cols-2">
           {a11y.key_terms.map((t) => (
-            <div key={t.term} className="rounded-xl bg-indigo-50 p-4 ring-1 ring-indigo-100">
+            <div key={t.term} className="rounded-xl bg-indigo-50 p-4 ring-1 ring-indigo-200">
               <dt className="text-lg font-semibold text-indigo-900">{t.term}</dt>
               <dd className="mt-1 text-slate-700">{t.meaning}</dd>
             </div>

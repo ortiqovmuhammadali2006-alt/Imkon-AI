@@ -72,7 +72,7 @@ export default function ProfileModal({ open, onClose, onLogout }: { open: boolea
             </div>
           </div>
 
-          <dl className="mt-5 divide-y divide-slate-100 rounded-2xl px-4 ring-1 ring-slate-200">
+          <dl className="mt-5 divide-y divide-line rounded-2xl px-4 ring-1 ring-line">
             <Row icon={UserRound} label="Login">{p.username}</Row>
             {p.phone && <Row icon={Phone} label="Telefon">{p.phone}</Row>}
             {p.role === "student" && (

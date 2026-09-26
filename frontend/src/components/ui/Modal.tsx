@@ -60,7 +60,7 @@ export default function Modal({
           size === "lg" ? "sm:max-w-3xl" : "sm:max-w-lg"
         }`}
       >
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-surface/90 px-6 py-4 backdrop-blur">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-surface/90 px-6 py-4 backdrop-blur">
           <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
           <button onClick={onClose} aria-label="Yopish" className="icon-btn -mr-2">
             <X className="size-5" />

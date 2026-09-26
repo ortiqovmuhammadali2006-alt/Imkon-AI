@@ -23,7 +23,7 @@ function GradeForm({ row }: { row: SubmissionRow }) {
         e.preventDefault();
         mutation.mutate(undefined);
       }}
-      className="mt-3 space-y-3 border-t border-slate-100 pt-3"
+      className="mt-3 space-y-3 border-t border-line pt-3"
     >
       <ScorePicker value={score} onChange={setScore} />
       <input
@@ -63,7 +63,7 @@ export default function SubmissionsView({ assignmentId }: { assignmentId: number
       </p>
       <ul className="space-y-3">
         {rows.map((r) => (
-          <li key={r.student_id} className="rounded-xl p-4 ring-1 ring-slate-200">
+          <li key={r.student_id} className="rounded-xl p-4 ring-1 ring-line">
             <div className="flex flex-wrap items-center gap-3">
               <div className="min-w-0 flex-1">
                 <p className="font-medium">{r.full_name}</p>

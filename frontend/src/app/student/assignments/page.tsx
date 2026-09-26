@@ -46,7 +46,7 @@ export default function AssignmentsPage() {
               aria-selected={tab === t.key}
               onClick={() => setTab(t.key)}
               className={`rounded-full px-4 py-2 font-medium ${
-                tab === t.key ? "bg-indigo-600 text-white" : "bg-surface text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+                tab === t.key ? "bg-indigo-600 text-white" : "bg-surface text-slate-600 ring-1 ring-line hover:bg-slate-50"
               }`}
             >
               {t.label} ({count})

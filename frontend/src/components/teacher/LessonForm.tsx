@@ -213,7 +213,7 @@ export default function LessonForm({
       )}
 
       {/* O'quvchi uchun avtomatik tayyorlanadigan formatlar */}
-      <div className="rounded-xl bg-indigo-50 p-4 ring-1 ring-indigo-100">
+      <div className="rounded-xl bg-indigo-50 p-4 ring-1 ring-indigo-200">
         <p className="mb-2 flex items-center gap-2 font-semibold text-indigo-900">
           <Sparkles className="size-4" aria-hidden /> O&apos;quvchilar uchun avtomatik tayyorlanadi
         </p>

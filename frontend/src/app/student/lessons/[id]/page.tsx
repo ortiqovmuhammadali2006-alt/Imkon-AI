@@ -76,7 +76,7 @@ export default function StudentLessonPage({ params }: { params: Promise<{ id: st
 
         <div className="px-6 py-8 sm:px-10">
           {lesson.a11y.processing && (
-            <p role="status" className="mb-6 flex items-center gap-2 rounded-xl bg-indigo-50 px-4 py-3 text-indigo-900 ring-1 ring-indigo-100">
+            <p role="status" className="mb-6 flex items-center gap-2 rounded-xl bg-indigo-50 px-4 py-3 text-indigo-900 ring-1 ring-indigo-200">
               <Loader2 className="size-4 animate-spin" aria-hidden />
               Material tayyorlanmoqda: subtitr va qo&apos;shimcha formatlar tez orada shu yerda paydo bo&apos;ladi.
             </p>
@@ -85,7 +85,7 @@ export default function StudentLessonPage({ params }: { params: Promise<{ id: st
           <LessonTextTabs content={lesson.content} a11y={lesson.a11y} category={profile?.category} onActiveText={setActiveText} />
 
           {lesson.file_url && lesson.file_name && (
-            <div className="mt-8 border-t border-slate-100 pt-8">
+            <div className="mt-8 border-t border-line pt-8">
               <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold tracking-tight">
                 Dars materiali <FileTypeBadge name={lesson.file_name} />
               </h2>

@@ -85,7 +85,7 @@ export default function SalariesPage() {
                 <th className="px-4 py-3 text-right">Amal</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-line">
               {rows.map((r) => {
                 const percent = r.monthly_salary ? Math.min((r.paid / r.monthly_salary) * 100, 100) : 0;
                 return (
@@ -135,7 +135,7 @@ export default function SalariesPage() {
       ) : !payments.data?.length ? (
         <p className="card px-5 py-8 text-center text-slate-500">Bu oyda hali to&apos;lov qilinmagan</p>
       ) : (
-        <ul className="card divide-y divide-slate-100">
+        <ul className="card divide-y divide-line">
           {payments.data.map((p) => (
             <li key={p.id} className="flex items-center gap-4 px-5 py-3">
               <div className="flex-1">

@@ -208,7 +208,7 @@ function writeVoiceOff(off: boolean) {
 }
 const FONT_SCALES = [100, 115, 130];
 const ROUND_BTN =
-  "flex size-11 items-center justify-center rounded-full border border-slate-200 bg-surface text-slate-600 shadow-sm transition-colors hover:border-slate-300 hover:text-indigo-600";
+  "flex size-11 items-center justify-center rounded-full border border-line bg-surface text-slate-600 shadow-sm transition-colors hover:border-slate-300 hover:text-indigo-600";
 
 function readStorage(key: string) {
   try {
@@ -629,7 +629,7 @@ export default function VoiceControl() {
           className={`flex h-11 items-center gap-2 rounded-full px-3 font-semibold transition-colors sm:px-4 ${
             mode
               ? "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200 hover:bg-emerald-100"
-              : "bg-slate-100 text-slate-600 ring-1 ring-slate-200 hover:bg-slate-200"
+              : "bg-slate-100 text-slate-600 ring-1 ring-line hover:bg-slate-200"
           }`}
           title={mode ? "Imkon tinglayapti — “Imkon” deb chaqiring (bosilsa o'chadi)" : "Ovozli yordamchini yoqish"}
         >

@@ -61,7 +61,7 @@ export default function TeachersPage() {
         <EmptyState message="Hali o'qituvchi qo'shilmagan" action={addButton} />
       ) : (
         <div className="card overflow-hidden">
-          <div className="border-b border-slate-200 p-4">
+          <div className="border-b border-line p-4">
             <div className="relative max-w-sm">
               <Search className="absolute top-1/2 left-3 size-5 -translate-y-1/2 text-slate-400" aria-hidden />
               <input
@@ -87,7 +87,7 @@ export default function TeachersPage() {
                   <th className="px-4 py-3 text-right">Amallar</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-line">
                 {filtered.map((t) => (
                   <tr key={t.id} className="transition-colors hover:bg-slate-50/70">
                     <td className="px-4 py-3">

@@ -83,7 +83,7 @@ export default function StudentGradesPage() {
           {all.length === 0 ? (
             <p className="card px-5 py-10 text-center text-slate-500">Hali baho qo&apos;yilmagan</p>
           ) : (
-            <ul className="card divide-y divide-slate-100">
+            <ul className="card divide-y divide-line">
               {all.map((g) => (
                 <li key={g.key} className="flex items-center gap-4 px-5 py-3">
                   <ScoreBadge score={g.score} />
@@ -107,10 +107,10 @@ export default function StudentGradesPage() {
             <p className="card px-5 py-10 text-center text-slate-500">Davomat belgilanmagan</p>
           ) : (
             <div className="card">
-              <p className="border-b border-slate-100 px-5 py-3 text-sm text-slate-600">
+              <p className="border-b border-line px-5 py-3 text-sm text-slate-600">
                 {attendance.data.length} kundan {present} kun qatnashgan
               </p>
-              <ul className="max-h-96 divide-y divide-slate-100 overflow-y-auto">
+              <ul className="max-h-96 divide-y divide-line overflow-y-auto">
                 {attendance.data.map((a) => (
                   <li key={a.id} className="flex items-center justify-between gap-3 px-5 py-2.5 text-sm">
                     <span>

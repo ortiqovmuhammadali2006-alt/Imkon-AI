@@ -240,7 +240,7 @@ export default function ImkonRobot() {
           ref={panelRef}
           role="dialog"
           aria-label="Imkon — AI yordamchi"
-          className="flex max-h-[min(600px,calc(100dvh-11rem))] w-[min(380px,calc(100vw-2rem))] animate-pop flex-col overflow-hidden rounded-3xl bg-surface shadow-2xl ring-1 ring-slate-200"
+          className="flex max-h-[min(600px,calc(100dvh-11rem))] w-[min(380px,calc(100vw-2rem))] animate-pop flex-col overflow-hidden rounded-3xl bg-surface shadow-2xl ring-1 ring-line"
         >
           <div className="flex items-center gap-3 bg-indigo-600 px-4 py-3 text-white">
             <RobotFace state={state} className="size-11 shrink-0 rounded-2xl bg-white/15 p-0.5" />
@@ -265,7 +265,7 @@ export default function ImkonRobot() {
                   key={q.label}
                   onClick={() => quick(q)}
                   disabled={busy}
-                  className={`flex items-center gap-2 rounded-2xl bg-surface px-3 py-2.5 text-left text-sm font-medium text-slate-700 ring-1 ring-slate-200 transition-colors hover:bg-indigo-50 hover:text-indigo-700 hover:ring-indigo-200 disabled:opacity-50 ${
+                  className={`flex items-center gap-2 rounded-2xl bg-surface px-3 py-2.5 text-left text-sm font-medium text-slate-700 ring-1 ring-line transition-colors hover:bg-indigo-50 hover:text-indigo-700 hover:ring-indigo-200 disabled:opacity-50 ${
                     q.label === "Shunchaki suhbatlashish" ? "col-span-2" : ""
                   }`}
                 >
@@ -301,7 +301,7 @@ export default function ImkonRobot() {
               setInput("");
               run(t);
             }}
-            className="flex items-center gap-2 border-t border-slate-100 p-3"
+            className="flex items-center gap-2 border-t border-line p-3"
           >
             <button
               type="button"
@@ -318,7 +318,7 @@ export default function ImkonRobot() {
               onChange={(e) => setInput(e.target.value)}
               placeholder={listening ? "Tinglayapman..." : "Masalan: ertangi darsimni och"}
               aria-label="Imkonga yozing"
-              className="min-w-0 flex-1 rounded-xl bg-slate-50 px-3 py-2.5 outline-none ring-1 ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-300"
+              className="min-w-0 flex-1 rounded-xl bg-slate-50 px-3 py-2.5 outline-none ring-1 ring-line placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-300"
             />
             <button
               type="submit"
@@ -335,7 +335,7 @@ export default function ImkonRobot() {
       {bubble && spoken && !open && (
         <div
           aria-hidden
-          className="relative max-w-[min(340px,calc(100vw-2rem))] animate-pop rounded-3xl rounded-br-md bg-surface py-3 pr-10 pl-4 shadow-xl ring-1 ring-indigo-100"
+          className="relative max-w-[min(340px,calc(100vw-2rem))] animate-pop rounded-3xl rounded-br-md bg-surface py-3 pr-10 pl-4 shadow-xl ring-1 ring-indigo-200"
         >
           <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-indigo-700">
             <span className={`size-2 rounded-full ${speaking ? "animate-pulse bg-emerald-500" : "bg-slate-300"}`} />
@@ -361,7 +361,7 @@ export default function ImkonRobot() {
             setHint(false);
             setOpen(true);
           }}
-          className="max-w-[240px] animate-pop rounded-2xl rounded-br-md bg-surface px-4 py-3 text-left text-sm text-slate-700 shadow-xl ring-1 ring-slate-200"
+          className="max-w-[240px] animate-pop rounded-2xl rounded-br-md bg-surface px-4 py-3 text-left text-sm text-slate-700 shadow-xl ring-1 ring-line"
         >
           <b className="text-indigo-700">Salom! Men Imkonman.</b> Yordam kerak bo&apos;lsa, meni bosing.
         </button>
@@ -381,7 +381,7 @@ export default function ImkonRobot() {
       >
         <span className="absolute inset-1 rounded-full bg-indigo-500/30 blur-xl transition-opacity group-hover:opacity-100" aria-hidden />
         {/* Telefonda ixchamroq (kontentni to'smasin), kompyuterda katta */}
-        <span className="relative flex size-16 items-center justify-center rounded-full bg-surface shadow-2xl shadow-indigo-600/30 ring-2 ring-indigo-100 transition-transform group-hover:scale-105 sm:size-[104px]">
+        <span className="relative flex size-16 items-center justify-center rounded-full bg-surface shadow-2xl shadow-indigo-600/30 ring-2 ring-indigo-200 transition-transform group-hover:scale-105 sm:size-[104px]">
           <RobotFace state={state} className="size-[52px] sm:size-[84px]" />
         </span>
       </button>

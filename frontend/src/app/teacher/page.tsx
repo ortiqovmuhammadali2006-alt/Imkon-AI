@@ -83,7 +83,7 @@ export default function TeacherHome() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="card overflow-hidden lg:col-span-2">
-          <h2 className="border-b border-slate-100 px-6 py-4 text-lg font-semibold tracking-tight">O&apos;quvchilarim</h2>
+          <h2 className="border-b border-line px-6 py-4 text-lg font-semibold tracking-tight">O&apos;quvchilarim</h2>
           {students.isLoading ? (
             <LoadingState />
           ) : !students.data?.length ? (
@@ -99,7 +99,7 @@ export default function TeacherHome() {
                     <th className="px-5 py-3 text-center">Davomat (30 kun)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-line">
                   {students.data.map((st) => (
                     <tr key={st.id} className={`transition-colors hover:bg-slate-50/70 ${st.is_active ? "" : "opacity-50"}`}>
                       <td className="px-5 py-3">

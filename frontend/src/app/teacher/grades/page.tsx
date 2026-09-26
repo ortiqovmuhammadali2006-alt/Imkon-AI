@@ -63,7 +63,7 @@ export default function GradesPage() {
                   <th className="px-4 py-3 text-right">Amal</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-line">
                 {summary.data.map((s) => (
                   <tr key={s.student_id} className="transition-colors hover:bg-slate-50/70">
                     <td className="px-4 py-3">
@@ -109,7 +109,7 @@ export default function GradesPage() {
         ) : !grades.data?.length ? (
           <p className="card px-5 py-8 text-center text-slate-500">Bu oyda baho qo&apos;yilmagan</p>
         ) : (
-          <ul className="card divide-y divide-slate-100">
+          <ul className="card divide-y divide-line">
             {grades.data.map((g) => (
               <li key={g.id} className="flex items-center gap-4 px-5 py-3">
                 <ScoreBadge score={g.score} />

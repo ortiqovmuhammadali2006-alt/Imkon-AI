@@ -110,7 +110,7 @@ export default function MediaPlayer({
             Subtitr: {captionsOn ? "yoniq" : "o'chiq"}
           </button>
         )}
-        <div role="group" aria-label="Tezlik" className="flex items-center gap-1 rounded-xl border border-slate-200 bg-surface p-1">
+        <div role="group" aria-label="Tezlik" className="flex items-center gap-1 rounded-xl border border-line bg-surface p-1">
           <Gauge className="mx-1 size-4 text-slate-500" aria-hidden />
           {SPEEDS.map((s) => (
             <button
@@ -127,9 +127,9 @@ export default function MediaPlayer({
       </div>
 
       {segments.length > 0 && (
-        <details open className="rounded-2xl ring-1 ring-slate-200">
+        <details open className="rounded-2xl ring-1 ring-line">
           <summary className="cursor-pointer px-4 py-3 font-semibold">Matni (bosilgan joydan eshittiriladi)</summary>
-          <ol ref={listRef} className="relative max-h-72 space-y-1 overflow-y-auto border-t border-slate-100 p-2">
+          <ol ref={listRef} className="relative max-h-72 space-y-1 overflow-y-auto border-t border-line p-2">
             {segments.map((s, i) => (
               <li key={i}>
                 <button

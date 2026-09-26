@@ -18,7 +18,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         toastOptions={{
           duration: 3500,
           style: {
-            borderRadius: "14px",
+            borderRadius: "8px",
             padding: "10px 14px",
             fontWeight: 500,
             boxShadow: "0 10px 30px -10px rgb(15 23 42 / 0.25)",

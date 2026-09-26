@@ -58,7 +58,7 @@ export function SlotCard({
   );
 
   const className = `block w-full rounded-xl p-3 text-left ring-1 ${
-    live ? "bg-emerald-50 ring-emerald-300" : "bg-surface ring-slate-200"
+    live ? "bg-emerald-50 ring-emerald-300" : "bg-surface ring-line"
   }`;
 
   return onClick ? (
@@ -92,7 +92,7 @@ export default function WeeklySchedule({
           <section
             key={day}
             aria-label={WEEKDAYS[day - 1]}
-            className={`rounded-2xl p-3 ${day === today ? "bg-indigo-50 ring-2 ring-indigo-300" : "border border-slate-200/70 bg-surface/60"}`}
+            className={`rounded-2xl p-3 ${day === today ? "bg-indigo-50 ring-2 ring-indigo-300" : "border border-line bg-surface/60"}`}
           >
             <h3 className="mb-2 flex items-center justify-between px-1 font-semibold">
               {WEEKDAYS[day - 1]}

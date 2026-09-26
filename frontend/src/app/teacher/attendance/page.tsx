@@ -99,7 +99,7 @@ function DailyAttendance() {
             <span className="badge bg-slate-100 text-slate-600">Belgilanmagan: {counts.none}</span>
           </div>
 
-          <ul className="card divide-y divide-slate-100">
+          <ul className="card divide-y divide-line">
             {data.map((r) => {
               const current = statusOf(r.student_id, r.status);
               return (
@@ -127,7 +127,7 @@ function DailyAttendance() {
                           aria-checked={current === s}
                           onClick={() => toggle(r.student_id, r.status, s)}
                           className={`flex items-center gap-1.5 rounded-lg border-2 px-3 py-2 text-sm font-medium transition-colors ${
-                            current === s ? active : "border-slate-200 text-slate-600 hover:border-slate-300"
+                            current === s ? active : "border-line text-slate-600 hover:border-slate-300"
                           }`}
                         >
                           <Icon className="size-4" aria-hidden />
@@ -183,7 +183,7 @@ function MonthlyReport() {
                 <th className="px-4 py-3 text-center">Davomat</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-line">
               {data.map((r) => {
                 const total = r.present + r.late + r.absent;
                 const rate = total ? Math.round(((r.present + r.late) / total) * 100) : null;

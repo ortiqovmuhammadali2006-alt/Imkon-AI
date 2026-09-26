@@ -43,8 +43,8 @@ export default function Markdown({ children }: { children: string }) {
             <table className="w-full border-collapse text-sm" {...clean(p)} />
           </div>
         ),
-        th: (p) => <th className="border border-slate-200 bg-slate-50 px-3 py-2 text-left font-semibold" {...clean(p)} />,
-        td: (p) => <td className="border border-slate-200 px-3 py-2" {...clean(p)} />,
+        th: (p) => <th className="border border-line bg-slate-50 px-3 py-2 text-left font-semibold" {...clean(p)} />,
+        td: (p) => <td className="border border-line px-3 py-2" {...clean(p)} />,
       }}
     >
       {children}

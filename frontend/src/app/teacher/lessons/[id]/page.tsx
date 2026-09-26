@@ -83,14 +83,14 @@ export default function LessonDetailPage({ params }: { params: Promise<{ id: str
         </div>
 
         {lesson.content && (
-          <div className="mt-6 border-t border-slate-100 pt-6">
+          <div className="mt-6 border-t border-line pt-6">
             <h2 className="mb-2 font-semibold">Dars matni</h2>
             <p className="max-w-[70ch] text-lg leading-8 whitespace-pre-wrap text-slate-700">{lesson.content}</p>
           </div>
         )}
 
         {lesson.file_url && lesson.file_name && (
-          <div className="mt-6 border-t border-slate-100 pt-6">
+          <div className="mt-6 border-t border-line pt-6">
             <h2 className="mb-3 font-semibold">Material</h2>
             <FilePreview
               url={lesson.file_url}

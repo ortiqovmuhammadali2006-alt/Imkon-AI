@@ -118,7 +118,7 @@ const MessageItem = memo(function MessageItem({
       </div>
       <div className="min-w-0 flex-1 pt-0.5">
         {m.error ? (
-          <div role="alert" className="flex flex-wrap items-center gap-3 rounded-xl bg-red-50 px-4 py-3 text-red-800 ring-1 ring-red-100">
+          <div role="alert" className="flex flex-wrap items-center gap-3 rounded-xl bg-red-50 px-4 py-3 text-red-800 ring-1 ring-red-200">
             <p className="flex-1">{m.content}</p>
             {canRetry && (
               <button onClick={() => onRetry(m.retryOf!)} className="btn-secondary px-3 py-1.5 text-sm">
@@ -148,7 +148,7 @@ const MessageItem = memo(function MessageItem({
           </div>
         )}
         {!m.streaming && !m.error && !!m.sources?.length && (
-          <div className="mt-3 rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-100">
+          <div className="mt-3 rounded-2xl bg-slate-50 p-3 ring-1 ring-line">
             <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-slate-500 uppercase">
               <Globe className="size-3.5" aria-hidden /> Manbalar (internetdan)
             </p>
@@ -440,7 +440,7 @@ export default function ChatPage() {
   return (
     <div className="card flex h-[calc(100dvh-8.5rem)] overflow-hidden lg:h-[calc(100dvh-10rem)]">
       {/* Suhbatlar ro'yxati: kompyuterda doimiy, telefonda ochiladigan */}
-      <aside className="hidden w-72 shrink-0 border-r border-slate-100 bg-slate-50/60 md:block">{sidebar}</aside>
+      <aside className="hidden w-72 shrink-0 border-r border-line bg-slate-50/60 md:block">{sidebar}</aside>
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} aria-hidden />
@@ -456,7 +456,7 @@ export default function ChatPage() {
       )}
 
       <section className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center gap-2 border-b border-slate-100 px-4 py-3">
+        <header className="flex items-center gap-2 border-b border-line px-4 py-3">
           <button onClick={() => setSidebarOpen(true)} className="icon-btn md:hidden" aria-label="Suhbatlar ro'yxati">
             <PanelLeft className="size-5" />
           </button>
@@ -503,13 +503,13 @@ export default function ChatPage() {
         </div>
 
         {/* Yozish maydoni */}
-        <div className="border-t border-slate-100 bg-surface/80 p-3 sm:p-4">
+        <div className="border-t border-line bg-surface/80 p-3 sm:p-4">
           <form
             onSubmit={(e) => {
               e.preventDefault();
               submit();
             }}
-            className="mx-auto flex max-w-3xl items-end gap-2 rounded-3xl border border-slate-200 bg-surface p-2 shadow-sm focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-100"
+            className="mx-auto flex max-w-3xl items-end gap-2 rounded-3xl border border-line bg-surface p-2 shadow-sm focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-200"
           >
             <button
               type="button"

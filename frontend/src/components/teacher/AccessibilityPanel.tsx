@@ -69,9 +69,9 @@ export default function AccessibilityPanel({ lessonId, a11y }: { lessonId: numbe
 
       {/* Natijalardan qisqa namuna */}
       {(a11y?.simple_text || a11y?.transcript || a11y?.image_description || a11y?.key_terms?.length) && (
-        <details className="mt-4 rounded-xl ring-1 ring-slate-200">
+        <details className="mt-4 rounded-xl ring-1 ring-line">
           <summary className="cursor-pointer px-4 py-3 font-medium">Natijani ko&apos;rish</summary>
-          <div className="space-y-4 border-t border-slate-100 px-4 py-4 text-sm">
+          <div className="space-y-4 border-t border-line px-4 py-4 text-sm">
             {a11y.simple_text && (
               <div>
                 <p className="mb-1 font-semibold">Oddiy tilda</p>

@@ -94,7 +94,7 @@ export default function StepByStep({ lessonId, text }: { lessonId: number; text:
 
   return (
     <section aria-label="Bosqichma-bosqich o'rganish" className="card overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
         <div className="flex items-center gap-3">
           <div className="rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 p-2 text-white shadow-md shadow-indigo-500/25">
             <Footprints className="size-5" aria-hidden />
@@ -121,7 +121,7 @@ export default function StepByStep({ lessonId, text }: { lessonId: number; text:
           <div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-indigo-600 transition-all duration-500" style={{ width: `${progress}%` }} />
         </div>
 
-        <p aria-live="polite" className="min-h-[6rem] rounded-2xl bg-slate-50 px-5 py-5 text-xl leading-9 text-slate-800 ring-1 ring-slate-100">
+        <p aria-live="polite" className="min-h-[6rem] rounded-2xl bg-slate-50 px-5 py-5 text-xl leading-9 text-slate-800 ring-1 ring-line">
           {steps[index]}
         </p>
 
@@ -161,7 +161,7 @@ export default function StepByStep({ lessonId, text }: { lessonId: number; text:
         )}
 
         {explanation && explanation.step === index && (
-          <div className="mt-5 rounded-2xl bg-indigo-50 p-5 ring-1 ring-indigo-100">
+          <div className="mt-5 rounded-2xl bg-indigo-50 p-5 ring-1 ring-indigo-200">
             <p className="mb-2 flex items-center gap-2 font-semibold text-indigo-900">
               <Sparkles className="size-4" aria-hidden /> {index + 1}-qism tushuntirishi
             </p>

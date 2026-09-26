@@ -7,6 +7,8 @@
   --background: #ffffff;
   --foreground: #0f172a;
   --surface: #ffffff; /* kartalar, formalar, menyu foni */
+  --canvas: #f1f4f9; /* panel sahifalari foni — oq kartalar undan aniq ajralib tursin */
+  --line: #d3dbe6; /* kartalar, jadvallar, bo'limlar chegarasi — oq fonda aniq ko'rinadi */
 }
 
 /*
@@ -32,6 +34,8 @@
   --background: #0b1020;
   --foreground: #e2e8f0;
   --surface: #131b2e;
+  --canvas: #0b1020;
+  --line: #334166;
 
   --color-slate-50: #182238;
   --color-slate-100: #1d2842;
@@ -89,6 +93,8 @@
   --background: #ffffff;
   --foreground: #0f172a;
   --surface: #ffffff;
+  --canvas: #f1f4f9;
+  --line: #d3dbe6;
   color: var(--foreground);
   --color-slate-50: oklch(98.4% 0.003 247.858);
   --color-slate-100: oklch(96.8% 0.007 247.896);
@@ -229,6 +235,16 @@ html.dark.role-student :is(.text-indigo-500, .text-indigo-600) {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
+  --color-canvas: var(--canvas);
+  --color-line: var(--line);
+
+  /* Burchak radiusi: butun tizimda ixcham — 6px (kichik elementlar) va 8px (karta, tugma, oyna). rounded-full o'zgarmaydi */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 8px;
+  --radius-2xl: 8px;
+  --radius-3xl: 8px;
 
   /* Rangli (gradient) fonlar ustida ishlatiladigan doimiy ranglar — tungi rejimda almashtirilmaydi */
   --color-brand-100: #e0e7ff;
@@ -329,7 +345,7 @@ video::cue {
     @apply bg-gradient-to-b from-indigo-500 to-indigo-600 text-white shadow-sm shadow-indigo-600/25 hover:from-indigo-600 hover:to-brand-700 hover:shadow-md hover:shadow-indigo-600/25;
   }
   .btn-secondary {
-    @apply border border-slate-200 bg-surface text-slate-700 shadow-sm shadow-slate-900/[0.03] hover:border-slate-300 hover:bg-slate-50;
+    @apply border border-slate-300 bg-surface text-slate-700 shadow-sm shadow-slate-900/[0.05] hover:border-slate-400 hover:bg-slate-50;
   }
   .btn-danger {
     @apply bg-gradient-to-b from-red-500 to-red-600 text-white shadow-sm shadow-red-600/25 hover:from-red-600 hover:to-crimson-700;
@@ -341,19 +357,19 @@ video::cue {
     @apply mb-1.5 block text-sm font-medium text-slate-700;
   }
   .input {
-    @apply w-full rounded-xl border border-slate-200 bg-surface px-3.5 py-2.5 shadow-sm shadow-slate-900/[0.02] transition-colors outline-none placeholder:text-slate-400 hover:border-slate-300 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100;
+    @apply w-full rounded-lg border border-slate-300 bg-surface px-3.5 py-2.5 shadow-sm shadow-slate-900/[0.03] transition-colors outline-none placeholder:text-slate-400 hover:border-slate-400 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100;
   }
   .card {
-    @apply rounded-2xl border border-slate-200/70 bg-surface shadow-[0_1px_2px_rgb(15_23_42/0.04),0_4px_16px_-4px_rgb(15_23_42/0.06)];
+    @apply rounded-lg border border-line bg-surface shadow-[0_1px_2px_rgb(15_23_42/0.06),0_4px_14px_-4px_rgb(15_23_42/0.10)];
   }
   .card-hover {
-    @apply transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-[0_2px_4px_rgb(15_23_42/0.04),0_12px_28px_-8px_rgb(79_70_229/0.18)];
+    @apply transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-[0_2px_4px_rgb(15_23_42/0.04),0_12px_28px_-8px_rgb(79_70_229/0.18)];
   }
   .badge {
     @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap;
   }
   .table-head {
-    @apply border-b border-slate-100 bg-slate-50/80 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase;
+    @apply border-b border-line bg-slate-100/80 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase;
   }
   .skeleton {
     @apply rounded-xl bg-[linear-gradient(90deg,var(--color-slate-100)_0%,var(--color-slate-200)_50%,var(--color-slate-100)_100%)] bg-[length:200%_100%];

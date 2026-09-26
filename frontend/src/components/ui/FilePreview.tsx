@@ -27,7 +27,7 @@ export default function FilePreview({
   if (["jpg", "jpeg", "png", "webp", "gif"].includes(ext))
     // eslint-disable-next-line @next/next/no-img-element
     preview = <img src={src} alt={imageDescription || name} className="max-h-96 rounded-lg" />;
-  else if (ext === "pdf") preview = <iframe src={src} title={name} className="h-96 w-full rounded-lg ring-1 ring-slate-200" />;
+  else if (ext === "pdf") preview = <iframe src={src} title={name} className="h-96 w-full rounded-lg ring-1 ring-line" />;
 
   return (
     <div className="space-y-3">

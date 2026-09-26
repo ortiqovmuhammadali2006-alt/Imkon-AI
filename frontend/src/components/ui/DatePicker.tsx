@@ -34,8 +34,8 @@ export function formatUzDate(value: string) {
 }
 
 const TRIGGER =
-  "input flex items-center gap-2.5 text-left data-[open=true]:border-indigo-400 data-[open=true]:ring-4 data-[open=true]:ring-indigo-100";
-const PANEL = "fixed z-[60] animate-pop rounded-2xl bg-surface p-3 shadow-2xl ring-1 ring-slate-200 outline-none";
+  "input flex items-center gap-2.5 text-left data-[open=true]:border-indigo-400 data-[open=true]:ring-4 data-[open=true]:ring-indigo-200";
+const PANEL = "fixed z-[60] animate-pop rounded-2xl bg-surface p-3 shadow-2xl ring-1 ring-line outline-none";
 const NAV_BTN = "flex size-9 items-center justify-center rounded-xl text-slate-600 transition-colors hover:bg-slate-100 disabled:opacity-30";
 
 // ---------- Umumiy ochiladigan oyna: tugma ostida (joy bo'lmasa — ustida), tashqariga bosilsa yoki Esc — yopiladi ----------
@@ -332,7 +332,7 @@ export function DatePicker({
             </div>
           )}
 
-          <div className="mt-2 flex items-center justify-between border-t border-slate-100 pt-2">
+          <div className="mt-2 flex items-center justify-between border-t border-line pt-2">
             {clearable && value ? (
               <button
                 type="button"

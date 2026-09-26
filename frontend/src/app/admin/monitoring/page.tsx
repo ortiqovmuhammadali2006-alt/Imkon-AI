@@ -63,7 +63,7 @@ function TeacherDetail({ id }: { id: number }) {
         {data.lessons.length === 0 ? (
           <p className="text-sm text-slate-500">Dars yuklanmagan</p>
         ) : (
-          <ul className="divide-y divide-slate-100 rounded-xl ring-1 ring-slate-200">
+          <ul className="divide-y divide-line rounded-xl ring-1 ring-line">
             {data.lessons.map((l) => (
               <li key={l.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
                 <span className="font-medium">{l.title}</span>
@@ -84,7 +84,7 @@ function TeacherDetail({ id }: { id: number }) {
         {data.grades.length === 0 ? (
           <p className="text-sm text-slate-500">Baho qo&apos;yilmagan</p>
         ) : (
-          <ul className="divide-y divide-slate-100 rounded-xl ring-1 ring-slate-200">
+          <ul className="divide-y divide-line rounded-xl ring-1 ring-line">
             {data.grades.map((g) => (
               <li key={g.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
                 <span>
@@ -161,7 +161,7 @@ export default function MonitoringPage() {
                   <th className="px-2 py-3" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-line">
                 {data!.map((t) => (
                   <tr
                     key={t.id}
