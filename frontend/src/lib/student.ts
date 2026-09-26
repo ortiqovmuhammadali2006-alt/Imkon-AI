@@ -37,6 +37,8 @@ export type LessonAssignment = {
   title: string;
   description: string | null;
   due_date: string | null;
+  task_file_url: string | null; // o'qituvchi biriktirgan vazifa fayli
+  task_file_name: string | null;
   submission_id: number | null;
   submitted_at: string | null;
   score: number | null;
@@ -78,6 +80,8 @@ export type StudentAssignment = {
   description: string | null;
   due_date: string | null;
   created_at: string;
+  task_file_url: string | null;
+  task_file_name: string | null;
   lesson_id: number;
   lesson_title: string;
   teacher_name: string;

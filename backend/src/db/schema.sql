@@ -177,3 +177,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 
 -- YouTube video havolasi (dars uchun)
 ALTER TABLE lessons ADD COLUMN IF NOT EXISTS youtube_url TEXT;
+
+-- Vazifa fayli (o'qituvchi topshiriq varag'i, PDF, rasm va h.k. biriktiradi)
+ALTER TABLE assignments ADD COLUMN IF NOT EXISTS file_url  TEXT;
+ALTER TABLE assignments ADD COLUMN IF NOT EXISTS file_name TEXT;

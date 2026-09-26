@@ -6,6 +6,7 @@ import { BookOpen, CalendarClock, MessageSquare } from "lucide-react";
 import { formatDate } from "@/lib/format";
 import { isOverdue } from "@/lib/student";
 import { ScoreBadge } from "@/components/teacher/ScorePicker";
+import AttachmentLink from "@/components/ui/AttachmentLink";
 import SpeakButton from "./SpeakButton";
 import SubmitForm from "./SubmitForm";
 
@@ -20,6 +21,8 @@ type AssignmentLike = {
   feedback: string | null;
   answer_text?: string | null;
   file_name?: string | null;
+  task_file_url?: string | null; // o'qituvchi biriktirgan vazifa fayli
+  task_file_name?: string | null;
   lesson_id?: number;
   lesson_title?: string;
   subject?: string | null;
@@ -43,7 +46,13 @@ function accentOf(a: AssignmentLike) {
 export default function AssignmentCard({ a, showLesson }: { a: AssignmentLike; showLesson?: boolean }) {
   const [open, setOpen] = useState(false);
   const canSubmit = a.score === null;
-  const speechText = [a.title, a.description, a.due_date && `Muddat: ${formatDate(a.due_date)}`, a.feedback && `O'qituvchi izohi: ${a.feedback}`]
+  const speechText = [
+    a.title,
+    a.description,
+    a.task_file_name && "Vazifaga fayl biriktirilgan",
+    a.due_date && `Muddat: ${formatDate(a.due_date)}`,
+    a.feedback && `O'qituvchi izohi: ${a.feedback}`,
+  ]
     .filter(Boolean)
     .join(". ");
 
@@ -66,6 +75,11 @@ export default function AssignmentCard({ a, showLesson }: { a: AssignmentLike; s
       </div>
 
       {a.description && <p className="mt-2 whitespace-pre-wrap text-slate-700">{a.description}</p>}
+      {a.task_file_url && a.task_file_name && (
+        <div className="mt-3 max-w-md">
+          <AttachmentLink url={a.task_file_url} name={a.task_file_name} />
+        </div>
+      )}
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500">
         {a.due_date && (

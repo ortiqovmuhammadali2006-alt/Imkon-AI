@@ -102,6 +102,8 @@ router.delete("/:id", async (req, res) => {
        JOIN lessons l ON l.id = a.lesson_id
      WHERE l.teacher_id = $1 AND s.file_url IS NOT NULL
      UNION ALL
+     SELECT a.file_url FROM assignments a JOIN lessons l ON l.id = a.lesson_id WHERE l.teacher_id = $1 AND a.file_url IS NOT NULL
+     UNION ALL
      SELECT avatar_url FROM users WHERE id = $1 AND avatar_url IS NOT NULL`,
     [id]
   );

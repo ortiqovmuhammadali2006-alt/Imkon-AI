@@ -7,6 +7,7 @@ import { ArrowLeft, CalendarClock, Pencil, Plus, Trash2, Users } from "lucide-re
 import { api, getErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import FilePreview from "@/components/ui/FilePreview";
+import AttachmentLink from "@/components/ui/AttachmentLink";
 import YouTubeLesson from "@/components/ui/YouTubeLesson";
 import AccessibilityPanel from "@/components/teacher/AccessibilityPanel";
 import { formatDate, subjectTone } from "@/lib/format";
@@ -131,6 +132,11 @@ export default function LessonDetailPage({ params }: { params: Promise<{ id: str
                   <div className="min-w-0 flex-1">
                     <h3 className="font-semibold">{a.title}</h3>
                     {a.description && <p className="mt-1 whitespace-pre-wrap text-slate-600">{a.description}</p>}
+                    {a.file_url && a.file_name && (
+                      <div className="mt-3 max-w-md">
+                        <AttachmentLink url={a.file_url} name={a.file_name} />
+                      </div>
+                    )}
                     <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
                       {a.due_date && (
                         <span className={`flex items-center gap-1 ${isOverdue(a.due_date) ? "text-red-600" : ""}`}>

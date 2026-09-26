@@ -87,7 +87,7 @@ router.get("/lessons", async (req, res) => {
 router.get("/lessons/:id", async (req, res) => {
   const lesson = await getMyLesson(req.user.id, parseId(req.params.id));
   const { rows: assignments } = await pool.query(
-    `SELECT a.id, a.title, a.description, a.due_date, a.created_at,
+    `SELECT a.id, a.title, a.description, a.due_date, a.file_url, a.file_name, a.created_at,
             COUNT(s.id)::int AS submissions_count,
             COUNT(s.id) FILTER (WHERE s.score IS NOT NULL)::int AS graded_count
      FROM assignments a
@@ -163,7 +163,9 @@ router.delete("/lessons/:id", async (req, res) => {
   // Dars bilan birga o'chadigan topshiriq fayllari
   const { rows: files } = await pool.query(
     `SELECT s.file_url FROM submissions s JOIN assignments a ON a.id = s.assignment_id
-     WHERE a.lesson_id = $1 AND s.file_url IS NOT NULL`,
+     WHERE a.lesson_id = $1 AND s.file_url IS NOT NULL
+     UNION ALL
+     SELECT file_url FROM assignments WHERE lesson_id = $1 AND file_url IS NOT NULL`,
     [lesson.id]
   );
   await pool.query("DELETE FROM lessons WHERE id = $1", [lesson.id]);
@@ -176,24 +178,52 @@ router.delete("/lessons/:id", async (req, res) => {
 
 // ---------- Uy vazifalari ----------
 
-router.post("/lessons/:id/assignments", async (req, res) => {
-  const lesson = await getMyLesson(req.user.id, parseId(req.params.id));
-  const fields = parseAssignmentFields(req.body || {});
+// Vazifa: matn + ixtiyoriy fayl (topshiriq varag'i, PDF, rasm, audio...). JSON ham, multipart ham qabul qilinadi
+function withAssignmentFile(req, parse) {
+  try {
+    return parse(req.body || {});
+  } catch (err) {
+    if (req.file) removeFile(fileInfo(req.file).file_url);
+    throw err;
+  }
+}
+
+router.post("/lessons/:id/assignments", upload.single("file"), async (req, res) => {
+  let lesson;
+  try {
+    lesson = await getMyLesson(req.user.id, parseId(req.params.id));
+  } catch (err) {
+    if (req.file) removeFile(fileInfo(req.file).file_url);
+    throw err;
+  }
+  const fields = withAssignmentFile(req, parseAssignmentFields);
+  const file = fileInfo(req.file) || { file_url: null, file_name: null };
   const { rows } = await pool.query(
-    `INSERT INTO assignments (lesson_id, title, description, due_date)
-     VALUES ($1, $2, $3, $4) RETURNING *`,
-    [lesson.id, fields.title, fields.description, fields.due_date]
+    `INSERT INTO assignments (lesson_id, title, description, due_date, file_url, file_name)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+    [lesson.id, fields.title, fields.description, fields.due_date, file.file_url, file.file_name]
   );
   res.status(201).json(rows[0]);
 });
 
-router.put("/assignments/:id", async (req, res) => {
-  const assignment = await getMyAssignment(req.user.id, parseId(req.params.id));
-  const fields = parseAssignmentFields(req.body || {});
+// Yangi fayl yuborilsa — almashtiriladi; remove_file = "true" — o'chiriladi
+router.put("/assignments/:id", upload.single("file"), async (req, res) => {
+  let assignment;
+  try {
+    assignment = await getMyAssignment(req.user.id, parseId(req.params.id));
+  } catch (err) {
+    if (req.file) removeFile(fileInfo(req.file).file_url);
+    throw err;
+  }
+  const fields = withAssignmentFile(req, parseAssignmentFields);
+  let file = { file_url: assignment.file_url, file_name: assignment.file_name };
+  if (req.file) file = fileInfo(req.file);
+  else if (req.body?.remove_file === "true") file = { file_url: null, file_name: null };
   const { rows } = await pool.query(
-    `UPDATE assignments SET title = $1, description = $2, due_date = $3 WHERE id = $4 RETURNING *`,
-    [fields.title, fields.description, fields.due_date, assignment.id]
+    `UPDATE assignments SET title = $1, description = $2, due_date = $3, file_url = $4, file_name = $5 WHERE id = $6 RETURNING *`,
+    [fields.title, fields.description, fields.due_date, file.file_url, file.file_name, assignment.id]
   );
+  if (assignment.file_url !== file.file_url) removeFile(assignment.file_url);
   res.json(rows[0]);
 });
 
@@ -205,6 +235,7 @@ router.delete("/assignments/:id", async (req, res) => {
   );
   await pool.query("DELETE FROM assignments WHERE id = $1", [assignment.id]);
   files.forEach((f) => removeFile(f.file_url));
+  removeFile(assignment.file_url);
   res.status(204).end();
 });
 

@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { Loader2, Mic, Paperclip, Send, X } from "lucide-react";
-import { listenOnce } from "@/lib/speech";
+import { listenAccurate } from "@/lib/recorder";
 import { useSubmitAssignment } from "@/lib/student";
 
 const ACCEPT = ".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.webp,.mp3,.wav,.ogg,.m4a,.mp4,.webm,.zip";
@@ -30,7 +30,7 @@ export default function SubmitForm({
   const dictate = async () => {
     setListening(true);
     try {
-      const heard = await listenOnce();
+      const heard = await listenAccurate();
       if (heard) setText((t) => (t ? `${t} ${heard}` : heard));
     } catch (e) {
       toast.error((e as Error).message);

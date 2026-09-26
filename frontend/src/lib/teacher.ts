@@ -75,6 +75,8 @@ export type Assignment = {
   title: string;
   description: string | null;
   due_date: string | null;
+  file_url?: string | null; // vazifa fayli (topshiriq varag'i)
+  file_name?: string | null;
   created_at: string;
   submissions_count: number;
   graded_count: number;

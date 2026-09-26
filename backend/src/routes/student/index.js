@@ -136,7 +136,7 @@ router.get("/lessons", async (req, res) => {
 router.get("/lessons/:id", async (req, res) => {
   const lesson = await getLesson(req.user.id, parseId(req.params.id));
   const { rows: assignments } = await pool.query(
-    `SELECT a.id, a.title, a.description, a.due_date,
+    `SELECT a.id, a.title, a.description, a.due_date, a.file_url AS task_file_url, a.file_name AS task_file_name,
             s.id AS submission_id, s.submitted_at, s.score, s.feedback
      FROM assignments a
      LEFT JOIN submissions s ON s.assignment_id = a.id AND s.student_id = $2
@@ -587,6 +587,7 @@ router.post("/assistant", async (req, res) => {
 router.get("/assignments", async (req, res) => {
   const { rows } = await pool.query(
     `SELECT a.id, a.title, a.description, a.due_date, a.created_at,
+            a.file_url AS task_file_url, a.file_name AS task_file_name,
             l.id AS lesson_id, l.title AS lesson_title, tu.full_name AS teacher_name, t.subject,
             s.id AS submission_id, s.answer_text, s.file_url, s.file_name, s.submitted_at,
             s.score, s.feedback, s.graded_at
