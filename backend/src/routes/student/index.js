@@ -71,32 +71,18 @@ router.get("/profile", async (req, res) => {
 
 router.get("/stats", async (req, res) => {
   const id = req.user.id;
-  const [pending, grades] = await Promise.all([
-    pool.query(
-      `SELECT COUNT(*)::int AS count
-       FROM assignments a JOIN lessons l ON l.id = a.lesson_id
-       JOIN teacher_students ts ON ts.teacher_id = l.teacher_id AND ts.student_id = $1
-       JOIN students st ON st.user_id = ts.student_id
-       LEFT JOIN submissions s ON s.assignment_id = a.id AND s.student_id = $1
-       WHERE (l.category IS NULL OR l.category = st.category)
-         AND s.id IS NULL AND (a.due_date IS NULL OR a.due_date >= CURRENT_DATE)`,
-      [id]
-    ),
-    pool.query(
-      `SELECT ROUND(AVG(score), 2) AS avg_score, COUNT(*)::int AS count FROM (
-         SELECT score FROM grades WHERE student_id = $1
-         UNION ALL
-         SELECT score FROM submissions WHERE student_id = $1 AND score IS NOT NULL
-       ) x`,
-      [id]
-    ),
-  ]);
-  // Davomat o'quvchiga ko'rsatilmaydi — uni faqat o'qituvchi yuritadi va ko'radi
-  res.json({
-    pending_assignments: pending.rows[0].count,
-    avg_score: grades.rows[0].avg_score,
-    grades_count: grades.rows[0].count,
-  });
+  const pending = await pool.query(
+    `SELECT COUNT(*)::int AS count
+     FROM assignments a JOIN lessons l ON l.id = a.lesson_id
+     JOIN teacher_students ts ON ts.teacher_id = l.teacher_id AND ts.student_id = $1
+     JOIN students st ON st.user_id = ts.student_id
+     LEFT JOIN submissions s ON s.assignment_id = a.id AND s.student_id = $1
+     WHERE (l.category IS NULL OR l.category = st.category)
+       AND s.id IS NULL AND (a.due_date IS NULL OR a.due_date >= CURRENT_DATE)`,
+    [id]
+  );
+  // Davomat va baholar ro'yxati o'quvchi panelida ko'rsatilmaydi (vazifa bahosi va izohi — vazifa kartasida)
+  res.json({ pending_assignments: pending.rows[0].count });
 });
 
 // Dars jadvali: o'z o'qituvchilarining darslari; guruh ko'rsatilgan bo'lsa — faqat o'z sinfiniki
@@ -365,7 +351,6 @@ const ASSISTANT_ACTIONS = [
   "tutor", // AI Tutor bilan darsni o'rganish (lesson_id)
   "open_assignments",
   "open_schedule",
-  "open_grades",
   "open_chat", // AI suhbat (savol berish, shunchaki suhbat)
   "voice_chat", // ovozli suhbat
   "answer", // faqat javob (bugungi reja, oddiy savol) — sahifa o'zgarmaydi
@@ -542,35 +527,5 @@ router.post("/assignments/:id/submit", upload.single("file"), async (req, res) =
 });
 
 // ---------- Baholar va davomat ----------
-
-router.get("/grades", async (req, res) => {
-  const [grades, submissions] = await Promise.all([
-    pool.query(
-      `SELECT g.id, g.score, g.comment, g.created_at, tu.full_name AS teacher_name, t.subject,
-              g.lesson_id, l.title AS lesson_title
-       FROM grades g
-       JOIN users tu ON tu.id = g.teacher_id
-       JOIN teachers t ON t.user_id = g.teacher_id
-       LEFT JOIN lessons l ON l.id = g.lesson_id
-       WHERE g.student_id = $1
-       ORDER BY g.created_at DESC`,
-      [req.user.id]
-    ),
-    pool.query(
-      `SELECT s.id, s.score, s.feedback, s.graded_at, s.submitted_at, s.answer_text, s.file_url, s.file_name,
-              a.title AS assignment_title, a.description AS assignment_description,
-              l.id AS lesson_id, l.title AS lesson_title, t.subject, tu.full_name AS teacher_name
-       FROM submissions s
-       JOIN assignments a ON a.id = s.assignment_id
-       JOIN lessons l ON l.id = a.lesson_id
-       JOIN teachers t ON t.user_id = l.teacher_id
-       JOIN users tu ON tu.id = l.teacher_id
-       WHERE s.student_id = $1 AND s.score IS NOT NULL
-       ORDER BY s.graded_at DESC`,
-      [req.user.id]
-    ),
-  ]);
-  res.json({ grades: grades.rows, submissions: submissions.rows });
-});
 
 module.exports = router;

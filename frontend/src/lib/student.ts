@@ -12,8 +12,6 @@ export type StudentProfile = {
 
 export type StudentStats = {
   pending_assignments: number;
-  avg_score: number | null;
-  grades_count: number;
 };
 
 export type StudentLesson = {
@@ -95,34 +93,6 @@ export type StudentAssignment = {
   graded_at: string | null;
 };
 
-export type StudentGrades = {
-  grades: {
-    id: number;
-    score: number;
-    comment: string | null;
-    created_at: string;
-    teacher_name: string;
-    subject: string | null;
-    lesson_id: number | null;
-    lesson_title: string | null;
-  }[];
-  submissions: {
-    id: number;
-    score: number;
-    feedback: string | null;
-    graded_at: string;
-    submitted_at: string;
-    answer_text: string | null;
-    file_url: string | null;
-    file_name: string | null;
-    assignment_title: string;
-    assignment_description: string | null;
-    lesson_id: number;
-    lesson_title: string;
-    subject: string | null;
-    teacher_name: string;
-  }[];
-};
 
 export type ChatMessage = { role: "user" | "assistant"; content: string };
 
@@ -157,8 +127,6 @@ export const useStudentAssignments = () =>
     queryFn: () => get<StudentAssignment[]>("/student/assignments"),
   });
 
-export const useStudentGrades = () =>
-  useQuery({ queryKey: ["student", "grades"], queryFn: () => get<StudentGrades>("/student/grades") });
 
 export function useSubmitAssignment(assignmentId: number, onDone?: () => void) {
   const queryClient = useQueryClient();

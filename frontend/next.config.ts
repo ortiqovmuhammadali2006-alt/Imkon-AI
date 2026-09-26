@@ -5,7 +5,10 @@ const nextConfig: NextConfig = {
   devIndicators: false,
   // Olib tashlangan bo'limlarning eski manzillari (saqlangan havola, brauzer tarixi) — o'quvchi bosh sahifasiga
   async redirects() {
-    return [{ source: "/student/knowledge", destination: "/student", permanent: false }];
+    return [
+      { source: "/student/knowledge", destination: "/student", permanent: false },
+      { source: "/student/grades", destination: "/student", permanent: false },
+    ];
   },
 };
 
