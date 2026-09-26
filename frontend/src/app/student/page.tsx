@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, CalendarCheck, ClipboardList, PartyPopper, Star } from "lucide-react";
+import { BookOpen, ClipboardList, PartyPopper } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { CATEGORIES, formatGrade } from "@/lib/format";
@@ -29,7 +29,6 @@ export default function StudentHome() {
             ? `Bugun ${todaySlots.length} ta dars: ` +
               todaySlots.map((x) => `soat ${x.start_time} da ${x.subject ?? "dars"}`).join(", ") + "."
             : "Bugun dars yo'q.",
-          stats.data.avg_score != null ? `O'rtacha bahoingiz ${stats.data.avg_score}.` : "",
         ].join(" ")
       : null
   );
@@ -48,10 +47,8 @@ export default function StudentHome() {
         subtitle={[formatGrade(profile.data?.grade), profile.data && profile.data.category !== "general" && CATEGORIES[profile.data.category].label].filter(Boolean).join(" · ") || undefined}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2">
         <StatCard icon={ClipboardList} label="Topshirilmagan vazifalar" value={s.pending_assignments} href="/student/assignments" />
-        <StatCard icon={Star} label="O'rtacha baho" value={s.avg_score ?? "—"} href="/student/grades" />
-        <StatCard icon={CalendarCheck} label="Davomat (30 kun)" value={s.attendance_rate != null ? `${s.attendance_rate}%` : "—"} href="/student/grades" />
         <StatCard icon={BookOpen} label="O'qituvchilarim" value={profile.data?.teachers.length ?? 0} href="/student/lessons" />
       </div>
 

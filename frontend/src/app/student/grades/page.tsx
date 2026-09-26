@@ -3,27 +3,19 @@
 import { Star } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
 import { formatDate } from "@/lib/format";
-import { useStudentAttendance, useStudentGrades, useStudentStats } from "@/lib/student";
+import { useStudentGrades, useStudentStats } from "@/lib/student";
 import { ErrorState, LoadingState, PageHeader } from "@/components/ui/States";
 import { ScoreBadge } from "@/components/teacher/ScorePicker";
 import useVoiceRead from "@/components/student/useVoiceRead";
 
-const ATTENDANCE_LABEL = {
-  present: { label: "Keldi", className: "bg-emerald-100 text-emerald-700" },
-  late: { label: "Kechikdi", className: "bg-amber-100 text-amber-800" },
-  absent: { label: "Kelmadi", className: "bg-red-100 text-red-700" },
-};
-
 export default function StudentGradesPage() {
   const stats = useStudentStats();
   const grades = useStudentGrades();
-  const attendance = useStudentAttendance();
 
   useVoiceRead(
     stats.data && grades.data
       ? [
           stats.data.avg_score != null ? `O'rtacha bahoingiz ${stats.data.avg_score}.` : "Hali baho qo'yilmagan.",
-          stats.data.attendance_rate != null ? `Davomatingiz ${stats.data.attendance_rate} foiz.` : "",
           grades.data.grades.slice(0, 5).length
             ? "So'nggi baholar: " + grades.data.grades.slice(0, 5).map((g) => `${g.subject ?? "dars"} ${g.score}`).join(", ") + "."
             : "",
@@ -54,13 +46,12 @@ export default function StudentGradesPage() {
     })),
   ].sort((a, b) => b.date.localeCompare(a.date));
 
-  const present = attendance.data?.filter((a) => a.status !== "absent").length ?? 0;
-
   return (
     <section className="space-y-6">
-      <PageHeader icon={Star} title="Baholarim" description="Baholaringiz va so'nggi 30 kunlik davomatingiz" />
+      {/* Davomat o'quvchiga ko'rsatilmaydi — uni faqat o'qituvchi ko'radi */}
+      <PageHeader icon={Star} title="Baholarim" description="Darsdagi va vazifalar uchun olgan baholaringiz" />
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         <div className="card p-5">
           <p className="text-sm text-slate-500">O&apos;rtacha baho</p>
           <p className="mt-1 text-3xl font-bold text-indigo-700">{stats.data?.avg_score ?? "—"}</p>
@@ -69,16 +60,10 @@ export default function StudentGradesPage() {
           <p className="text-sm text-slate-500">Baholar soni</p>
           <p className="mt-1 text-3xl font-bold">{all.length}</p>
         </div>
-        <div className="card p-5">
-          <p className="text-sm text-slate-500">Davomat (30 kun)</p>
-          <p className="mt-1 text-3xl font-bold text-emerald-700">
-            {stats.data?.attendance_rate != null ? `${stats.data.attendance_rate}%` : "—"}
-          </p>
-        </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+      <div>
+        <div>
           <h2 className="mb-3 text-lg font-semibold">Barcha baholar</h2>
           {all.length === 0 ? (
             <p className="card px-5 py-10 text-center text-slate-500">Hali baho qo&apos;yilmagan</p>
@@ -98,30 +83,6 @@ export default function StudentGradesPage() {
                 </li>
               ))}
             </ul>
-          )}
-        </div>
-
-        <div>
-          <h2 className="mb-3 text-lg font-semibold">Davomat</h2>
-          {!attendance.data?.length ? (
-            <p className="card px-5 py-10 text-center text-slate-500">Davomat belgilanmagan</p>
-          ) : (
-            <div className="card">
-              <p className="border-b border-line px-5 py-3 text-sm text-slate-600">
-                {attendance.data.length} kundan {present} kun qatnashgan
-              </p>
-              <ul className="max-h-96 divide-y divide-line overflow-y-auto">
-                {attendance.data.map((a) => (
-                  <li key={a.id} className="flex items-center justify-between gap-3 px-5 py-2.5 text-sm">
-                    <span>
-                      {formatDate(a.date)}
-                      {a.subject && <span className="text-slate-500"> · {a.subject}</span>}
-                    </span>
-                    <span className={`badge ${ATTENDANCE_LABEL[a.status].className}`}>{ATTENDANCE_LABEL[a.status].label}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
           )}
         </div>
       </div>

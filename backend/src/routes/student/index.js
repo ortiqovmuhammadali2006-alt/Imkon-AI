@@ -71,7 +71,7 @@ router.get("/profile", async (req, res) => {
 
 router.get("/stats", async (req, res) => {
   const id = req.user.id;
-  const [pending, grades, attendance] = await Promise.all([
+  const [pending, grades] = await Promise.all([
     pool.query(
       `SELECT COUNT(*)::int AS count
        FROM assignments a JOIN lessons l ON l.id = a.lesson_id
@@ -90,17 +90,12 @@ router.get("/stats", async (req, res) => {
        ) x`,
       [id]
     ),
-    pool.query(
-      `SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE status <> 'absent') / NULLIF(COUNT(*), 0))::int AS rate
-       FROM attendance WHERE student_id = $1 AND date > CURRENT_DATE - 30`,
-      [id]
-    ),
   ]);
+  // Davomat o'quvchiga ko'rsatilmaydi — uni faqat o'qituvchi yuritadi va ko'radi
   res.json({
     pending_assignments: pending.rows[0].count,
     avg_score: grades.rows[0].avg_score,
     grades_count: grades.rows[0].count,
-    attendance_rate: attendance.rows[0].rate,
   });
 });
 
@@ -678,19 +673,6 @@ router.get("/grades", async (req, res) => {
     ),
   ]);
   res.json({ grades: grades.rows, submissions: submissions.rows });
-});
-
-router.get("/attendance", async (req, res) => {
-  const { rows } = await pool.query(
-    `SELECT a.id, a.date, a.status, tu.full_name AS teacher_name, t.subject
-     FROM attendance a
-     JOIN users tu ON tu.id = a.teacher_id
-     JOIN teachers t ON t.user_id = a.teacher_id
-     WHERE a.student_id = $1 AND a.date > CURRENT_DATE - 30
-     ORDER BY a.date DESC`,
-    [req.user.id]
-  );
-  res.json(rows);
 });
 
 module.exports = router;

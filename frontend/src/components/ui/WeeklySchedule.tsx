@@ -30,34 +30,34 @@ export function SlotCard({
   const body = (
     <>
       <div className="flex items-center justify-between gap-2">
-        <span className="flex items-center gap-1 text-sm font-semibold text-indigo-700">
-          <Clock className="size-3.5" aria-hidden />
+        <span className="flex items-center gap-1.5 font-semibold text-indigo-700">
+          <Clock className="size-4" aria-hidden />
           {slot.start_time}–{slot.end_time}
         </span>
         {live && <span className="badge bg-emerald-600 text-white">Hozir</span>}
       </div>
-      <p className="mt-1 font-medium">{slot.subject || "Dars"}</p>
-      <div className="mt-1 space-y-0.5 text-sm text-slate-500">
+      <p className="mt-1.5 text-lg font-semibold text-slate-900">{slot.subject || "Dars"}</p>
+      <div className="mt-2 space-y-1 text-slate-600">
         {showTeacher && (
           <p className="flex items-center gap-1.5">
-            <UserRound className="size-3.5 shrink-0" aria-hidden /> {slot.teacher_name}
+            <UserRound className="size-4 shrink-0" aria-hidden /> {slot.teacher_name}
           </p>
         )}
         {slot.group_name && (
           <p className="flex items-center gap-1.5">
-            <Users className="size-3.5 shrink-0" aria-hidden /> {formatGrade(slot.group_name)}
+            <Users className="size-4 shrink-0" aria-hidden /> {formatGrade(slot.group_name)}
           </p>
         )}
         {slot.room && (
           <p className="flex items-center gap-1.5">
-            <DoorOpen className="size-3.5 shrink-0" aria-hidden /> {slot.room}-xona
+            <DoorOpen className="size-4 shrink-0" aria-hidden /> {slot.room}-xona
           </p>
         )}
       </div>
     </>
   );
 
-  const className = `block w-full rounded-xl p-3 text-left ring-1 ${
+  const className = `block w-full rounded-xl p-4 text-left ring-1 ${
     live ? "bg-emerald-50 ring-emerald-300" : "bg-surface ring-line"
   }`;
 
@@ -70,7 +70,7 @@ export function SlotCard({
   );
 }
 
-// Haftalik jadval: kunlar ustun bo'lib (kichik ekranda — ketma-ket)
+// Haftalik jadval: bir qatorda 3 ta kun (planshetda 2 ta, telefonda 1 ta) — kartalar katta, o'qish oson
 export default function WeeklySchedule({
   slots,
   showTeacher,
@@ -85,23 +85,23 @@ export default function WeeklySchedule({
   const days = slots.some((s) => s.day_of_week === 7) ? [1, 2, 3, 4, 5, 6, 7] : [1, 2, 3, 4, 5, 6];
 
   return (
-    <div className={`grid gap-3 md:grid-cols-3 ${days.length === 7 ? "xl:grid-cols-7" : "xl:grid-cols-6"}`}>
+    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {days.map((day) => {
         const daySlots = slots.filter((s) => s.day_of_week === day);
         return (
           <section
             key={day}
             aria-label={WEEKDAYS[day - 1]}
-            className={`rounded-2xl p-3 ${day === today ? "bg-indigo-50 ring-2 ring-indigo-300" : "border border-line bg-surface/60"}`}
+            className={`rounded-2xl p-5 ${day === today ? "bg-indigo-50 ring-2 ring-indigo-300" : "border border-line bg-surface"}`}
           >
-            <h3 className="mb-2 flex items-center justify-between px-1 font-semibold">
+            <h3 className="mb-3 flex items-center justify-between px-1 text-lg font-bold text-slate-900">
               {WEEKDAYS[day - 1]}
               {day === today && <span className="badge bg-indigo-600 text-white">Bugun</span>}
             </h3>
             {daySlots.length === 0 ? (
-              <p className="px-1 py-3 text-sm text-slate-400">Dars yo&apos;q</p>
+              <p className="rounded-xl border border-dashed border-line px-3 py-5 text-center text-slate-400">Dars yo&apos;q</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {daySlots.map((s) => (
                   <SlotCard
                     key={s.id}

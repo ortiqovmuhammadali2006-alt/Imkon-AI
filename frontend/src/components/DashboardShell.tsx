@@ -21,10 +21,8 @@ const ROLE_LABEL: Record<Role, string> = {
   student: "O'quvchi",
 };
 
-// Har bir rolning o'z ko'rinishi. Rang: asosiy (indigo) shkala <html class="role-..."> orqali almashtiriladi
-// (globals.css): admin — binafsha, o'qituvchi — qizil, o'quvchi — ko'k. Shuning uchun bu yerda faqat indigo-* yoziladi.
-// Tuzilish ham farq qiladi: admin — oq va binafsha, ixcham menyu, faol band chap chiziq bilan; o'qituvchi — to'ldirilgan faol band;
-// o'quvchi — katta, bosish oson tugmalar va rangli belgi kataklari.
+// Panel ko'rinishi. Rang: asosiy (indigo) shkala <html class="role-..."> orqali havo ko'kka almashtiriladi (globals.css),
+// shuning uchun bu yerda faqat indigo-* yoziladi. Katta, bosish oson menyu va rangli belgi kataklari.
 type RoleTheme = {
   page: string;
   sidebar: string;
@@ -47,71 +45,30 @@ type RoleTheme = {
   closeBtn: string;
 };
 
-const ROLE_THEME: Record<Role, RoleTheme> = {
-  admin: {
-    page: "bg-canvas",
-    sidebar: "border-r border-line bg-surface",
-    logoLight: false,
-    menuLabel: "text-indigo-500",
-    navItem: "text-slate-600 hover:bg-indigo-50 hover:text-indigo-700",
-    navItemActive: "bg-indigo-50 text-indigo-700 font-semibold",
-    navIndicator: "bg-indigo-600",
-    navSize: "px-3 py-2 text-[15px]",
-    iconBox: "size-8 rounded-lg",
-    navIcon: "text-slate-500 group-hover:text-indigo-600",
-    navIconActive: "bg-indigo-600 text-white shadow-md shadow-indigo-600/30",
-    userCard: "bg-indigo-50 ring-indigo-200 hover:bg-indigo-100",
-    userName: "text-slate-900",
-    userRole: "text-indigo-700",
-    header: "bg-surface/85 border-line",
-    loader: "text-indigo-600",
-    logoutHover: "text-slate-500 hover:bg-red-50 hover:text-red-600",
-    badge: "border-indigo-200 bg-indigo-50 text-indigo-700",
-    closeBtn: "text-slate-500",
-  },
-  teacher: {
-    page: "bg-canvas",
-    sidebar: "border-r border-line bg-surface",
-    logoLight: false,
-    menuLabel: "text-slate-400",
-    navItem: "text-slate-600 hover:bg-indigo-50 hover:text-indigo-700",
-    navItemActive: "bg-indigo-600 text-white shadow-md shadow-indigo-600/25",
-    navIndicator: "hidden",
-    navSize: "px-3 py-2.5",
-    iconBox: "size-8 rounded-lg",
-    navIcon: "text-slate-500 group-hover:text-indigo-600",
-    navIconActive: "text-white",
-    userCard: "bg-slate-50 ring-line hover:bg-indigo-50",
-    userName: "text-slate-900",
-    userRole: "text-slate-500",
-    header: "bg-surface/85 border-line",
-    loader: "text-indigo-600",
-    logoutHover: "text-slate-500 hover:bg-red-50 hover:text-red-600",
-    badge: "border-indigo-200 bg-indigo-50 text-indigo-700",
-    closeBtn: "text-slate-500",
-  },
-  student: {
-    page: "bg-canvas",
-    sidebar: "border-r border-indigo-200 bg-gradient-to-b from-indigo-50 to-surface",
-    logoLight: false,
-    menuLabel: "text-indigo-700/70",
-    navItem: "text-slate-700 hover:bg-surface hover:text-indigo-700 hover:shadow-sm",
-    navItemActive: "bg-surface text-indigo-700 shadow-md ring-2 ring-indigo-200",
-    navIndicator: "hidden",
-    navSize: "px-3 py-3 text-[17px]",
-    iconBox: "size-10 rounded-xl",
-    navIcon: "bg-indigo-100 text-indigo-600",
-    navIconActive: "bg-indigo-600 text-white shadow-md shadow-indigo-600/30",
-    userCard: "bg-surface shadow-sm ring-indigo-200 hover:bg-indigo-50",
-    userName: "text-slate-900",
-    userRole: "text-indigo-700",
-    header: "bg-surface/85 border-indigo-200",
-    loader: "text-indigo-600",
-    logoutHover: "text-slate-500 hover:bg-red-50 hover:text-red-600",
-    badge: "border-indigo-200 bg-indigo-100 text-indigo-700",
-    closeBtn: "text-slate-500",
-  },
+// Barcha rollar bir xil ko'rinishda — o'quvchi paneli uslubi (oq fon, havo ko'k, katta va bosish oson menyu)
+const PANEL_THEME: RoleTheme = {
+  page: "bg-canvas",
+  sidebar: "border-r border-indigo-200 bg-gradient-to-b from-indigo-50 to-surface",
+  logoLight: false,
+  menuLabel: "text-indigo-700/70",
+  navItem: "text-slate-700 hover:bg-surface hover:text-indigo-700 hover:shadow-sm",
+  navItemActive: "bg-surface text-indigo-700 shadow-md ring-2 ring-indigo-200",
+  navIndicator: "hidden",
+  navSize: "px-3 py-3 text-[17px]",
+  iconBox: "size-10 rounded-xl",
+  navIcon: "bg-indigo-100 text-indigo-600",
+  navIconActive: "bg-indigo-600 text-white shadow-md shadow-indigo-600/30",
+  userCard: "bg-surface shadow-sm ring-indigo-200 hover:bg-indigo-50",
+  userName: "text-slate-900",
+  userRole: "text-indigo-700",
+  header: "bg-surface/85 border-indigo-200",
+  loader: "text-indigo-600",
+  logoutHover: "text-slate-500 hover:bg-red-50 hover:text-red-600",
+  badge: "border-indigo-200 bg-indigo-100 text-indigo-700",
+  closeBtn: "text-slate-500",
 };
+
+const ROLE_THEME: Record<Role, RoleTheme> = { admin: PANEL_THEME, teacher: PANEL_THEME, student: PANEL_THEME };
 
 function NavLinks({ nav, role, pathname, onNavigate }: { nav: NavItem[]; role: Role; pathname: string; onNavigate?: () => void }) {
   const theme = ROLE_THEME[role];

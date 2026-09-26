@@ -14,7 +14,6 @@ export type StudentStats = {
   pending_assignments: number;
   avg_score: number | null;
   grades_count: number;
-  attendance_rate: number | null;
 };
 
 export type StudentLesson = {
@@ -117,14 +116,6 @@ export type StudentGrades = {
   }[];
 };
 
-export type StudentAttendance = {
-  id: number;
-  date: string;
-  status: "present" | "late" | "absent";
-  teacher_name: string;
-  subject: string | null;
-}[];
-
 export type ChatMessage = { role: "user" | "assistant"; content: string };
 
 async function get<T>(url: string) {
@@ -160,9 +151,6 @@ export const useStudentAssignments = () =>
 
 export const useStudentGrades = () =>
   useQuery({ queryKey: ["student", "grades"], queryFn: () => get<StudentGrades>("/student/grades") });
-
-export const useStudentAttendance = () =>
-  useQuery({ queryKey: ["student", "attendance"], queryFn: () => get<StudentAttendance>("/student/attendance") });
 
 export function useSubmitAssignment(assignmentId: number, onDone?: () => void) {
   const queryClient = useQueryClient();
