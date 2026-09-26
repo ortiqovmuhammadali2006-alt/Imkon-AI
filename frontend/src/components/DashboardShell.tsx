@@ -23,9 +23,8 @@ const ROLE_LABEL: Record<Role, string> = {
 
 // Har bir rolning o'z ko'rinishi. Rang: asosiy (indigo) shkala <html class="role-..."> orqali almashtiriladi
 // (globals.css): admin — binafsha, o'qituvchi — indigo, o'quvchi — ko'k. Shuning uchun bu yerda faqat indigo-* yoziladi.
-// Tuzilish ham farq qiladi: admin — doim to'q, ixcham menyu; o'qituvchi — to'ldirilgan faol band;
+// Tuzilish ham farq qiladi: admin — oq va binafsha, ixcham menyu, faol band chap chiziq bilan; o'qituvchi — to'ldirilgan faol band;
 // o'quvchi — katta, bosish oson tugmalar va rangli belgi kataklari.
-// Admin menyusi gray-* ishlatadi: slate tungi rejimda teskari bo'ladi, gray esa doim to'q qoladi.
 type RoleTheme = {
   page: string;
   sidebar: string;
@@ -51,24 +50,24 @@ type RoleTheme = {
 const ROLE_THEME: Record<Role, RoleTheme> = {
   admin: {
     page: "bg-canvas",
-    sidebar: "border-r border-gray-800 bg-gray-950 text-gray-300",
-    logoLight: true,
-    menuLabel: "text-gray-500",
-    navItem: "text-gray-400 hover:bg-white/5 hover:text-gray-100",
-    navItemActive: "bg-white/10 text-white",
-    navIndicator: "bg-indigo-400",
+    sidebar: "border-r border-line bg-surface",
+    logoLight: false,
+    menuLabel: "text-indigo-500",
+    navItem: "text-slate-600 hover:bg-indigo-50 hover:text-indigo-700",
+    navItemActive: "bg-indigo-50 text-indigo-700 font-semibold",
+    navIndicator: "bg-indigo-600",
     navSize: "px-3 py-2 text-[15px]",
     iconBox: "size-8 rounded-lg",
-    navIcon: "text-gray-500 group-hover:text-gray-300",
-    navIconActive: "bg-indigo-500 text-white shadow-md shadow-indigo-500/30",
-    userCard: "bg-white/5 ring-white/10 hover:bg-white/10",
-    userName: "text-white",
-    userRole: "text-gray-400",
+    navIcon: "text-slate-500 group-hover:text-indigo-600",
+    navIconActive: "bg-indigo-600 text-white shadow-md shadow-indigo-600/30",
+    userCard: "bg-indigo-50 ring-indigo-200 hover:bg-indigo-100",
+    userName: "text-slate-900",
+    userRole: "text-indigo-700",
     header: "bg-surface/85 border-line",
     loader: "text-indigo-600",
-    logoutHover: "text-gray-400 hover:bg-red-500/20 hover:text-red-300",
-    badge: "border-white/15 bg-white/10 text-brand-200",
-    closeBtn: "text-gray-400 hover:bg-white/10 hover:text-white",
+    logoutHover: "text-slate-500 hover:bg-red-50 hover:text-red-600",
+    badge: "border-indigo-200 bg-indigo-50 text-indigo-700",
+    closeBtn: "text-slate-500",
   },
   teacher: {
     page: "bg-canvas",
