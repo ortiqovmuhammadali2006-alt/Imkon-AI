@@ -151,7 +151,7 @@
 /*
  * ROL RANGLARI: har bir panel o'z asosiy rangiga ega (DashboardShell <html> ga role-* klassini qo'yadi).
  * Komponentlar indigo-* yozadi — shu yerda indigo shkalasi rol rangiga almashtiriladi:
- * admin — binafsha, o'qituvchi — indigo (o'zgarishsiz), o'quvchi — ko'k. Yashil/sariq/qizil ma'nolari hamma rolda bir xil.
+ * admin — binafsha, o'qituvchi — qizil, o'quvchi — ko'k. Yashil/sariq/qizil ma'nolari hamma rolda bir xil.
  * html.dark.role-* — tungi rejim (och fonlar to'q tusga, to'q matnlar och tusga), .dark qoidalaridan ustun turadi.
  */
 html.role-admin {
@@ -182,6 +182,35 @@ html.dark.role-admin {
 }
 html.dark.role-admin :is(.text-indigo-500, .text-indigo-600) {
   color: #c4b5fd;
+}
+html.role-teacher {
+  --color-indigo-50: oklch(97.1% 0.013 17.38);
+  --color-indigo-100: oklch(93.6% 0.032 17.717);
+  --color-indigo-200: oklch(88.5% 0.062 18.334);
+  --color-indigo-300: oklch(80.8% 0.114 19.571);
+  --color-indigo-400: oklch(70.4% 0.191 22.216);
+  --color-indigo-500: oklch(63.7% 0.237 25.331);
+  --color-indigo-600: oklch(57.7% 0.245 27.325);
+  --color-indigo-700: oklch(50.5% 0.213 27.518);
+  --color-indigo-800: oklch(44.4% 0.177 26.899);
+  --color-indigo-900: oklch(39.6% 0.141 25.723);
+  --color-indigo-950: oklch(25.8% 0.092 26.042);
+  --color-brand-100: #fee2e2;
+  --color-brand-200: #fecaca;
+  --color-brand-700: #b91c1c;
+}
+html.dark.role-teacher {
+  --color-indigo-50: color-mix(in oklab, #ef4444 16%, var(--tint-base));
+  --color-indigo-100: color-mix(in oklab, #ef4444 24%, var(--tint-base));
+  --color-indigo-200: color-mix(in oklab, #ef4444 36%, var(--tint-base));
+  --color-indigo-300: color-mix(in oklab, #ef4444 50%, var(--tint-base));
+  --color-indigo-700: #fca5a5;
+  --color-indigo-800: #fecaca;
+  --color-indigo-900: #fee2e2;
+  --color-indigo-950: #fef2f2;
+}
+html.dark.role-teacher :is(.text-indigo-500, .text-indigo-600) {
+  color: #fca5a5;
 }
 html.role-student {
   --color-indigo-50: oklch(97% 0.014 254.604);

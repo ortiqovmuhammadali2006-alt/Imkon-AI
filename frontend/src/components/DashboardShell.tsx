@@ -22,7 +22,7 @@ const ROLE_LABEL: Record<Role, string> = {
 };
 
 // Har bir rolning o'z ko'rinishi. Rang: asosiy (indigo) shkala <html class="role-..."> orqali almashtiriladi
-// (globals.css): admin — binafsha, o'qituvchi — indigo, o'quvchi — ko'k. Shuning uchun bu yerda faqat indigo-* yoziladi.
+// (globals.css): admin — binafsha, o'qituvchi — qizil, o'quvchi — ko'k. Shuning uchun bu yerda faqat indigo-* yoziladi.
 // Tuzilish ham farq qiladi: admin — oq va binafsha, ixcham menyu, faol band chap chiziq bilan; o'qituvchi — to'ldirilgan faol band;
 // o'quvchi — katta, bosish oson tugmalar va rangli belgi kataklari.
 type RoleTheme = {
