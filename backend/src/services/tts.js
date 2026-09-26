@@ -106,7 +106,8 @@ function remember(key, audio) {
 
 async function synthesize(rawText, speed) {
   // Raqamlar o'zbekcha so'z bilan o'qilsin ("0" -> "nol", "5-sinf" -> "beshinchi sinf"), inglizcha ("oh") emas
-  const text = uzNumbersToWords(rawText);
+  // "AI" o'zbekcha ovozda tushunarsiz ("ey-ay") — "sun'iy intellekt" deb o'qiladi; brend nomi "Imkon AI" — "Imkon"
+  const text = uzNumbersToWords(rawText.replace(/Imkon AI/g, "Imkon").replace(/\bAI\b/g, "sun'iy intellekt"));
   const list = providers();
   if (!list.length) throw new HttpError(503, "Server ovozi sozlanmagan yoki vaqtincha ishlamayapti");
 

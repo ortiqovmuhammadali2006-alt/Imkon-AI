@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Headphones, HelpCircle, Loader2, Mic, Turtle, Type, Volume2 } from "lucide-react";
+import { HelpCircle, Loader2, Mic, MicOff, Turtle, Type, Volume2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import {
   checkServerTts,
@@ -61,11 +61,11 @@ function pageName(pathname: string) {
   if (pathname === "/student") return "Bosh sahifa";
   if (pathname === "/student/schedule") return "Dars jadvali";
   if (pathname === "/student/lessons") return "Darslarim. Ro'yxatni eshitish uchun o'qib ber deb ayting";
-  if (TUTOR_PATH.test(pathname)) return "AI Tutor darsi. Javob berish uchun mikrofon tugmasini bosing yoki yozing";
-  if (pathname.startsWith("/student/lessons/")) return "Dars sahifasi. Imkon, o'rgat desangiz, AI Tutor dars o'tadi";
+  if (TUTOR_PATH.test(pathname)) return "Sun'iy intellekt o'qituvchisi bilan dars. Javob berish uchun mikrofon tugmasini bosing yoki yozing";
+  if (pathname.startsWith("/student/lessons/")) return "Dars sahifasi. Imkon, o'rgat desangiz, sun'iy intellekt o'qituvchisi dars o'tadi";
   if (pathname === "/student/assignments") return "Vazifalar";
   if (pathname === "/student/grades") return "Baholarim";
-  if (pathname === "/student/chat") return "AI suhbat. AI bilan gaplashish uchun mikrofon tugmasini bosing";
+  if (pathname === "/student/chat") return "Sun'iy intellekt bilan suhbat sahifasi. Suhbatlashish uchun mikrofon tugmasini bosing";
   return "";
 }
 
@@ -85,13 +85,13 @@ const COMMANDS: Command[] = [
     },
   },
   {
-    label: "“O'rgat” — ochiq darsni AI Tutor bilan o'rganish",
+    label: "“O'rgat” — ochiq darsni sun'iy intellekt o'qituvchisi bilan o'rganish",
     match: (t) => has(t, "orgat", "tutor", "organamiz"),
     run: ({ go, pathname }) => {
       const m = pathname.match(TUTOR_HREF);
       if (!m) return "Avval darsni oching, keyin o'rgat deb ayting";
       go(`/student/lessons/${m[1]}/tutor`);
-      return "AI Tutor ochildi. Darsni boshlash tugmasini bosing yoki boshla deb ayting";
+      return "Sun'iy intellekt o'qituvchisi ochildi. Darsni boshlash tugmasini bosing";
     },
   },
   { label: "“Tushuntir” — ochiq darsni AI tushuntiradi", match: (t) => has(t, "tushuntir"), run: () => dispatchVoiceAction("explain") },
@@ -121,7 +121,12 @@ const COMMANDS: Command[] = [
     },
   },
   { label: "“O'qib ber” — sahifadagi ma'lumotni o'qiydi", match: (t) => has(t, "oqi", "tingla"), run: () => dispatchVoiceAction("read") },
-  { label: "“Suhbat” — AI bilan suhbat", match: (t) => has(t, "suhbat", "chat", "чат"), run: ({ go }) => go("/student/chat"), reply: "AI suhbat ochildi. Savolingizni ayting" },
+  {
+    label: "“Suhbat” — sun'iy intellekt bilan suhbatlashish",
+    match: (t) => has(t, "suhbat", "chat", "чат"),
+    run: ({ go }) => go("/student/chat"),
+    reply: "Sun'iy intellekt bilan suhbat ochildi. Suhbatlashish uchun mikrofon tugmasini bosing",
+  },
   {
     label: "“Profil” — ma'lumotlarim",
     match: (t) => has(t, "profil", "malumotlarim"),
@@ -136,7 +141,7 @@ const COMMANDS: Command[] = [
   { label: "“Darslar” — darslarim", match: (t) => has(t, "dars"), run: ({ go }) => go("/student/lessons"), reply: "Darslar ochildi. Ro'yxatni eshitish uchun o'qib ber deb ayting" },
   { label: "“Bosh sahifa”", match: (t) => has(t, "bosh sahifa", "asosiy"), run: ({ go }) => go("/student"), reply: "Bosh sahifa ochildi" },
   { label: "“Orqaga” — oldingi sahifa", match: (t) => has(t, "orqaga"), run: ({ back }) => back(), reply: "Oldingi sahifaga qaytildi" },
-  { label: "“Qayerdaman” — qaysi sahifadaligingiz", match: (t) => has(t, "qayer"), run: ({ pathname }) => pageName(pathname) || "Imkon AI" },
+  { label: "“Qayerdaman” — qaysi sahifadaligingiz", match: (t) => has(t, "qayer"), run: ({ pathname }) => pageName(pathname) || "Imkon" },
   {
     label: "“Yordam” — buyruqlarni aytib beradi",
     match: (t) => has(t, "yordam"),
@@ -162,16 +167,16 @@ function findCommand(text: string) {
 // Tez-tez aytiladigan javoblar — ovoz rejimi yoqilganda oldindan yuklab qo'yiladi (buyruqdan keyin darhol eshitilsin)
 const READY_PHRASES = [
   "Ha, eshitaman",
-  "Bu buyruq emas. AI bilan gaplashish uchun AI suhbat sahifasida mikrofon tugmasini bosing.",
+  "Bu buyruq emas. Sun'iy intellekt bilan suhbatlashish uchun suhbat sahifasida mikrofon tugmasini bosing.",
   ...COMMANDS.map((c) => c.reply).filter((r): r is string => Boolean(r)),
 ];
 
 // Qaysi sahifa va qaysi rejimdaligini Madina ovozida aytish (server ovozi holati avval aniqlanadi)
 function announce(kind: "login" | "reload" | "unsupported", fullName: string, pathname: string) {
-  const page = pageName(pathname) || "Imkon AI";
+  const page = pageName(pathname) || "Imkon";
   const text =
     kind === "login"
-      ? `Xush kelibsiz, ${fullName}! Hozir siz turgan sahifa: ${page}. Ovoz rejimi yoqilgan, men sizni tinglayapman. ` +
+      ? `Xush kelibsiz, ${fullName}! Hozir siz turgan sahifa: ${page}. Ovozli yordamchi yoqilgan, men sizni tinglayapman. ` +
         "Buyruq berish uchun avval Imkon deng. Masalan: Imkon, darslarni och."
       : kind === "unsupported"
         ? `Xush kelibsiz, ${fullName}! Hozir siz turgan sahifa: ${page}. ` +
@@ -186,7 +191,21 @@ function announce(kind: "login" | "reload" | "unsupported", fullName: string, pa
 
 let pendingLoginWelcome = false; // login'dan keyingi "xush kelibsiz" hali aytilmagan
 const FONT_KEY = "imkon_font_scale";
-const MODE_KEY = "imkon_voice_mode";
+// Ovoz yordamchisi doim yoqiq (Siri kabi — "Imkon" deb chaqiriladi). O'quvchi tugma bilan o'chirsa — faqat shu seans davomida
+const VOICE_OFF_KEY = "imkon_voice_off";
+function readVoiceOff() {
+  try {
+    return sessionStorage.getItem(VOICE_OFF_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+function writeVoiceOff(off: boolean) {
+  try {
+    if (off) sessionStorage.setItem(VOICE_OFF_KEY, "1");
+    else sessionStorage.removeItem(VOICE_OFF_KEY);
+  } catch {}
+}
 const FONT_SCALES = [100, 115, 130];
 const ROUND_BTN =
   "flex size-11 items-center justify-center rounded-full border border-slate-200 bg-surface text-slate-600 shadow-sm transition-colors hover:border-slate-300 hover:text-indigo-600";
@@ -386,7 +405,7 @@ export default function VoiceControl() {
         // birinchi bosishda qayta urinamiz. Bosishdan keyin ham rad etilsa — haqiqatan ruxsat yo'q, yo'riqnoma chiqadi
         if (autoStartRef.current && (code === "not-allowed" || code === "service-not-allowed")) {
           autoStartRef.current = false;
-          toast("Ovoz rejimini boshlash uchun sahifaning istalgan joyini bosing", {
+          toast("Ovozli yordamchini boshlash uchun sahifaning istalgan joyini bosing", {
             icon: <Mic className="size-5 text-indigo-600" aria-hidden />,
             duration: 10000,
           });
@@ -399,9 +418,9 @@ export default function VoiceControl() {
           window.addEventListener("keydown", retry, true);
           return;
         }
+        // Mikrofon ishlamadi — hozircha o'chadi, lekin keyingi sahifa ochilishida yana urinib ko'riladi
         modeRef.current = false;
         setModeState(false);
-        writeStorage(MODE_KEY, "0");
         reportMicError(message, code);
       },
     });
@@ -423,13 +442,13 @@ export default function VoiceControl() {
     modeRef.current = on;
     setModeState(on);
     setLastHeard("");
-    writeStorage(MODE_KEY, on ? "1" : "0");
+    writeVoiceOff(!on);
     if (on) {
       voiceMode.enable();
-      speak("Ovoz rejimi yoqildi. Buyruq berish uchun avval Imkon deng. Masalan: Imkon, darslarni och.", { quick: true });
+      speak("Ovozli yordamchi yoqildi. Buyruq berish uchun Imkon deb chaqiring. Masalan: Imkon, darslarni och.", { quick: true });
     } else {
       voiceMode.disable();
-      speak("Ovoz rejimi o'chirildi", { quick: true });
+      speak("Ovozli yordamchi o'chirildi", { quick: true });
     }
   }, []);
   useEffect(() => {
@@ -456,18 +475,20 @@ export default function VoiceControl() {
     } catch {}
     const justLoggedIn = pendingLoginWelcome;
     const supported = isRecognitionSupported();
-    const savedMode = (justLoggedIn || readStorage(MODE_KEY) === "1") && supported;
-    if (justLoggedIn && supported) writeStorage(MODE_KEY, "1");
-    welcomeRef.current = justLoggedIn ? (supported ? "login" : "unsupported") : savedMode ? "reload" : null;
+    // Har kirishda va har sahifa ochilganda yoqiq; yangi kirishda qo'lda o'chirish ham unutiladi
+    if (justLoggedIn) writeVoiceOff(false);
+    const savedMode = supported && !readVoiceOff();
+    // E'lon faqat kirishda (har yangilashda takrorlanmaydi — "Imkon" doim tinglab turadi)
+    welcomeRef.current = justLoggedIn ? (supported ? "login" : "unsupported") : null;
     modeRef.current = savedMode;
     autoStartRef.current = savedMode;
     if (savedMode) voiceMode.enable();
-    const id = requestAnimationFrame(() => {
+    const id = setTimeout(() => {
       setFontIndex(savedFont);
       setModeState(savedMode);
-    });
+    }, 0);
     return () => {
-      cancelAnimationFrame(id);
+      clearTimeout(id);
       document.documentElement.style.fontSize = "";
       modeRef.current = false;
       voiceMode.disable();
@@ -604,14 +625,24 @@ export default function VoiceControl() {
         <button
           onClick={() => setMode(!mode)}
           aria-pressed={mode}
-          aria-label={mode ? "Ovoz rejimini o'chirish (Alt + O)" : "Ovoz rejimini yoqish (Alt + O)"}
-          className={`flex h-11 items-center gap-2 rounded-full px-3 font-semibold text-white shadow-md transition-colors sm:px-5 ${
-            mode ? "bg-red-600 shadow-red-600/25 hover:bg-red-700" : "bg-gradient-to-b from-indigo-500 to-indigo-600 shadow-indigo-600/25 hover:to-brand-700"
+          aria-label={mode ? "Ovozli yordamchi yoqiq — Imkon deb chaqiring. O'chirish (Alt + O)" : "Ovozli yordamchini yoqish (Alt + O)"}
+          className={`flex h-11 items-center gap-2 rounded-full px-3 font-semibold transition-colors sm:px-4 ${
+            mode
+              ? "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200 hover:bg-emerald-100"
+              : "bg-slate-100 text-slate-600 ring-1 ring-slate-200 hover:bg-slate-200"
           }`}
-          title="Ovoz rejimi (Alt + O)"
+          title={mode ? "Imkon tinglayapti — “Imkon” deb chaqiring (bosilsa o'chadi)" : "Ovozli yordamchini yoqish"}
         >
-          <Headphones className="size-5" aria-hidden />
-          <span className="max-sm:hidden">{mode ? "Ovoz rejimi: yoniq" : "Ovoz rejimi"}</span>
+          {/* Yoqiq — doim tinglab turadi (Siri kabi), bosish shart emas; tugma faqat holatni ko'rsatadi va o'chirish uchun */}
+          {mode ? (
+            <span className="relative flex size-2.5" aria-hidden>
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex size-2.5 rounded-full bg-emerald-500" />
+            </span>
+          ) : (
+            <MicOff className="size-5" aria-hidden />
+          )}
+          <span className="max-sm:hidden">{mode ? "Imkon tinglayapti" : "Ovozni yoqish"}</span>
         </button>
       </div>
 

@@ -435,6 +435,7 @@ router.post("/assistant", async (req, res) => {
           role: "system",
           content:
             "Sen 'Imkon' — imkoniyati cheklangan o'quvchilar platformasidagi mehribon robot-yordamchisan. O'quvchining gapini tushunib, " +
+            "javobingda 'AI' so'zini ishlatma — 'sun'iy intellekt' de. " +
             "platformadagi bitta amalni tanla va qisqa (1-2 gap) iliq javob yoz. Faqat o'zbek tilida (lotin). Faqat JSON qaytar: " +
             `{"action": "${ASSISTANT_ACTIONS.join("|")}", "lesson_id": son yoki null, "reply": "..."}.\n` +
             "Qoidalar: darsni tushuntirish/o'rganish/qayta tushuntirish/'tushunmayapman' — action=tutor (ochiq dars yoki mos dars, " +
@@ -444,7 +445,7 @@ router.post("/assistant", async (req, res) => {
             (commandOnly
               ? "\nMUHIM: bu OVOZLI BUYRUQ rejimi. Faqat platformada biror amal bajarish (sahifa/dars ochish, bugungi reja) so'ralsa amal tanla. " +
                 "Agar gap savol, ma'lumot so'rash, suhbat yoki noaniq gap bo'lsa — action=unknown va reply: " +
-                "\"Bu buyruq emas. AI bilan gaplashish uchun AI suhbat sahifasida mikrofon tugmasini bosing.\" Savolga o'zing javob berma."
+                "\"Bu buyruq emas. Sun'iy intellekt bilan suhbatlashish uchun suhbat sahifasida mikrofon tugmasini bosing.\" Savolga o'zing javob berma."
               : ""),
         },
         { role: "user", content: `${context}\n\nO'quvchi: "${text}"` },
