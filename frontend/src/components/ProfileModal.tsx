@@ -1,9 +1,11 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { BookOpen, Cake, CalendarDays, GraduationCap, LogOut, Phone, UserRound, Users, type LucideIcon } from "lucide-react";
+import { useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
+import { BookOpen, Cake, CalendarDays, Camera, Check, GraduationCap, Loader2, LogOut, Pencil, Phone, Trash2, UserRound, Users, X, type LucideIcon } from "lucide-react";
 import { api, getErrorMessage } from "@/lib/api";
-import type { Role } from "@/lib/auth";
+import { useAuth, type Role } from "@/lib/auth";
 import type { Category } from "@/lib/types";
 import { formatDate, formatGrade } from "@/lib/format";
 import Modal from "@/components/ui/Modal";
@@ -16,6 +18,7 @@ type Profile = {
   username: string;
   role: Role;
   phone: string | null;
+  avatar_url: string | null;
   created_at: string;
   // o'quvchi
   category?: Category;
@@ -49,6 +52,58 @@ export default function ProfileModal({ open, onClose, onLogout }: { open: boolea
     queryFn: async () => (await api.get<Profile>("/auth/profile")).data,
     enabled: open,
   });
+  const queryClient = useQueryClient();
+  const { updateUser } = useAuth();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [editingName, setEditingName] = useState(false);
+  const [name, setName] = useState("");
+
+  const setProfile = (patch: Partial<Profile>) => {
+    queryClient.setQueryData<Profile>(["auth", "profile"], (old) => (old ? { ...old, ...patch } : old));
+    updateUser(patch);
+  };
+
+  const saveName = useMutation({
+    mutationFn: async (full_name: string) => (await api.patch<{ full_name: string }>("/auth/profile", { full_name })).data,
+    onSuccess: (data) => {
+      setProfile(data);
+      setEditingName(false);
+      toast.success("Ism saqlandi");
+    },
+    onError: (e) => toast.error(getErrorMessage(e)),
+  });
+
+  const uploadAvatar = useMutation({
+    mutationFn: async (file: File) => {
+      const form = new FormData();
+      form.append("avatar", file);
+      return (await api.post<{ avatar_url: string }>("/auth/avatar", form)).data;
+    },
+    onSuccess: (data) => {
+      setProfile(data);
+      toast.success("Profil rasmi yangilandi");
+    },
+    onError: (e) => toast.error(getErrorMessage(e)),
+  });
+
+  const removeAvatar = useMutation({
+    mutationFn: async () => (await api.delete<{ avatar_url: null }>("/auth/avatar")).data,
+    onSuccess: (data) => {
+      setProfile(data);
+      toast.success("Profil rasmi olib tashlandi");
+    },
+    onError: (e) => toast.error(getErrorMessage(e)),
+  });
+
+  const pickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // bir xil rasmni qayta tanlash mumkin bo'lsin
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return toast.error("Faqat rasm tanlang");
+    if (file.size > 5 * 1024 * 1024) return toast.error("Rasm hajmi 5 MB dan oshmasligi kerak");
+    uploadAvatar.mutate(file);
+  };
+  const avatarBusy = uploadAvatar.isPending || removeAvatar.isPending;
 
   return (
     <Modal open={open} title="Profil" onClose={onClose}>
@@ -62,13 +117,81 @@ export default function ProfileModal({ open, onClose, onLogout }: { open: boolea
       ) : (
         <>
           <div className="flex items-center gap-4">
-            <Avatar name={p.full_name} size="lg" />
-            <div className="min-w-0">
-              <p className="truncate text-xl font-bold text-slate-900">{p.full_name}</p>
+            {/* Profil rasmi: kamera tugmasi — yuklash */}
+            <div className="relative shrink-0">
+              <Avatar name={p.full_name} src={p.avatar_url} size="xl" />
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={avatarBusy}
+                title="Rasm yuklash"
+                aria-label="Profil rasmini yuklash"
+                className="absolute -right-1 -bottom-1 flex size-8 items-center justify-center rounded-full border-2 border-surface bg-indigo-600 text-white shadow-md transition-colors hover:bg-indigo-700 disabled:opacity-60"
+              >
+                {avatarBusy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Camera className="size-4" aria-hidden />}
+              </button>
+              <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={pickFile} />
+            </div>
+
+            <div className="min-w-0 flex-1">
+              {editingName ? (
+                <form
+                  className="flex items-center gap-2"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    saveName.mutate(name);
+                  }}
+                >
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="input py-2"
+                    aria-label="Ism va familiya"
+                    placeholder="Ism va familiya"
+                    maxLength={150}
+                    autoFocus
+                  />
+                  <button type="submit" disabled={saveName.isPending} className="btn-primary px-3 py-2" aria-label="Saqlash" title="Saqlash">
+                    {saveName.isPending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Check className="size-4" aria-hidden />}
+                  </button>
+                  <button type="button" onClick={() => setEditingName(false)} className="btn-secondary px-3 py-2" aria-label="Bekor qilish" title="Bekor qilish">
+                    <X className="size-4" aria-hidden />
+                  </button>
+                </form>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <p className="truncate text-xl font-bold text-slate-900">{p.full_name}</p>
+                  {/* Ismni faqat administrator o'zi o'zgartiradi (o'qituvchi va o'quvchi ismini administrator kiritadi) */}
+                  {p.role === "admin" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setName(p.full_name);
+                        setEditingName(true);
+                      }}
+                      className="icon-btn"
+                      aria-label="Ismni o'zgartirish"
+                      title="Ismni o'zgartirish"
+                    >
+                      <Pencil className="size-4" aria-hidden />
+                    </button>
+                  )}
+                </div>
+              )}
               <p className="text-sm text-slate-500">
                 {ROLE_LABEL[p.role]}
                 {p.subject && ` · ${p.subject}`}
               </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button type="button" onClick={() => fileRef.current?.click()} disabled={avatarBusy} className="btn-sm btn-sm-edit">
+                  <Camera className="size-3.5" aria-hidden /> {p.avatar_url ? "Rasmni almashtirish" : "Rasm yuklash"}
+                </button>
+                {p.avatar_url && (
+                  <button type="button" onClick={() => removeAvatar.mutate()} disabled={avatarBusy} className="btn-sm border-line bg-surface text-slate-600 hover:bg-slate-100">
+                    <Trash2 className="size-3.5" aria-hidden /> Olib tashlash
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 

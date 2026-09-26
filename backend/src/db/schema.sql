@@ -171,3 +171,6 @@ CREATE INDEX IF NOT EXISTS tutor_turns_session_idx ON tutor_turns (session_id, i
 
 -- AI suhbat javobi internetdan qidirilgan bo'lsa — manbalar ro'yxati [{title, url}]
 ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS sources JSONB;
+
+-- Profil rasmi (profil oynasidan yuklanadi)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;

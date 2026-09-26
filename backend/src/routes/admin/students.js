@@ -122,7 +122,9 @@ router.delete("/:id", async (req, res) => {
   const id = parseId(req.params.id);
   await findStudent(id);
   const { rows: files } = await pool.query(
-    "SELECT file_url FROM submissions WHERE student_id = $1 AND file_url IS NOT NULL",
+    `SELECT file_url FROM submissions WHERE student_id = $1 AND file_url IS NOT NULL
+     UNION ALL
+     SELECT avatar_url FROM users WHERE id = $1 AND avatar_url IS NOT NULL`,
     [id]
   );
   await pool.query("DELETE FROM users WHERE id = $1", [id]);

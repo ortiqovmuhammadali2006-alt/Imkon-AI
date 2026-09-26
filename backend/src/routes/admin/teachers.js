@@ -100,7 +100,9 @@ router.delete("/:id", async (req, res) => {
      UNION ALL
      SELECT s.file_url FROM submissions s JOIN assignments a ON a.id = s.assignment_id
        JOIN lessons l ON l.id = a.lesson_id
-     WHERE l.teacher_id = $1 AND s.file_url IS NOT NULL`,
+     WHERE l.teacher_id = $1 AND s.file_url IS NOT NULL
+     UNION ALL
+     SELECT avatar_url FROM users WHERE id = $1 AND avatar_url IS NOT NULL`,
     [id]
   );
   await pool.query("DELETE FROM users WHERE id = $1", [id]);

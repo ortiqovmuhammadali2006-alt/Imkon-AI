@@ -155,7 +155,7 @@ function UserCard({ user, role, onOpen, onLogout }: { user: User; role: Role; on
         title="Profilni ko'rish"
         className="flex min-w-0 flex-1 items-center gap-3 rounded-xl p-1.5 text-left transition-colors"
       >
-        <Avatar name={user.full_name} />
+        <Avatar name={user.full_name} src={user.avatar_url} />
         <span className="min-w-0 flex-1">
           <span className={`block truncate font-semibold ${theme.userName}`}>{user.full_name}</span>
           <span className={`block truncate text-xs ${theme.userRole}`}>

@@ -114,7 +114,7 @@ function PlanPanel({ plan, current, finished }: { plan: TutorPlan | null; curren
   );
 }
 
-const TurnItem = memo(function TurnItem({ t, userName }: { t: UiTurn; userName: string }) {
+const TurnItem = memo(function TurnItem({ t, userName, userAvatar }: { t: UiTurn; userName: string; userAvatar?: string | null }) {
   if (t.role === "user") {
     return (
       <div className="flex justify-end gap-3">
@@ -126,7 +126,7 @@ const TurnItem = memo(function TurnItem({ t, userName }: { t: UiTurn; userName: 
           {t.kind === "mode" && <HelpCircle className="mr-1.5 inline size-5 align-[-0.2em]" aria-hidden />}
           {t.content}
         </p>
-        <Avatar name={userName} size="sm" />
+        <Avatar name={userName} src={userAvatar} size="sm" />
       </div>
     );
   }
@@ -442,7 +442,7 @@ function TutorView({ lessonId, data }: { lessonId: number; data: TutorState }) {
             ) : (
               <div className="mx-auto max-w-3xl space-y-6 px-4 py-6">
                 {turns.map((t, i) => (
-                  <TurnItem key={t.id ?? `n${i}`} t={t} userName={user?.full_name ?? "?"} />
+                  <TurnItem key={t.id ?? `n${i}`} t={t} userName={user?.full_name ?? "?"} userAvatar={user?.avatar_url} />
                 ))}
                 {finished && !busy && (
                   <div className="rounded-3xl bg-surface p-6 text-center shadow-sm ring-2 ring-emerald-200">

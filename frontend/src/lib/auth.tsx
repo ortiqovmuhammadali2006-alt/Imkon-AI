@@ -11,6 +11,7 @@ export type User = {
   username: string;
   role: Role;
   subject?: string | null; // faqat o'qituvchi uchun
+  avatar_url?: string | null; // profil rasmi ("/uploads/...")
 };
 
 export const ROLE_HOME: Record<Role, string> = {
@@ -24,6 +25,7 @@ type AuthContextValue = {
   loading: boolean;
   login: (token: string, user: User) => void;
   logout: () => void;
+  updateUser: (patch: Partial<User>) => void; // profil oynasida o'zgartirilganda (ism, rasm)
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -53,8 +55,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(user);
   }, []);
 
+  const updateUser = useCallback((patch: Partial<User>) => setUser((u) => (u ? { ...u, ...patch } : u)), []);
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

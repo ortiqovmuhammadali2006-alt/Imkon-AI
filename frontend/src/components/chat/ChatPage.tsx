@@ -93,11 +93,13 @@ function CopyButton({ text }: { text: string }) {
 const MessageItem = memo(function MessageItem({
   m,
   userName,
+  userAvatar,
   canRetry,
   onRetry,
 }: {
   m: UiMessage;
   userName: string;
+  userAvatar?: string | null;
   canRetry: boolean;
   onRetry: (text: string) => void;
 }) {
@@ -107,7 +109,7 @@ const MessageItem = memo(function MessageItem({
         <p className="max-w-[85%] rounded-3xl rounded-br-md bg-gradient-to-br from-indigo-500 to-indigo-600 px-4 py-2.5 whitespace-pre-wrap text-white shadow-md shadow-indigo-500/20">
           {m.content}
         </p>
-        <Avatar name={userName} size="sm" />
+        <Avatar name={userName} src={userAvatar} size="sm" />
       </div>
     );
   }
@@ -494,6 +496,7 @@ export default function ChatPage() {
                   key={i}
                   m={m}
                   userName={user?.full_name ?? "?"}
+                  userAvatar={user?.avatar_url}
                   canRetry={Boolean(m.retryOf) && i === messages.length - 1 && !streaming}
                   onRetry={retry}
                 />
