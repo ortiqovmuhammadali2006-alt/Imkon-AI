@@ -362,12 +362,116 @@ const ASSISTANT_ACTIONS = [
   "open_assignments",
   "open_schedule",
   "open_grades",
+  "open_knowledge", // "Mening bilimim" — qaysi mavzuni qanchalik bilishi
   "open_chat", // AI suhbat (savol berish, shunchaki suhbat)
   "voice_chat", // ovozli suhbat
   "answer", // faqat javob (bugungi reja, oddiy savol) — sahifa o'zgarmaydi
   "unknown", // command_only rejimida: gap platforma buyrug'i emas — hech narsa bajarilmaydi
 ];
 const WEEKDAY_NAMES = ["", "dushanba", "seshanba", "chorshanba", "payshanba", "juma", "shanba", "yakshanba"];
+
+// ---------- Mening bilimim: AI o'qituvchi baholari asosida bilim xaritasi ----------
+// Har bir dars va uning qismlari (ai_plan.parts) bo'yicha: to'g'ri / qisman / noto'g'ri javoblar soni.
+// O'zlashtirish = (to'g'ri + qisman/2) / baholangan javoblar
+function mastery(c) {
+  const n = c.correct + c.partial + c.wrong;
+  return n ? Math.round(((c.correct + c.partial / 2) / n) * 100) : null;
+}
+
+router.get("/knowledge", async (req, res) => {
+  const [lessons, evals, sessions] = await Promise.all([
+    pool.query(
+      `SELECT l.id, l.title, l.ai_plan, t.subject, tu.full_name AS teacher_name ${ACCESSIBLE_LESSONS} ORDER BY l.created_at DESC`,
+      [req.user.id]
+    ),
+    pool.query(
+      `SELECT s.lesson_id, tt.part, tt.evaluation, COUNT(*)::int AS n
+       FROM tutor_turns tt JOIN tutor_sessions s ON s.id = tt.session_id
+       WHERE s.student_id = $1 AND tt.evaluation IS NOT NULL
+       GROUP BY 1, 2, 3`,
+      [req.user.id]
+    ),
+    pool.query(
+      `SELECT DISTINCT ON (lesson_id) lesson_id, current_part, finished, updated_at,
+              bool_or(finished) OVER (PARTITION BY lesson_id) AS ever_finished
+       FROM tutor_sessions WHERE student_id = $1
+       ORDER BY lesson_id, updated_at DESC`,
+      [req.user.id]
+    ),
+  ]);
+
+  const sessionBy = new Map(sessions.rows.map((r) => [r.lesson_id, r]));
+  const evalBy = new Map(); // lesson_id -> part -> {correct, partial, wrong}
+  for (const r of evals.rows) {
+    if (!evalBy.has(r.lesson_id)) evalBy.set(r.lesson_id, new Map());
+    const parts = evalBy.get(r.lesson_id);
+    const key = r.part || 1;
+    if (!parts.has(key)) parts.set(key, { correct: 0, partial: 0, wrong: 0 });
+    parts.get(key)[r.evaluation] += r.n;
+  }
+
+  const items = lessons.rows.map((l) => {
+    const session = sessionBy.get(l.id);
+    const planParts = l.ai_plan?.parts || [];
+    const counts = evalBy.get(l.id) || new Map();
+    const total = { correct: 0, partial: 0, wrong: 0 };
+    counts.forEach((c) => ["correct", "partial", "wrong"].forEach((k) => (total[k] += c[k])));
+    const parts = planParts.map((p, i) => {
+      const c = counts.get(i + 1) || { correct: 0, partial: 0, wrong: 0 };
+      const score = mastery(c);
+      return {
+        title: p.title,
+        ...c,
+        mastery: score,
+        level: score == null ? "new" : score >= 75 ? "strong" : score >= 40 ? "medium" : "weak",
+      };
+    });
+    const score = mastery(total);
+    const answered = total.correct + total.partial + total.wrong;
+    const weak = parts.filter((p) => p.level === "weak").map((p) => p.title);
+    const progress = !session
+      ? 0
+      : session.ever_finished
+        ? 100
+        : planParts.length
+          ? Math.round(((session.current_part - 1) / planParts.length) * 100)
+          : 0;
+    const status = !session
+      ? "not_started"
+      : (answered >= 2 && score < 50) || (session.ever_finished && weak.length)
+        ? "review"
+        : session.ever_finished && (score == null || score >= 70)
+          ? "mastered"
+          : "learning";
+    return {
+      lesson_id: l.id,
+      title: l.title,
+      subject: l.subject,
+      teacher_name: l.teacher_name,
+      status,
+      mastery: score,
+      progress,
+      answered,
+      ...total,
+      parts,
+      weak_parts: weak,
+      last_activity: session?.updated_at || null,
+    };
+  });
+
+  const scored = items.filter((i) => i.mastery != null);
+  res.json({
+    summary: {
+      total: items.length,
+      mastered: items.filter((i) => i.status === "mastered").length,
+      learning: items.filter((i) => i.status === "learning").length,
+      review: items.filter((i) => i.status === "review").length,
+      not_started: items.filter((i) => i.status === "not_started").length,
+      mastery: scored.length ? Math.round(scored.reduce((a, i) => a + i.mastery, 0) / scored.length) : null,
+    },
+    lessons: items,
+  });
+});
 
 router.post("/assistant", async (req, res) => {
   const text = typeof req.body?.text === "string" ? req.body.text.trim().slice(0, 500) : "";
@@ -441,7 +545,7 @@ router.post("/assistant", async (req, res) => {
             "Qoidalar: darsni tushuntirish/o'rganish/qayta tushuntirish/'tushunmayapman' — action=tutor (ochiq dars yoki mos dars, " +
             "bo'lmasa oxirgi Tutor darsi). Aniq darsni ochish — open_lesson (fan va sana bo'yicha eng mos darsni tanla; ertangi fan so'ralsa — shu fanning eng yangi darsi). " +
             "Bugungi reja so'ralsa — answer: jadval va topshirilmagan vazifalarni qisqa ayt. Mos dars topilmasa — open_lessons va buni ayt. " +
-            "Savol bermoqchi yoki suhbatlashmoqchi bo'lsa — open_chat; ovozli suhbat yoki 'mikrofonni yoq' — voice_chat. lesson_id faqat ro'yxatdagi id bo'lsin." +
+            "Savol bermoqchi yoki suhbatlashmoqchi bo'lsa — open_chat; ovozli suhbat yoki 'mikrofonni yoq' — voice_chat. Nimani bilishi, qaysi mavzuni o'zlashtirgani, nimani takrorlash kerakligi so'ralsa — open_knowledge. lesson_id faqat ro'yxatdagi id bo'lsin." +
             (commandOnly
               ? "\nMUHIM: bu OVOZLI BUYRUQ rejimi. Faqat platformada biror amal bajarish (sahifa/dars ochish, bugungi reja) so'ralsa amal tanla. " +
                 "Agar gap savol, ma'lumot so'rash, suhbat yoki noaniq gap bo'lsa — action=unknown va reply: " +

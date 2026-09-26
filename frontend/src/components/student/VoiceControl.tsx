@@ -65,6 +65,7 @@ function pageName(pathname: string) {
   if (pathname.startsWith("/student/lessons/")) return "Dars sahifasi. Imkon, o'rgat desangiz, sun'iy intellekt o'qituvchisi dars o'tadi";
   if (pathname === "/student/assignments") return "Vazifalar";
   if (pathname === "/student/grades") return "Baholarim";
+  if (pathname === "/student/knowledge") return "Mening bilimim. Qaysi mavzuni qanchalik bilishingizni eshitish uchun o'qib ber deb ayting";
   if (pathname === "/student/chat") return "Sun'iy intellekt bilan suhbat sahifasi. Suhbatlashish uchun Imkon, mikrofonni yoq deng";
   return "";
 }
@@ -150,6 +151,12 @@ const COMMANDS: Command[] = [
   },
   { label: "“Jadval” — dars jadvali", match: (t) => has(t, "jadval"), run: ({ go }) => go("/student/schedule"), reply: "Dars jadvali ochildi" },
   { label: "“Vazifalar” — uy vazifalari", match: (t) => has(t, "vazifa", "uy ishi"), run: ({ go }) => go("/student/assignments"), reply: "Vazifalar ochildi" },
+  {
+    label: "“Bilimim” — qaysi mavzuni qanchalik bilishim",
+    match: (t) => has(t, "bilim"),
+    run: ({ go }) => go("/student/knowledge"),
+    reply: "Mening bilimim ochildi. Eshitish uchun o'qib ber deb ayting",
+  },
   { label: "“Baholar” — baholarim", match: (t) => has(t, "baho"), run: ({ go }) => go("/student/grades"), reply: "Baholar ochildi" },
   { label: "“Darslar” — darslarim", match: (t) => has(t, "dars"), run: ({ go }) => go("/student/lessons"), reply: "Darslar ochildi. Ro'yxatni eshitish uchun o'qib ber deb ayting" },
   { label: "“Bosh sahifa”", match: (t) => has(t, "bosh sahifa", "asosiy"), run: ({ go }) => go("/student"), reply: "Bosh sahifa ochildi" },
@@ -159,7 +166,7 @@ const COMMANDS: Command[] = [
     label: "“Yordam” — buyruqlarni aytib beradi",
     match: (t) => has(t, "yordam"),
     run: () =>
-      "Buyruqdan oldin Imkon deng. Buyruqlar: darslar, vazifalar, jadval, suhbat, mikrofonni yoq, yangi suhbat, profil, baholar, bosh sahifa, ikkinchi darsni och, o'qib ber, tushuntir, keyingi, qayta, " +
+      "Buyruqdan oldin Imkon deng. Buyruqlar: darslar, vazifalar, jadval, suhbat, mikrofonni yoq, yangi suhbat, profil, baholar, bilimim, bosh sahifa, ikkinchi darsni och, o'qib ber, tushuntir, keyingi, qayta, " +
       "sekinroq, kattalashtir, kichraytir, tungi rejim, to'xta, orqaga, ovoz rejimini o'chir, chiqish.",
   },
   {
