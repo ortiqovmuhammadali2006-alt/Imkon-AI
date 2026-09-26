@@ -441,11 +441,11 @@ router.post("/assistant", async (req, res) => {
             "Qoidalar: darsni tushuntirish/o'rganish/qayta tushuntirish/'tushunmayapman' — action=tutor (ochiq dars yoki mos dars, " +
             "bo'lmasa oxirgi Tutor darsi). Aniq darsni ochish — open_lesson (fan va sana bo'yicha eng mos darsni tanla; ertangi fan so'ralsa — shu fanning eng yangi darsi). " +
             "Bugungi reja so'ralsa — answer: jadval va topshirilmagan vazifalarni qisqa ayt. Mos dars topilmasa — open_lessons va buni ayt. " +
-            "Savol bermoqchi yoki suhbatlashmoqchi bo'lsa — open_chat; ovozli suhbat — voice_chat. lesson_id faqat ro'yxatdagi id bo'lsin." +
+            "Savol bermoqchi yoki suhbatlashmoqchi bo'lsa — open_chat; ovozli suhbat yoki 'mikrofonni yoq' — voice_chat. lesson_id faqat ro'yxatdagi id bo'lsin." +
             (commandOnly
               ? "\nMUHIM: bu OVOZLI BUYRUQ rejimi. Faqat platformada biror amal bajarish (sahifa/dars ochish, bugungi reja) so'ralsa amal tanla. " +
                 "Agar gap savol, ma'lumot so'rash, suhbat yoki noaniq gap bo'lsa — action=unknown va reply: " +
-                "\"Bu buyruq emas. Sun'iy intellekt bilan suhbatlashish uchun suhbat sahifasida mikrofon tugmasini bosing.\" Savolga o'zing javob berma."
+                "\"Bu buyruq emas. Sun'iy intellekt bilan suhbatlashish uchun Imkon, mikrofonni yoq deng.\" Savolga o'zing javob berma."
               : ""),
         },
         { role: "user", content: `${context}\n\nO'quvchi: "${text}"` },

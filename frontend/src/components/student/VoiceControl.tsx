@@ -29,7 +29,7 @@ import {
   extractWake,
   prefetchSpeech,
 } from "@/lib/speech";
-import { askRobot } from "@/lib/assistant";
+import { askRobot, requestVoiceChat } from "@/lib/assistant";
 import { LOGIN_WELCOME_KEY, SESSION_STARTED_KEY, voiceMode } from "@/lib/voiceMode";
 import { OPEN_PROFILE_EVENT } from "@/components/DashboardShell";
 import { setTheme } from "@/lib/theme";
@@ -61,11 +61,11 @@ function pageName(pathname: string) {
   if (pathname === "/student") return "Bosh sahifa";
   if (pathname === "/student/schedule") return "Dars jadvali";
   if (pathname === "/student/lessons") return "Darslarim. Ro'yxatni eshitish uchun o'qib ber deb ayting";
-  if (TUTOR_PATH.test(pathname)) return "Sun'iy intellekt o'qituvchisi bilan dars. Javob berish uchun mikrofon tugmasini bosing yoki yozing";
+  if (TUTOR_PATH.test(pathname)) return "Sun'iy intellekt o'qituvchisi bilan dars. Ovoz bilan javob berish uchun Imkon, mikrofonni yoq deng";
   if (pathname.startsWith("/student/lessons/")) return "Dars sahifasi. Imkon, o'rgat desangiz, sun'iy intellekt o'qituvchisi dars o'tadi";
   if (pathname === "/student/assignments") return "Vazifalar";
   if (pathname === "/student/grades") return "Baholarim";
-  if (pathname === "/student/chat") return "Sun'iy intellekt bilan suhbat sahifasi. Suhbatlashish uchun mikrofon tugmasini bosing";
+  if (pathname === "/student/chat") return "Sun'iy intellekt bilan suhbat sahifasi. Suhbatlashish uchun Imkon, mikrofonni yoq deng";
   return "";
 }
 
@@ -82,6 +82,19 @@ const COMMANDS: Command[] = [
       if (pathname === "/student/lessons") window.dispatchEvent(new CustomEvent(OPEN_LESSON_EVENT, { detail: n }));
       else go(`/student/lessons?open=${n}`);
       return `${n}-dars ochilmoqda`;
+    },
+  },
+  {
+    // Ko'rmaydigan o'quvchi tugmani topa olmaydi — sun'iy intellekt bilan ovozli suhbat buyruq bilan boshlanadi.
+    // Suhbat yoki o'qituvchi sahifasida — shu yerda, boshqa sahifada — suhbat sahifasi ochilib, darhol boshlanadi
+    label: "“Mikrofonni yoq” — sun'iy intellekt bilan ovozli suhbat",
+    match: (t) => has(t, "mikrofon", "mikrafon", "gaplashmoqchiman", "savol bermoqchiman") && !has(t, "ochir"),
+    run: ({ go, pathname }) => {
+      if (pathname === "/student/chat" || TUTOR_PATH.test(pathname)) dispatchVoiceAction("voice-chat");
+      else {
+        requestVoiceChat();
+        go("/student/chat");
+      }
     },
   },
   {
@@ -125,7 +138,7 @@ const COMMANDS: Command[] = [
     label: "“Suhbat” — sun'iy intellekt bilan suhbatlashish",
     match: (t) => has(t, "suhbat", "chat", "чат"),
     run: ({ go }) => go("/student/chat"),
-    reply: "Sun'iy intellekt bilan suhbat ochildi. Suhbatlashish uchun mikrofon tugmasini bosing",
+    reply: "Sun'iy intellekt bilan suhbat ochildi. Suhbatlashish uchun Imkon, mikrofonni yoq deng",
   },
   {
     label: "“Profil” — ma'lumotlarim",
@@ -146,7 +159,7 @@ const COMMANDS: Command[] = [
     label: "“Yordam” — buyruqlarni aytib beradi",
     match: (t) => has(t, "yordam"),
     run: () =>
-      "Buyruqdan oldin Imkon deng. Buyruqlar: darslar, vazifalar, jadval, suhbat, yangi suhbat, profil, baholar, bosh sahifa, ikkinchi darsni och, o'qib ber, tushuntir, keyingi, qayta, " +
+      "Buyruqdan oldin Imkon deng. Buyruqlar: darslar, vazifalar, jadval, suhbat, mikrofonni yoq, yangi suhbat, profil, baholar, bosh sahifa, ikkinchi darsni och, o'qib ber, tushuntir, keyingi, qayta, " +
       "sekinroq, kattalashtir, kichraytir, tungi rejim, to'xta, orqaga, ovoz rejimini o'chir, chiqish.",
   },
   {
@@ -167,7 +180,7 @@ function findCommand(text: string) {
 // Tez-tez aytiladigan javoblar — ovoz rejimi yoqilganda oldindan yuklab qo'yiladi (buyruqdan keyin darhol eshitilsin)
 const READY_PHRASES = [
   "Ha, eshitaman",
-  "Bu buyruq emas. Sun'iy intellekt bilan suhbatlashish uchun suhbat sahifasida mikrofon tugmasini bosing.",
+  "Bu buyruq emas. Sun'iy intellekt bilan suhbatlashish uchun Imkon, mikrofonni yoq deng.",
   ...COMMANDS.map((c) => c.reply).filter((r): r is string => Boolean(r)),
 ];
 

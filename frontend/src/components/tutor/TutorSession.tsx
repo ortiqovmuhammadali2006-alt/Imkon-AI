@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useStudentProfile } from "@/lib/student";
-import { createSpeechStream, onChatAsk, RecognitionError, stopSpeaking, type SpeechStream } from "@/lib/speech";
+import { createSpeechStream, onChatAsk, onVoiceAction, RecognitionError, stopSpeaking, type SpeechStream } from "@/lib/speech";
 import { listenAccurate } from "@/lib/recorder";
 import { streamTutor, useTutor, type Evaluation, type TutorPlan, type TutorState, type TutorTurn } from "@/lib/tutor";
 import { getErrorMessage } from "@/lib/api";
@@ -308,6 +308,8 @@ function TutorView({ lessonId, data }: { lessonId: number; data: TutorState }) {
 
   // Ovozli boshqaruv ("Ovoz rejimi"): aytilgan gap javob sifatida yuboriladi
   useEffect(() => onChatAsk((text) => void sendRef.current({ message: text })), []);
+  // "Imkon, mikrofonni yoq" — ko'rmaydigan o'quvchi tugma bosmasdan ovozli darsni boshlaydi
+  useEffect(() => onVoiceAction((action) => action === "voice-chat" && setVoiceOpen(true)), []);
 
   const submit = () => {
     const text = input.trim();
