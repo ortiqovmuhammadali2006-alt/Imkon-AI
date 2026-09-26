@@ -234,7 +234,7 @@ export default function ImkonRobot() {
   const raised = TUTOR_OR_CHAT.test(pathname); // yozish maydoni bor sahifalarda robot biroz yuqorida — tugmalarni to'smasin
 
   return (
-    <div className={`fixed right-4 z-40 flex flex-col items-end gap-3 sm:right-6 ${raised ? "bottom-40" : "bottom-5 sm:bottom-6"}`}>
+    <div className={`fixed right-4 z-40 flex flex-col items-end gap-3 sm:right-6 ${raised ? "bottom-44" : "bottom-5 sm:bottom-6"}`}>
       {open && (
         <div
           ref={panelRef}
@@ -335,22 +335,23 @@ export default function ImkonRobot() {
       {bubble && spoken && !open && (
         <div
           aria-hidden
-          className="relative max-w-[min(340px,calc(100vw-2rem))] animate-pop rounded-3xl rounded-br-md bg-surface py-3 pr-10 pl-4 shadow-xl ring-1 ring-indigo-200"
+          className="relative w-max max-w-[min(460px,calc(100vw-2rem))] animate-pop rounded-3xl rounded-br-md bg-surface py-4 pr-12 pl-5 shadow-xl ring-2 ring-indigo-200"
         >
-          <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-indigo-700">
-            <span className={`size-2 rounded-full ${speaking ? "animate-pulse bg-emerald-500" : "bg-slate-300"}`} />
+          <p className="mb-1.5 flex items-center gap-2 text-sm font-semibold text-indigo-700">
+            <span className={`size-2.5 rounded-full ${speaking ? "animate-pulse bg-emerald-500" : "bg-slate-300"}`} />
             Imkon {speaking ? "gapiryapti" : "aytdi"}
           </p>
-          <div ref={bubbleRef} className="max-h-40 overflow-y-auto text-[15px] leading-6 text-slate-800">
+          {/* Katta, o'qish oson yozuv (ko'rishi zaif o'quvchilar uchun ham) */}
+          <div ref={bubbleRef} className="max-h-64 overflow-y-auto text-lg leading-8 font-medium text-slate-900 sm:text-xl sm:leading-9">
             {spoken}
           </div>
           <button
             onClick={() => setBubble(false)}
             tabIndex={-1}
-            className="absolute top-2 right-2 rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            className="absolute top-2.5 right-2.5 rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
             aria-label="Xabarni yopish"
           >
-            <X className="size-4" />
+            <X className="size-5" />
           </button>
         </div>
       )}
@@ -361,7 +362,7 @@ export default function ImkonRobot() {
             setHint(false);
             setOpen(true);
           }}
-          className="max-w-[240px] animate-pop rounded-2xl rounded-br-md bg-surface px-4 py-3 text-left text-sm text-slate-700 shadow-xl ring-1 ring-line"
+          className="max-w-[300px] animate-pop rounded-2xl rounded-br-md bg-surface px-5 py-4 text-left text-base leading-7 text-slate-700 shadow-xl ring-2 ring-indigo-200"
         >
           <b className="text-indigo-700">Salom! Men Imkonman.</b> Yordam kerak bo&apos;lsa, meni bosing.
         </button>
@@ -381,8 +382,8 @@ export default function ImkonRobot() {
       >
         <span className="absolute inset-1 rounded-full bg-indigo-500/30 blur-xl transition-opacity group-hover:opacity-100" aria-hidden />
         {/* Telefonda ixchamroq (kontentni to'smasin), kompyuterda katta */}
-        <span className="relative flex size-16 items-center justify-center rounded-full bg-surface shadow-2xl shadow-indigo-600/30 ring-2 ring-indigo-200 transition-transform group-hover:scale-105 sm:size-[104px]">
-          <RobotFace state={state} className="size-[52px] sm:size-[84px]" />
+        <span className="relative flex size-20 items-center justify-center rounded-full bg-surface shadow-2xl shadow-indigo-600/30 ring-2 ring-indigo-200 transition-transform group-hover:scale-105 sm:size-[136px]">
+          <RobotFace state={state} className="size-16 sm:size-[112px]" />
         </span>
       </button>
     </div>
