@@ -103,6 +103,7 @@ export type StudentGrades = {
     created_at: string;
     teacher_name: string;
     subject: string | null;
+    lesson_id: number | null;
     lesson_title: string | null;
   }[];
   submissions: {
@@ -110,9 +111,16 @@ export type StudentGrades = {
     score: number;
     feedback: string | null;
     graded_at: string;
+    submitted_at: string;
+    answer_text: string | null;
+    file_url: string | null;
+    file_name: string | null;
     assignment_title: string;
+    assignment_description: string | null;
+    lesson_id: number;
     lesson_title: string;
     subject: string | null;
+    teacher_name: string;
   }[];
 };
 

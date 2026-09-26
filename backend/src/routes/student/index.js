@@ -651,7 +651,7 @@ router.get("/grades", async (req, res) => {
   const [grades, submissions] = await Promise.all([
     pool.query(
       `SELECT g.id, g.score, g.comment, g.created_at, tu.full_name AS teacher_name, t.subject,
-              l.title AS lesson_title
+              g.lesson_id, l.title AS lesson_title
        FROM grades g
        JOIN users tu ON tu.id = g.teacher_id
        JOIN teachers t ON t.user_id = g.teacher_id
@@ -661,12 +661,14 @@ router.get("/grades", async (req, res) => {
       [req.user.id]
     ),
     pool.query(
-      `SELECT s.id, s.score, s.feedback, s.graded_at, a.title AS assignment_title,
-              l.title AS lesson_title, t.subject
+      `SELECT s.id, s.score, s.feedback, s.graded_at, s.submitted_at, s.answer_text, s.file_url, s.file_name,
+              a.title AS assignment_title, a.description AS assignment_description,
+              l.id AS lesson_id, l.title AS lesson_title, t.subject, tu.full_name AS teacher_name
        FROM submissions s
        JOIN assignments a ON a.id = s.assignment_id
        JOIN lessons l ON l.id = a.lesson_id
        JOIN teachers t ON t.user_id = l.teacher_id
+       JOIN users tu ON tu.id = l.teacher_id
        WHERE s.student_id = $1 AND s.score IS NOT NULL
        ORDER BY s.graded_at DESC`,
       [req.user.id]
