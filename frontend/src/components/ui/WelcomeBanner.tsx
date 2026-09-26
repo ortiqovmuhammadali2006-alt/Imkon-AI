@@ -53,7 +53,7 @@ export default function WelcomeBanner({
   subtitle?: string;
   children?: React.ReactNode;
 }) {
-  const firstName = name.split(/\s+/)[0];
+  const fullName = name.trim().replace(/\s+/g, " "); // ism va familiya to'liq
   const now = useTashkentTime();
   return (
     // Bitta rang boshidan oxirigacha (gradient va xira dog'larsiz) — palitra bir xil bo'lsin
@@ -65,8 +65,8 @@ export default function WelcomeBanner({
       <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-sm font-medium text-brand-100/90">{`${WEEKDAYS[now.weekday]}, ${now.day}-${MONTHS[now.month]}`}</p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
-            {greeting(now.hour)}, {firstName}! <Hand className="ml-1 inline size-7 -rotate-12 align-[-0.1em]" aria-hidden />
+          <h1 className="mt-1 text-2xl font-bold tracking-tight break-words sm:text-3xl">
+            {greeting(now.hour)}, {fullName}! <Hand className="ml-1 inline size-7 -rotate-12 align-[-0.1em]" aria-hidden />
           </h1>
           {subtitle && <p className="mt-2 max-w-xl text-brand-100/90">{subtitle}</p>}
         </div>
