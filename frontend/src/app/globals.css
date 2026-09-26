@@ -350,6 +350,16 @@ video::cue {
   .btn-danger {
     @apply bg-gradient-to-b from-red-500 to-red-600 text-white shadow-sm shadow-red-600/25 hover:from-red-600 hover:to-crimson-700;
   }
+  /* Jadval qatoridagi amal tugmalari: Tahrirlash (asosiy rang), O'chirish (qizil) */
+  .btn-sm {
+    @apply inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-55;
+  }
+  .btn-sm-edit {
+    @apply border-indigo-200 bg-indigo-50 text-indigo-700 hover:border-indigo-300 hover:bg-indigo-100;
+  }
+  .btn-sm-danger {
+    @apply border-red-600 bg-red-600 text-white hover:border-crimson-700 hover:bg-crimson-700; /* crimson-700 — tungi rejimda ham to'q qizil */
+  }
   .icon-btn {
     @apply rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800;
   }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Users, Lock, LockOpen, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Users, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { api, getErrorMessage } from "@/lib/api";
 import { useAdminMutation, useStudents } from "@/lib/admin";
 import { CATEGORIES, formatDate, formatGrade } from "@/lib/format";
@@ -20,10 +20,6 @@ export default function StudentsPage() {
   const [editing, setEditing] = useState<Student | null | undefined>(undefined);
   const [deleting, setDeleting] = useState<Student | null>(null);
 
-  const toggleStatus = useAdminMutation(
-    (s: Student) => api.patch(`/admin/students/${s.id}/status`, { is_active: !s.is_active }),
-    "Holat o'zgartirildi"
-  );
   const remove = useAdminMutation(
     (s: Student) => api.delete(`/admin/students/${s.id}`),
     "O'quvchi o'chirildi",
@@ -89,7 +85,7 @@ export default function StudentsPage() {
             </select>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[820px] text-sm">
+            <table className="w-full min-w-[860px] text-sm">
               <thead className="table-head">
                 <tr>
                   <th className="px-4 py-3">O&apos;quvchi</th>
@@ -131,25 +127,12 @@ export default function StudentsPage() {
                       <StatusBadge active={s.is_active} />
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex justify-end gap-1">
-                        <button onClick={() => setEditing(s)} className="icon-btn" aria-label="Tahrirlash" title="Tahrirlash">
-                          <Pencil className="size-4" />
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => setEditing(s)} className="btn-sm btn-sm-edit">
+                          <Pencil className="size-3.5" aria-hidden /> Tahrirlash
                         </button>
-                        <button
-                          onClick={() => toggleStatus.mutate(s)}
-                          className="icon-btn"
-                          aria-label={s.is_active ? "Bloklash" : "Blokdan chiqarish"}
-                          title={s.is_active ? "Bloklash" : "Blokdan chiqarish"}
-                        >
-                          {s.is_active ? <Lock className="size-4" /> : <LockOpen className="size-4" />}
-                        </button>
-                        <button
-                          onClick={() => setDeleting(s)}
-                          className="icon-btn hover:bg-red-50 hover:text-red-600"
-                          aria-label="O'chirish"
-                          title="O'chirish"
-                        >
-                          <Trash2 className="size-4" />
+                        <button onClick={() => setDeleting(s)} className="btn-sm btn-sm-danger">
+                          <Trash2 className="size-3.5" aria-hidden /> O&apos;chirish
                         </button>
                       </div>
                     </td>
