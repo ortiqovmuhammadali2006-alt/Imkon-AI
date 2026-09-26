@@ -16,7 +16,6 @@ const QUICK_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/teachers", label: "O'qituvchi qo'shish", icon: UserPlus },
   { href: "/admin/students", label: "O'quvchi qo'shish", icon: Users },
   { href: "/admin/schedule", label: "Dars jadvali", icon: CalendarDays },
-  { href: "/admin/salaries", label: "Oylik to'lash", icon: Wallet },
 ];
 
 const CATEGORY_BAR: Record<Category, string> = {
