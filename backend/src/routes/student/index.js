@@ -365,12 +365,15 @@ const ASSISTANT_ACTIONS = [
   "open_chat", // AI suhbat (savol berish, shunchaki suhbat)
   "voice_chat", // ovozli suhbat
   "answer", // faqat javob (bugungi reja, oddiy savol) — sahifa o'zgarmaydi
+  "unknown", // command_only rejimida: gap platforma buyrug'i emas — hech narsa bajarilmaydi
 ];
 const WEEKDAY_NAMES = ["", "dushanba", "seshanba", "chorshanba", "payshanba", "juma", "shanba", "yakshanba"];
 
 router.post("/assistant", async (req, res) => {
   const text = typeof req.body?.text === "string" ? req.body.text.trim().slice(0, 500) : "";
   const pathname = typeof req.body?.pathname === "string" ? req.body.pathname.slice(0, 200) : "";
+  // Ovoz rejimidan kelgan buyruq ("Imkon, ..."): savol yoki suhbat bo'lsa javob berilmaydi, faqat platforma amali
+  const commandOnly = Boolean(req.body?.command_only);
   if (!text) throw new HttpError(400, "Nima yordam kerakligini yozing yoki ayting");
   checkAiLimit(req.user.id);
 
@@ -437,7 +440,12 @@ router.post("/assistant", async (req, res) => {
             "Qoidalar: darsni tushuntirish/o'rganish/qayta tushuntirish/'tushunmayapman' — action=tutor (ochiq dars yoki mos dars, " +
             "bo'lmasa oxirgi Tutor darsi). Aniq darsni ochish — open_lesson (fan va sana bo'yicha eng mos darsni tanla; ertangi fan so'ralsa — shu fanning eng yangi darsi). " +
             "Bugungi reja so'ralsa — answer: jadval va topshirilmagan vazifalarni qisqa ayt. Mos dars topilmasa — open_lessons va buni ayt. " +
-            "Savol bermoqchi yoki suhbatlashmoqchi bo'lsa — open_chat; ovozli suhbat — voice_chat. lesson_id faqat ro'yxatdagi id bo'lsin.",
+            "Savol bermoqchi yoki suhbatlashmoqchi bo'lsa — open_chat; ovozli suhbat — voice_chat. lesson_id faqat ro'yxatdagi id bo'lsin." +
+            (commandOnly
+              ? "\nMUHIM: bu OVOZLI BUYRUQ rejimi. Faqat platformada biror amal bajarish (sahifa/dars ochish, bugungi reja) so'ralsa amal tanla. " +
+                "Agar gap savol, ma'lumot so'rash, suhbat yoki noaniq gap bo'lsa — action=unknown va reply: " +
+                "\"Bu buyruq emas. AI bilan gaplashish uchun AI suhbat sahifasida mikrofon tugmasini bosing.\" Savolga o'zing javob berma."
+              : ""),
         },
         { role: "user", content: `${context}\n\nO'quvchi: "${text}"` },
       ],
@@ -447,7 +455,7 @@ router.post("/assistant", async (req, res) => {
     throw toHttpError(err);
   }
 
-  let action = ASSISTANT_ACTIONS.includes(result.action) ? result.action : "answer";
+  let action = ASSISTANT_ACTIONS.includes(result.action) ? result.action : commandOnly ? "unknown" : "answer";
   let lessonId = lessons.some((l) => l.id === Number(result.lesson_id)) ? Number(result.lesson_id) : null;
   if (["open_lesson", "tutor"].includes(action) && !lessonId) {
     lessonId = action === "tutor" ? openLessonId || lastTutor[0]?.lesson_id || null : null;

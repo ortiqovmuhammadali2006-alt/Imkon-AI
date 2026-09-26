@@ -12,7 +12,6 @@ import {
   setSpeechRate,
   SPEECH_RATES,
   type SpeechRateKey,
-  askChat,
   dispatchVoiceAction,
   extractNumber,
   isRecognitionSupported,
@@ -26,6 +25,8 @@ import {
   AUTOPLAY_BLOCKED,
   stopSpeaking,
   VOICE_COMMAND_EVENT,
+  WAKE_EVENT,
+  extractWake,
 } from "@/lib/speech";
 import { askRobot } from "@/lib/assistant";
 import { LOGIN_WELCOME_KEY, SESSION_STARTED_KEY, voiceMode } from "@/lib/voiceMode";
@@ -55,22 +56,15 @@ const has = (t: string, ...words: string[]) => words.some((w) => t.includes(w));
 const TUTOR_PATH = /^\/student\/lessons\/\d+\/tutor$/;
 const TUTOR_HREF = /^\/student\/lessons\/(\d+)$/;
 
-// Tutor darsida buyruq deb qabul qilinadiganlari: boshqaruv so'zlari yoki "…ga o't / …ni och"
-function isExplicitCommand(t: string) {
-  const words = t.split(" ");
-  if (has(t, "toxta", "orqaga", "bosh sahifa", "chiqish", "yordam", "ovoz rejim", "sekinroq", "tezroq", "kattalashtir", "kichraytir", "tungi rejim", "kunduzgi rejim")) return true;
-  return (words.includes("och") || words.includes("ot") || words.includes("oting")) && has(t, "dars", "vazifa", "jadval", "baho", "suhbat", "profil");
-}
-
 function pageName(pathname: string) {
   if (pathname === "/student") return "Bosh sahifa";
   if (pathname === "/student/schedule") return "Dars jadvali";
   if (pathname === "/student/lessons") return "Darslarim. Ro'yxatni eshitish uchun o'qib ber deb ayting";
-  if (TUTOR_PATH.test(pathname)) return "AI Tutor darsi. Savolga javob bering yoki tushunmadim deng";
-  if (pathname.startsWith("/student/lessons/")) return "Dars sahifasi. O'rgat deb aytsangiz, AI Tutor dars o'tadi. O'qib ber yoki tushuntir ham deyishingiz mumkin";
+  if (TUTOR_PATH.test(pathname)) return "AI Tutor darsi. Javob berish uchun mikrofon tugmasini bosing yoki yozing";
+  if (pathname.startsWith("/student/lessons/")) return "Dars sahifasi. Imkon, o'rgat desangiz, AI Tutor dars o'tadi";
   if (pathname === "/student/assignments") return "Vazifalar";
   if (pathname === "/student/grades") return "Baholarim";
-  if (pathname === "/student/chat") return "AI suhbat. Savolingizni ayting, men javob beraman";
+  if (pathname === "/student/chat") return "AI suhbat. AI bilan gaplashish uchun mikrofon tugmasini bosing";
   return "";
 }
 
@@ -146,7 +140,7 @@ const COMMANDS: Command[] = [
     label: "“Yordam” — buyruqlarni aytib beradi",
     match: (t) => has(t, "yordam"),
     run: () =>
-      "Buyruqlar: darslar, vazifalar, jadval, suhbat, yangi suhbat, profil, baholar, bosh sahifa, ikkinchi darsni och, o'qib ber, tushuntir, keyingi, qayta, " +
+      "Buyruqdan oldin Imkon deng. Buyruqlar: darslar, vazifalar, jadval, suhbat, yangi suhbat, profil, baholar, bosh sahifa, ikkinchi darsni och, o'qib ber, tushuntir, keyingi, qayta, " +
       "sekinroq, kattalashtir, kichraytir, tungi rejim, to'xta, orqaga, ovoz rejimini o'chir, chiqish.",
   },
   {
@@ -164,7 +158,7 @@ function announce(kind: "login" | "reload" | "unsupported", fullName: string, pa
   const text =
     kind === "login"
       ? `Xush kelibsiz, ${fullName}! Hozir siz turgan sahifa: ${page}. Ovoz rejimi yoqilgan, men sizni tinglayapman. ` +
-        "Buyruq ayting, masalan: darslar, suhbat yoki yordam."
+        "Buyruq berish uchun avval Imkon deng. Masalan: Imkon, darslarni och."
       : kind === "unsupported"
         ? `Xush kelibsiz, ${fullName}! Hozir siz turgan sahifa: ${page}. ` +
           "Bu brauzerda ovozli boshqaruv ishlamaydi. Google Chrome yoki Microsoft Edge'dan foydalaning."
@@ -243,47 +237,35 @@ export default function VoiceControl() {
   };
 
   // ---------- Buyruqni bajarish ----------
-  // asCommand — AI gapirayotganda aytilgan buyruq: suhbat sahifasida ham savol emas, buyruq sifatida bajariladi
-  const handleRef = useRef<(heard: string, asCommand?: boolean) => void>(() => {});
+  // Bu yerga faqat buyruq keladi ("Imkon" bilan chaqirilgan yoki mikrofon tugmasi bosilgan) — hech qachon AI'ga savol emas
+  const handleRef = useRef<(heard: string) => void>(() => {});
   const setModeRef = useRef<(on: boolean) => void>(() => {});
   const skipAnnounceRef = useRef(false); // buyruq javobini aytgan bo'lsak, sahifa nomini qayta aytmaymiz
 
   useEffect(() => {
-    handleRef.current = (heard: string, asCommand = false) => {
+    handleRef.current = (heard: string) => {
       const text = normalizeSpeech(heard);
       if (!text) return;
       setLastHeard(heard);
 
-      // AI suhbat sahifasida: savollar to'g'ridan-to'g'ri AI'ga yuboriladi, javob ovoz bilan aytiladi
-      if (pathname === "/student/chat" && !asCommand) {
+      // AI suhbat sahifasining o'z buyruqlari ("Imkon, yangi suhbat")
+      if (pathname === "/student/chat") {
         if (has(text, "yangi suhbat")) {
           dispatchVoiceAction("new-chat");
-          speak("Yangi suhbat boshlandi. Savolingizni ayting", { quick: true });
+          speak("Yangi suhbat boshlandi", { quick: true });
           return;
         }
         if (has(text, "ovozli suhbat")) {
           dispatchVoiceAction("voice-chat");
           return;
         }
-        // Uzun gap — buyruq emas, savol ("darslar haqida gapirib ber" darslar sahifasini ochmasin)
-        const chatCommand = text.split(" ").length <= 3 ? COMMANDS.find((c) => c.match(text)) : undefined;
-        if (!chatCommand) {
-          askChat(heard.trim());
-          return;
-        }
-      }
-
-      // AI Tutor darsida: aytilgan gap — savolga javob. Faqat aniq buyruqlar ("to'xta", "darslarga o't") buyruq bo'ladi,
-      // aks holda "darsni tushunmadim" darslar sahifasini ochib yuborardi
-      if (TUTOR_PATH.test(pathname) && !asCommand && !isExplicitCommand(text)) {
-        askChat(heard.trim());
-        return;
       }
 
       const command = COMMANDS.find((c) => c.match(text));
       if (!command) {
-        // Oddiy buyruq emas ("Ertangi matematika darsimni och") — Imkon robot AI bilan tushunib bajaradi
-        askRobot(heard.trim());
+        // Ro'yxatda yo'q buyruq ("Ertangi matematika darsimni och") — robot AI bilan tushunadi, lekin faqat BUYRUQ sifatida:
+        // savol yoki suhbat bo'lsa bajarilmaydi ("AI bilan gaplashish uchun mikrofonni bosing")
+        askRobot(heard.trim(), { commandOnly: true });
         return;
       }
       const reply =
@@ -310,9 +292,51 @@ export default function VoiceControl() {
     };
   });
 
-  // Ovozli suhbat oynasida AI gapirayotganda aytilgan sahifa buyrug'i ("darslarga o't")
+  // "Imkon" chaqiruvi: "Imkon, darslarni och" — darhol; faqat "Imkon" — keyingi 9 soniyadagi gap buyruq bo'ladi.
+  // Chaqiruvsiz gap (atrofdagi suhbat, noto'g'ri eshitilgan so'z) butunlay e'tiborsiz qoldiriladi
+  const awakeUntilRef = useRef(0);
+  const [awake, setAwakeState] = useState(false);
+  const setAwake = useCallback((on: boolean) => {
+    awakeUntilRef.current = on ? Date.now() + 9000 : 0;
+    setAwakeState(on);
+    window.dispatchEvent(new CustomEvent<boolean>(WAKE_EVENT, { detail: on }));
+  }, []);
   useEffect(() => {
-    const listener = (e: Event) => handleRef.current((e as CustomEvent<string>).detail, true);
+    if (!awake) return;
+    const id = setTimeout(() => setAwake(false), 9000);
+    return () => clearTimeout(id);
+  }, [awake, setAwake]);
+
+  const onUtteranceRef = useRef<(heard: string) => void>(() => {});
+  useEffect(() => {
+    onUtteranceRef.current = (heard: string) => {
+      const { woke, rest } = extractWake(heard);
+      if (woke) {
+        if (!rest) {
+          setAwake(true);
+          setLastHeard("");
+          speak("Ha, eshitaman", { quick: true });
+          return;
+        }
+        setAwake(false);
+        handleRef.current(rest);
+        return;
+      }
+      if (Date.now() < awakeUntilRef.current) {
+        setAwake(false);
+        handleRef.current(heard);
+      }
+      // Chaqiruvsiz — hech narsa qilinmaydi
+    };
+  });
+
+  // Ovozli suhbat oynasida AI gapirayotganda aytilgan buyruq ("Imkon, darslarga o't")
+  useEffect(() => {
+    const listener = (e: Event) => {
+      const said = (e as CustomEvent<string>).detail;
+      const { woke, rest } = extractWake(said);
+      handleRef.current(woke ? rest : said);
+    };
     window.addEventListener(VOICE_COMMAND_EVENT, listener);
     return () => window.removeEventListener(VOICE_COMMAND_EVENT, listener);
   }, []);
@@ -320,14 +344,20 @@ export default function VoiceControl() {
   // ---------- Doimiy tinglash (lib/voiceMode) ----------
   useEffect(() => {
     voiceMode.setHandlers({
-      onCommand: (text) => handleRef.current(text),
-      onHeard: (text) => setLastHeard(text),
-      // AI gapirayotganda "to'xta" / "darslarga o't": ovoz darhol to'xtaydi, buyruq bo'lsa — bajariladi
+      onCommand: (text) => onUtteranceRef.current(text),
+      isAwake: () => Date.now() < awakeUntilRef.current,
+      // Ekranda faqat chaqirilganda aytilayotgan gap ko'rsatiladi (atrofdagi gap-so'zlar emas)
+      onHeard: (text) => {
+        if (extractWake(text).woke || Date.now() < awakeUntilRef.current) setLastHeard(text);
+      },
+      // AI gapirayotganda: "to'xta" — darhol jim; "Imkon, darslarga o't" — to'xtab, buyruqni bajaradi
       onBargeIn: (kind, text) => {
         stopSpeaking();
         dispatchVoiceAction("stop");
         setLastHeard(text);
-        if (kind === "command") handleRef.current(text, true);
+        if (kind === "command") handleRef.current(extractWake(text).rest);
+        // Faqat "Imkon" — gapini to'xtatib, buyruqni kutadi
+        if (kind === "wake") onUtteranceRef.current(text);
       },
       onFatal: (message, code) => {
         // Avtomatik yoqishda (sahifa bosishsiz ochilgan) Chrome mikrofonni rad etishi mumkin — rejimni o'chirmaymiz:
@@ -367,7 +397,7 @@ export default function VoiceControl() {
     writeStorage(MODE_KEY, on ? "1" : "0");
     if (on) {
       voiceMode.enable();
-      speak("Ovoz rejimi yoqildi. Buyruqni ayting. Yordam uchun yordam deb ayting.", { quick: true });
+      speak("Ovoz rejimi yoqildi. Buyruq berish uchun avval Imkon deng. Masalan: Imkon, darslarni och.", { quick: true });
     } else {
       voiceMode.disable();
       speak("Ovoz rejimi o'chirildi", { quick: true });
@@ -498,8 +528,10 @@ export default function VoiceControl() {
           role="status"
           className="fixed top-20 right-4 z-40 max-w-xs animate-pop rounded-xl bg-gray-900/90 px-4 py-2 text-sm text-white shadow-lg sm:right-6 lg:right-10"
         >
-          <span className="mr-2 inline-block size-2 animate-pulse rounded-full bg-red-500" aria-hidden />
-          Tinglayapman{lastHeard && <span className="text-gray-300"> · “{lastHeard}”</span>}
+          {/* Chaqirilmagan paytda — "Imkon" deb chaqirish eslatmasi; chaqirilganda — eshitilayotgan buyruq */}
+          <span className={`mr-2 inline-block size-2 rounded-full ${awake || listening ? "animate-pulse bg-red-500" : "bg-emerald-400"}`} aria-hidden />
+          {awake || listening ? "Eshitaman" : "“Imkon” deb chaqiring"}
+          {(awake || listening) && lastHeard && <span className="text-gray-300"> · “{lastHeard}”</span>}
         </div>
       )}
 

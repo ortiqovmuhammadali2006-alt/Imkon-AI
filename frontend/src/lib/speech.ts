@@ -504,17 +504,43 @@ export function isEcho(heard: string) {
 }
 
 // "stop" — ovozni to'xtatish, "command" — sahifa/rejim buyrug'i, null — buyruq emas (yoki aks-sado)
-export function bargeInKind(heard: string): "stop" | "command" | null {
+export type BargeInKind = "stop" | "command" | "wake";
+
+// Sahifa buyrug'i faqat "Imkon" bilan ("Imkon, darslarga o't"); to'xtatish ("to'xta", "jim") — chaqiruvsiz ham;
+// yolg'iz "Imkon" (wake) — AI jim bo'lib, buyruqni tinglaydi
+export function bargeInKind(heard: string): BargeInKind | null {
   const t = normalizeSpeech(heard);
   const words = t.split(" ").filter(Boolean);
-  if (!words.length || words.length > 6 || isEcho(heard)) return null;
+  if (!words.length || words.length > 8 || isEcho(heard)) return null;
   if (words.some((w) => STOP_WORDS.includes(w) || w.startsWith("toxta"))) return "stop";
-  if (COMMAND_WORDS.some((w) => t.includes(w))) return "command";
+  const { woke, rest } = extractWake(heard);
+  if (woke && !rest) return "wake";
+  if (woke && COMMAND_WORDS.some((w) => normalizeSpeech(rest).includes(w))) return "command";
   return null;
 }
 
+// ---------- Chaqiruv so'zi: "Imkon" ----------
+// Ovoz rejimi faqat "Imkon" deb chaqirilganda buyruq qabul qiladi — atrofdagi gap-so'zlar buyruq yoki savol bo'lib ketmasin.
+// Nutqni tanish so'zni biroz boshqacha yozishi mumkin — yaqin variantlar ham qabul qilinadi ("imkoniyat" esa emas)
+const WAKE_WORDS = ["imkon", "imkom", "inkon", "imqon", "imkan", "emkon", "ymkon", "hey imkon"];
+
+// { woke: chaqirildimi, rest: chaqiruvdan keyingi buyruq (asl yozuvda) }
+export function extractWake(heard: string): { woke: boolean; rest: string } {
+  const tokens = heard.trim().split(/\s+/);
+  for (let i = 0; i < tokens.length; i++) {
+    const w = normalizeSpeech(tokens[i]).replace(/[^a-z]/g, "");
+    if (WAKE_WORDS.includes(w)) {
+      return { woke: true, rest: tokens.slice(i + 1).join(" ").replace(/^[\s,.!?:;—-]+/, "").trim() };
+    }
+  }
+  return { woke: false, rest: "" };
+}
+
+// Chaqiruv holati (robotcha "tinglayapman" ko'rinishiga o'tadi)
+export const WAKE_EVENT = "imkon:wake";
+
 // Ovozli suhbat oynasi uchun: AI gapirayotganda buyruqni kutish. Qaytgan funksiya — tinglashni to'xtatadi
-export function listenForBargeIn(onHit: (kind: "stop" | "command", text: string) => void): () => void {
+export function listenForBargeIn(onHit: (kind: BargeInKind, text: string) => void): () => void {
   let active = true;
   let rec: Recognition | null = null;
   const stop = () => {
@@ -540,7 +566,8 @@ export function listenForBargeIn(onHit: (kind: "stop" | "command", text: string)
         const text = e.results[i][0].transcript;
         const kind = bargeInKind(text);
         // "To'xta" — darhol (oraliq natijada ham), sahifa buyrug'i — gap tugagach
-        if (kind === "stop" || (kind === "command" && e.results[i].isFinal)) {
+        // "To'xta" — darhol (oraliq natijada ham); "Imkon" va buyruq — gap tugagach
+        if (kind === "stop" || (kind && e.results[i].isFinal)) {
           stop();
           onHit(kind, text);
           return;

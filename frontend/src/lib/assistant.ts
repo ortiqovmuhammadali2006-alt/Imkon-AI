@@ -11,12 +11,14 @@ export type AssistantAction =
   | "open_grades"
   | "open_chat"
   | "voice_chat"
-  | "answer";
+  | "answer"
+  | "unknown"; // "faqat buyruq" rejimida: gap buyruq emas (savol yoki suhbat) — hech narsa bajarilmaydi
 
 export type AssistantResult = { action: AssistantAction; lesson_id: number | null; reply: string };
 
-export async function askAssistant(text: string, pathname: string) {
-  return (await api.post<AssistantResult>("/student/assistant", { text, pathname })).data;
+// commandOnly — ovoz rejimidan kelgan buyruq: savolga javob berilmaydi, faqat platforma amali bajariladi
+export async function askAssistant(text: string, pathname: string, commandOnly = false) {
+  return (await api.post<AssistantResult>("/student/assistant", { text, pathname, command_only: commandOnly })).data;
 }
 
 // Amal -> sahifa (null — sahifa o'zgarmaydi, faqat javob)
@@ -58,6 +60,8 @@ export function requestVoiceChat() {
 // Ovozli boshqaruv tanimagan gap robotga uzatiladi (robot uni AI bilan tushunadi va bajaradi)
 export const ROBOT_ASK_EVENT = "imkon:robot-ask";
 
-export function askRobot(text: string) {
-  window.dispatchEvent(new CustomEvent<string>(ROBOT_ASK_EVENT, { detail: text }));
+export type RobotAsk = { text: string; commandOnly?: boolean };
+
+export function askRobot(text: string, opts: { commandOnly?: boolean } = {}) {
+  window.dispatchEvent(new CustomEvent<RobotAsk>(ROBOT_ASK_EVENT, { detail: { text, ...opts } }));
 }

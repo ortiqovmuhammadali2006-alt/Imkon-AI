@@ -1,5 +1,7 @@
 import {
   bargeInKind,
+  isEcho,
+  type BargeInKind,
   createRecognition,
   fallbackLanguage,
   onSpeakingChange,
@@ -11,7 +13,8 @@ type Handlers = {
   onCommand: (text: string) => void;
   onHeard?: (text: string) => void; // gapirayotgan paytdagi matn
   onFatal: (message: string, code: string) => void; // tinglashni davom ettirib bo'lmaydi (code: "not-allowed", "audio-capture"...)
-  onBargeIn?: (kind: "stop" | "command", text: string) => void; // AI gapirayotganda aytilgan buyruq
+  onBargeIn?: (kind: BargeInKind, text: string) => void;
+  isAwake?: () => boolean; // "Imkon" deb chaqirilganmi (buyruq kutilyaptimi) // AI gapirayotganda aytilgan buyruq yoki "Imkon" chaqiruvi
 };
 
 const UTTERANCE_PAUSE_MS = 1300; // shuncha jimlikdan keyin gap tugagan hisoblanadi
@@ -80,10 +83,23 @@ class VoiceMode {
     r.onresult = (e) => {
       // AI gapirayotganda (yoki endigina tugatganda) — faqat buyruqlar
       if (this.speaking || Date.now() < this.quietUntil) {
+        // "Imkon" deb chaqirilgan bo'lsa ("Ha, eshitaman" aytilayotgan payt) — aytilgan gap buyruq sifatida qabul qilinadi
+        // (AI'ning o'z ovozi — aks-sado — bundan mustasno)
+        if (this.handlers?.isAwake?.()) {
+          for (let i = e.resultIndex; i < e.results.length; i++) {
+            const text = e.results[i][0].transcript.trim();
+            if (e.results[i].isFinal && text && !isEcho(text)) {
+              this.quietUntil = Date.now() + AFTER_SPEECH_MS;
+              this.handlers.onCommand(text);
+              return;
+            }
+          }
+          return;
+        }
         for (let i = e.resultIndex; i < e.results.length; i++) {
           const text = e.results[i][0].transcript;
           const kind = bargeInKind(text);
-          if (kind === "stop" || (kind === "command" && e.results[i].isFinal)) {
+          if (kind === "stop" || (kind && e.results[i].isFinal)) {
             this.quietUntil = Date.now() + AFTER_SPEECH_MS; // shu buyruqning qolgan bo'laklari qayta ishlanmasin
             this.handlers?.onBargeIn?.(kind, text);
             return;

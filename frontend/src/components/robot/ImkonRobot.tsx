@@ -18,9 +18,9 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useStudentProfile } from "@/lib/student";
-import { actionHref, askAssistant, requestVoiceChat, ROBOT_ASK_EVENT } from "@/lib/assistant";
+import { actionHref, askAssistant, requestVoiceChat, ROBOT_ASK_EVENT, type RobotAsk } from "@/lib/assistant";
 import { getErrorMessage } from "@/lib/api";
-import { listenOnce, onSpeakingChange, onSpokenText, RecognitionError, speak, stopSpeaking } from "@/lib/speech";
+import { listenOnce, onSpeakingChange, onSpokenText, RecognitionError, speak, stopSpeaking, WAKE_EVENT } from "@/lib/speech";
 import { voiceMode } from "@/lib/voiceMode";
 import RobotFace, { type RobotState } from "./RobotFace";
 
@@ -56,6 +56,7 @@ export default function ImkonRobot() {
   const [listening, setListening] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [hint, setHint] = useState(false);
+  const [wakeListening, setWakeListening] = useState(false); // ovoz rejimida "Imkon" deb chaqirildi
   const [spoken, setSpoken] = useState(""); // hozir aytilayotgan ovozli xabar (robot yonidagi pufakchada)
   const [bubble, setBubble] = useState(false);
   const bubbleRef = useRef<HTMLDivElement>(null);
@@ -64,10 +65,17 @@ export default function ImkonRobot() {
   const inputRef = useRef<HTMLInputElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
 
-  const state: RobotState = listening ? "listening" : busy ? "thinking" : speaking ? "speaking" : "idle";
+  const state: RobotState = listening || wakeListening ? "listening" : busy ? "thinking" : speaking ? "speaking" : "idle";
 
   // Platformada ovoz o'qilayotganda robot "gapiradi"
   useEffect(() => onSpeakingChange(setSpeaking), []);
+
+  // Ovoz rejimida "Imkon" deb chaqirilganda robot "tinglayapman" holatiga o'tadi
+  useEffect(() => {
+    const onWake = (e: Event) => setWakeListening((e as CustomEvent<boolean>).detail);
+    window.addEventListener(WAKE_EVENT, onWake);
+    return () => window.removeEventListener(WAKE_EVENT, onWake);
+  }, []);
 
   // Ovozli xabar matni robot yonida ko'rinib turadi (eshitishi qiyinlar ham o'qiy oladi)
   useEffect(
@@ -141,14 +149,15 @@ export default function ImkonRobot() {
   // Javobni ovoz bilan aytish: ovoz bilan so'ralgan, ovoz rejimi yoqiq yoki o'quvchining ko'rishi cheklangan bo'lsa
   const shouldSpeak = (byVoice: boolean) => byVoice || voiceMode.enabled || profile?.category === "visual";
 
+  // commandOnly — ovoz rejimidagi buyruq: savol bo'lsa bajarilmaydi, panel ochilmaydi (javob aytiladi va pufakchada ko'rinadi)
   const run = useCallback(
-    async (text: string, byVoice = false) => {
+    async (text: string, byVoice = false, commandOnly = false) => {
       const clean = text.trim();
       if (!clean || busy) return;
       setLines((l) => [...l, { from: "me", text: clean }]);
       setBusy(true);
       try {
-        const r = await askAssistant(clean, pathname);
+        const r = await askAssistant(clean, pathname, commandOnly);
         setLines((l) => [...l, { from: "robot", text: r.reply }]);
         const href = actionHref(r);
         if (shouldSpeak(byVoice)) speak(r.reply, { quick: true });
@@ -176,8 +185,9 @@ export default function ImkonRobot() {
   });
   useEffect(() => {
     const listener = (e: Event) => {
-      setOpen(true);
-      void runRef.current((e as CustomEvent<string>).detail, true);
+      const { text, commandOnly } = (e as CustomEvent<RobotAsk>).detail;
+      if (!commandOnly) setOpen(true);
+      void runRef.current(text, true, commandOnly);
     };
     window.addEventListener(ROBOT_ASK_EVENT, listener);
     return () => window.removeEventListener(ROBOT_ASK_EVENT, listener);
