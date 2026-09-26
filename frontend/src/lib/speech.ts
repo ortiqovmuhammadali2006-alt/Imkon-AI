@@ -76,6 +76,16 @@ function notify(speaking: boolean) {
 }
 
 // Hozir o'qilayotganini kuzatish (tugmalar va mikrofon uchun)
+// Aytilayotgan matnni kuzatish (robot yonidagi "ovozli xabar" pufakchasi — eshitishi qiyinlar uchun ham)
+const textListeners = new Set<(text: string) => void>();
+
+export function onSpokenText(fn: (text: string) => void) {
+  textListeners.add(fn);
+  return () => {
+    textListeners.delete(fn);
+  };
+}
+
 export function onSpeakingChange(fn: (speaking: boolean) => void) {
   listeners.add(fn);
   return () => {
@@ -362,6 +372,7 @@ function primeBrowserVoice() {
 // quick — qisqa xabarlar (buyruq javoblari); endi ular ham Madina (server) ovozida aytiladi, parametr moslik uchun qoldirilgan
 export function createSpeechStream(_opts: { quick?: boolean } = {}): SpeechStream {
   stopSpeaking();
+  spokenText = ""; // yangi ovoz — bir xil matn qayta aytilsa ham pufakcha yangilansin
   const mySession = session;
   if (typeof window !== "undefined") primeBrowserVoice();
   notify(true);
@@ -449,6 +460,7 @@ export function createSpeechStream(_opts: { quick?: boolean } = {}): SpeechStrea
 
   const push = (fullText: string) => {
     if (mySession !== session || ended) return;
+    if (fullText !== spokenText) textListeners.forEach((fn) => fn(fullText));
     spokenText = fullText;
     buffer += fullText.slice(received);
     received = fullText.length;

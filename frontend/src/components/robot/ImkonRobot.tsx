@@ -20,7 +20,7 @@ import { useAuth } from "@/lib/auth";
 import { useStudentProfile } from "@/lib/student";
 import { actionHref, askAssistant, requestVoiceChat, ROBOT_ASK_EVENT } from "@/lib/assistant";
 import { getErrorMessage } from "@/lib/api";
-import { listenOnce, onSpeakingChange, RecognitionError, speak, stopSpeaking } from "@/lib/speech";
+import { listenOnce, onSpeakingChange, onSpokenText, RecognitionError, speak, stopSpeaking } from "@/lib/speech";
 import { voiceMode } from "@/lib/voiceMode";
 import RobotFace, { type RobotState } from "./RobotFace";
 
@@ -56,6 +56,9 @@ export default function ImkonRobot() {
   const [listening, setListening] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [hint, setHint] = useState(false);
+  const [spoken, setSpoken] = useState(""); // hozir aytilayotgan ovozli xabar (robot yonidagi pufakchada)
+  const [bubble, setBubble] = useState(false);
+  const bubbleRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -65,6 +68,26 @@ export default function ImkonRobot() {
 
   // Platformada ovoz o'qilayotganda robot "gapiradi"
   useEffect(() => onSpeakingChange(setSpeaking), []);
+
+  // Ovozli xabar matni robot yonida ko'rinib turadi (eshitishi qiyinlar ham o'qiy oladi)
+  useEffect(
+    () =>
+      onSpokenText((text) => {
+        setSpoken(text.replace(/[*#`>|_]/g, "").replace(/\s+/g, " ").trim());
+        setBubble(true);
+        setHint(false);
+      }),
+    []
+  );
+  // Gap tugagach pufakcha 6 soniya turadi, keyin yo'qoladi
+  useEffect(() => {
+    if (speaking || !bubble) return;
+    const id = setTimeout(() => setBubble(false), 6000);
+    return () => clearTimeout(id);
+  }, [speaking, bubble]);
+  useEffect(() => {
+    bubbleRef.current?.scrollTo({ top: bubbleRef.current.scrollHeight });
+  }, [spoken]);
 
   // Seansda bir marta: "Salom! Men Imkonman" pufakchasi
   useEffect(() => {
@@ -292,7 +315,30 @@ export default function ImkonRobot() {
         </div>
       )}
 
-      {hint && !open && (
+      {bubble && spoken && !open && (
+        <div
+          aria-hidden
+          className="relative max-w-[min(340px,calc(100vw-2rem))] animate-pop rounded-3xl rounded-br-md bg-surface py-3 pr-10 pl-4 shadow-xl ring-1 ring-indigo-100"
+        >
+          <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-indigo-700">
+            <span className={`size-2 rounded-full ${speaking ? "animate-pulse bg-emerald-500" : "bg-slate-300"}`} />
+            Imkon {speaking ? "gapiryapti" : "aytdi"}
+          </p>
+          <div ref={bubbleRef} className="max-h-40 overflow-y-auto text-[15px] leading-6 text-slate-800">
+            {spoken}
+          </div>
+          <button
+            onClick={() => setBubble(false)}
+            tabIndex={-1}
+            className="absolute top-2 right-2 rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            aria-label="Xabarni yopish"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+      )}
+
+      {hint && !open && !bubble && (
         <button
           onClick={() => {
             setHint(false);
@@ -317,8 +363,8 @@ export default function ImkonRobot() {
         className="robot-float group relative rounded-full focus-visible:outline-offset-4"
       >
         <span className="absolute inset-1 rounded-full bg-indigo-500/30 blur-xl transition-opacity group-hover:opacity-100" aria-hidden />
-        <span className="relative flex size-16 items-center justify-center rounded-full bg-surface shadow-xl shadow-indigo-600/25 ring-1 ring-indigo-100 transition-transform group-hover:scale-105 sm:size-[72px]">
-          <RobotFace state={state} className="size-12 sm:size-14" />
+        <span className="relative flex size-[88px] items-center justify-center rounded-full bg-surface shadow-2xl shadow-indigo-600/30 ring-2 ring-indigo-100 transition-transform group-hover:scale-105 sm:size-[104px]">
+          <RobotFace state={state} className="size-[70px] sm:size-[84px]" />
         </span>
       </button>
     </div>
