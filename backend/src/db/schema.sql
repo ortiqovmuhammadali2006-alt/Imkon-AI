@@ -174,3 +174,6 @@ ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS sources JSONB;
 
 -- Profil rasmi (profil oynasidan yuklanadi)
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+
+-- YouTube video havolasi (dars uchun)
+ALTER TABLE lessons ADD COLUMN IF NOT EXISTS youtube_url TEXT;

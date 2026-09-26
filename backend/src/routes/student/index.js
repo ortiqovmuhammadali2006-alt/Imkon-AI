@@ -20,6 +20,10 @@ const ACCESSIBLE_LESSONS = `
   WHERE (l.category IS NULL OR l.category = st.category)
 `;
 
+// Sinf nomi turlicha yozilishi mumkin: "9", "9-sinf", "9 sinf", "9-A" / "9A sinf" — hammasi bir xil deb solishtiriladi
+const normGrade = (col) => `REGEXP_REPLACE(REGEXP_REPLACE(LOWER(${col}), 'sinf', '', 'g'), '[^0-9a-z\u0400-\u04ff]', '', 'g')`;
+const SAME_GRADE = `${normGrade("sc.group_name")} = ${normGrade("st.grade")}`;
+
 async function getProfile(studentId) {
   const { rows } = await pool.query("SELECT category, grade FROM students WHERE user_id = $1", [studentId]);
   if (!rows[0]) throw new HttpError(404, "O'quvchi ma'lumotlari topilmadi");
@@ -28,7 +32,7 @@ async function getProfile(studentId) {
 
 async function getLesson(studentId, lessonId) {
   const { rows } = await pool.query(
-    `SELECT l.id, l.title, l.description, l.content, l.category, l.file_url, l.file_name, l.created_at,
+    `SELECT l.id, l.title, l.description, l.content, l.category, l.file_url, l.file_name, l.youtube_url, l.created_at,
             l.a11y, l.ai_plan, tu.full_name AS teacher_name, t.subject
      ${ACCESSIBLE_LESSONS} AND l.id = $2`,
     [studentId, lessonId]
@@ -106,7 +110,7 @@ router.get("/schedule", async (req, res) => {
     `${SELECT_SQL}
      JOIN teacher_students ts ON ts.teacher_id = sc.teacher_id AND ts.student_id = $1
      JOIN students st ON st.user_id = ts.student_id
-     WHERE sc.group_name IS NULL OR st.grade IS NULL OR LOWER(sc.group_name) = LOWER(st.grade)
+     WHERE sc.group_name IS NULL OR st.grade IS NULL OR ${SAME_GRADE}
      ${ORDER_SQL}`,
     [req.user.id]
   );
@@ -117,7 +121,7 @@ router.get("/schedule", async (req, res) => {
 
 router.get("/lessons", async (req, res) => {
   const { rows } = await pool.query(
-    `SELECT l.id, l.title, l.description, l.category, l.file_name, l.created_at,
+    `SELECT l.id, l.title, l.description, l.category, l.file_name, l.youtube_url, l.created_at,
             tu.full_name AS teacher_name, t.subject,
             (l.a11y ? 'subtitle_vtt_url') AS has_subtitles,
             (l.a11y ? 'simple_text') AS has_simple_text,
@@ -153,6 +157,8 @@ router.get("/lessons/:id", async (req, res) => {
     examples: a.examples || [],
     key_terms: a.key_terms || [],
     quiz: a.quiz || [],
+    video_title: a.video_title || null,
+    video_segments: a.video_segments || [],
     processing: ["pending", "processing"].includes(a.status),
   };
   res.json({ ...lesson, a11y, assignments });
@@ -490,7 +496,7 @@ router.post("/assistant", async (req, res) => {
       `${SELECT_SQL}
        JOIN teacher_students ts ON ts.teacher_id = sc.teacher_id AND ts.student_id = $1
        JOIN students st ON st.user_id = ts.student_id
-       WHERE sc.group_name IS NULL OR st.grade IS NULL OR LOWER(sc.group_name) = LOWER(st.grade)
+       WHERE sc.group_name IS NULL OR st.grade IS NULL OR ${SAME_GRADE}
        ${ORDER_SQL}`,
       [req.user.id]
     ),

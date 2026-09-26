@@ -7,6 +7,7 @@ import { ArrowLeft, CalendarClock, Pencil, Plus, Trash2, Users } from "lucide-re
 import { api, getErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import FilePreview from "@/components/ui/FilePreview";
+import YouTubeLesson from "@/components/ui/YouTubeLesson";
 import AccessibilityPanel from "@/components/teacher/AccessibilityPanel";
 import { formatDate, subjectTone } from "@/lib/format";
 import { useLesson, useTeacherMutation, type Assignment } from "@/lib/teacher";
@@ -86,6 +87,13 @@ export default function LessonDetailPage({ params }: { params: Promise<{ id: str
           <div className="mt-6 border-t border-line pt-6">
             <h2 className="mb-2 font-semibold">Dars matni</h2>
             <p className="max-w-[70ch] text-lg leading-8 whitespace-pre-wrap text-slate-700">{lesson.content}</p>
+          </div>
+        )}
+
+        {lesson.youtube_url && (
+          <div className="mt-6 border-t border-line pt-6">
+            <h2 className="mb-3 font-semibold">Video dars{lesson.a11y?.video_title ? `: ${lesson.a11y.video_title}` : ""}</h2>
+            <YouTubeLesson url={lesson.youtube_url} title={lesson.a11y?.video_title} segments={lesson.a11y?.video_segments} />
           </div>
         )}
 

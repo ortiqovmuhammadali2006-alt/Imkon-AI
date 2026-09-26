@@ -38,7 +38,7 @@ export type A11yStepStatus = { status: "done" | "failed"; error?: string; source
 // Qulaylik to'plami (backend: services/accessibility.js)
 export type LessonA11y = {
   status?: "pending" | "processing" | "done" | "partial" | "failed";
-  steps?: Partial<Record<"subtitle" | "text" | "image" | "simple", A11yStepStatus>>;
+  steps?: Partial<Record<"subtitle" | "text" | "image" | "video" | "simple", A11yStepStatus>>;
   subtitle_vtt_url?: string;
   transcript?: string;
   segments?: { start: number; end: number; text: string }[];
@@ -49,6 +49,8 @@ export type LessonA11y = {
   examples?: string[];
   key_terms?: { term: string; meaning: string }[];
   quiz?: { question: string; options: string[]; answer: number; explanation: string }[];
+  video_title?: string;
+  video_segments?: { start: number; end: number; text: string }[];
 };
 
 export type Lesson = {
@@ -59,6 +61,7 @@ export type Lesson = {
   category: Category | null;
   file_url: string | null;
   file_name: string | null;
+  youtube_url?: string | null;
   subtitle_url?: string | null;
   subtitle_name?: string | null;
   a11y?: LessonA11y;

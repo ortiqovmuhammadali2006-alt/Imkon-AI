@@ -15,6 +15,7 @@ import { ErrorState, LoadingState } from "@/components/ui/States";
 import AiTutor from "@/components/student/AiTutor";
 import AssignmentCard from "@/components/student/AssignmentCard";
 import LessonQuiz from "@/components/student/LessonQuiz";
+import YouTubeLesson from "@/components/ui/YouTubeLesson";
 import SpeakButton from "@/components/student/SpeakButton";
 
 export default function StudentLessonPage({ params }: { params: Promise<{ id: string }> }) {
@@ -84,6 +85,13 @@ export default function StudentLessonPage({ params }: { params: Promise<{ id: st
           )}
 
           <LessonTextTabs content={lesson.content} a11y={lesson.a11y} category={profile?.category} onActiveText={setActiveText} />
+
+          {lesson.youtube_url && (
+            <div className="mt-8 border-t border-line pt-8">
+              <h2 className="mb-4 text-lg font-semibold tracking-tight">Video dars</h2>
+              <YouTubeLesson url={lesson.youtube_url} title={lesson.a11y.video_title ?? lesson.title} segments={lesson.a11y.video_segments} />
+            </div>
+          )}
 
           {lesson.file_url && lesson.file_name && (
             <div className="mt-8 border-t border-line pt-8">

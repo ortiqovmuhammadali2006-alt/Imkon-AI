@@ -121,6 +121,11 @@ const COMMANDS: Command[] = [
     run: ({ pathname }) => (TUTOR_HREF.test(pathname) ? dispatchVoiceAction("quiz") : "Avval darsni oching, keyin test deng"),
   },
   {
+    label: "“Video” — dars videosini qo'yish (“To'xta” — pauza)",
+    match: (t) => has(t, "video", "videoni"),
+    run: ({ pathname }) => (TUTOR_HREF.test(pathname) ? dispatchVoiceAction("video") : "Avval darsni oching, keyin video deng"),
+  },
+  {
     label: "“Birinchi javob” — testdagi javob varianti",
     match: (t) => has(t, "javob") && extractNumber(t) !== null,
     run: (_, t) => dispatchVoiceAction("answer", extractNumber(t) ?? undefined),
@@ -193,7 +198,7 @@ const COMMANDS: Command[] = [
     label: "“Yordam” — buyruqlarni aytib beradi",
     match: (t) => has(t, "yordam"),
     run: () =>
-      "Buyruqdan oldin Imkon deng. Buyruqlar: darslar, vazifalar, jadval, suhbat, mikrofonni yoq, yangi suhbat, profil, baholar, bilimim, sodda, misol, test, birinchi javob, bosh sahifa, ikkinchi darsni och, o'qib ber, tushuntir, keyingi, qayta, " +
+      "Buyruqdan oldin Imkon deng. Buyruqlar: darslar, vazifalar, jadval, suhbat, mikrofonni yoq, yangi suhbat, profil, baholar, bilimim, sodda, misol, test, birinchi javob, video, bosh sahifa, ikkinchi darsni och, o'qib ber, tushuntir, keyingi, qayta, " +
       "sekinroq, kattalashtir, kichraytir, tungi rejim, to'xta, orqaga, ovoz rejimini o'chir, chiqish.",
   },
   {

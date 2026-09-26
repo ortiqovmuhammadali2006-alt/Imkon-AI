@@ -12,6 +12,7 @@ const { spawn } = require("child_process");
 const pool = require("../config/db");
 const { UPLOAD_DIR, removeFile } = require("../middleware/upload");
 const { transcribe, describeImage, simplifyLesson, toHttpError } = require("./ai");
+const { parseYoutubeId, fetchVideoInfo, fetchTranscript } = require("./youtube");
 
 const AUDIO_EXT = [".mp3", ".wav", ".ogg", ".m4a"];
 const VIDEO_EXT = [".mp4", ".webm"];
@@ -207,9 +208,45 @@ async function processLesson(lessonId) {
     await saveA11y(lessonId, a11y);
   }
 
+  // 3b. YouTube video darslik: nomi + subtitr matni (bo'lsa). Subtitr — eshitishi cheklanganlar uchun sinxron matn
+  // va sodda to'plam manbai; bo'lmasa to'plam video nomi va dars matni asosida tayyorlanadi
+  const videoId = parseYoutubeId(lesson.youtube_url);
+  if (videoId) {
+    try {
+      const info = await fetchVideoInfo(videoId);
+      a11y.video_title = info.title;
+      a11y.video_author = info.author;
+      let transcript = null;
+      try {
+        transcript = await fetchTranscript(videoId);
+      } catch (err) {
+        console.error("YouTube subtitr xatosi:", err.message);
+      }
+      if (transcript) {
+        a11y.video_transcript = transcript.text;
+        a11y.video_segments = transcript.segments;
+        a11y.video_language = transcript.language;
+        a11y.steps.video = { status: "done", source: transcript.auto ? "youtube-auto" : "youtube" };
+      } else {
+        a11y.steps.video = { status: "failed", error: "Videoda subtitr yo'q — to'plam video nomi va dars matni asosida tayyorlandi" };
+      }
+    } catch (err) {
+      a11y.steps.video = { status: "failed", error: err.message };
+    }
+    await saveA11y(lessonId, a11y);
+  }
+
   // 4. Sodda o'rganish to'plami — barcha mavjud matn asosida. Material qisqa bo'lsa ham ("1 + 2 = 3") tayyorlanadi:
   // aynan shunday qisqa darslarni sodda tushuntirish va misollar bilan to'ldirish kerak
-  const source = [lesson.description, lesson.content, a11y.extracted_text, a11y.transcript, a11y.image_description]
+  const source = [
+    lesson.description,
+    lesson.content,
+    a11y.extracted_text,
+    a11y.transcript,
+    a11y.image_description,
+    a11y.video_title && `Video darslik: ${a11y.video_title}`,
+    a11y.video_transcript && `Video darslikdagi nutq:\n${a11y.video_transcript}`,
+  ]
     .filter(Boolean)
     .join("\n\n");
   if (source.trim().length >= 3) {

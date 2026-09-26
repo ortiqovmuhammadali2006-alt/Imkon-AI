@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookOpen, ClipboardList, Loader2, Plus, Search, Sparkles } from "lucide-react";
+import { BookOpen, CirclePlay, ClipboardList, Loader2, Plus, Search, Sparkles } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { CATEGORIES, formatDate, subjectTone } from "@/lib/format";
@@ -106,6 +106,11 @@ export default function LessonsPage() {
                         <ClipboardList className="size-4" aria-hidden /> {l.assignments_count} ta vazifa
                       </span>
                       {l.file_name && <FileTypeBadge name={l.file_name} />}
+                      {l.youtube_url && (
+                        <span className="badge bg-red-50 text-red-700">
+                          <CirclePlay className="size-3.5" aria-hidden /> Video
+                        </span>
+                      )}
                       {(l.a11y_status === "pending" || l.a11y_status === "processing") && (
                         <span className="badge bg-indigo-50 text-indigo-700">
                           <Loader2 className="size-3.5 animate-spin" aria-hidden /> Tayyorlanmoqda

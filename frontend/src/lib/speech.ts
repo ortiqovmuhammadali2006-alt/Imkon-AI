@@ -812,7 +812,7 @@ export const OPEN_LESSON_EVENT = "imkon:open-lesson";
 export type VoiceAction = {
   action:
     | "read" | "explain" | "stop" | "next" | "prev" | "repeat" | "new-chat" | "voice-chat"
-    | "simple" | "examples" | "terms" | "quiz" | "answer";
+    | "simple" | "examples" | "terms" | "quiz" | "answer" | "video";
   value?: number;
 };
 

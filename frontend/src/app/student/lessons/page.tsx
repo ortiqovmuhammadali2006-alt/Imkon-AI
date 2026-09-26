@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { OPEN_LESSON_EVENT, speak } from "@/lib/speech";
 import useVoiceRead from "@/components/student/useVoiceRead";
-import { BookOpen, Captions, ClipboardList, MessageSquareText, Search, UserRound } from "lucide-react";
+import { BookOpen, Captions, CirclePlay, ClipboardList, MessageSquareText, Search, UserRound } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
 import { formatDate, subjectTone } from "@/lib/format";
 import { useStudentLessons } from "@/lib/student";
@@ -98,53 +98,83 @@ export default function StudentLessonsPage() {
           {filtered.length === 0 ? (
             <p className="card px-5 py-10 text-center text-slate-500">Hech narsa topilmadi</p>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {filtered.map((l) => (
-                <Link
-                  key={l.id}
-                  href={`/student/lessons/${l.id}`}
-                  className="card card-hover flex flex-col overflow-hidden"
-                >
-                  <div className={`h-1.5 bg-gradient-to-r ${subjectTone(l.subject)}`} aria-hidden />
-                  <div className="flex flex-1 flex-col p-5">
-                    <div className="mb-3 flex items-center justify-between gap-2 text-sm">
-                      <span className="flex items-center gap-2 font-semibold text-slate-700">
-                        <span
-                          className={`inline-flex size-7 items-center justify-center rounded-full bg-gradient-to-br text-xs font-bold text-white ${subjectTone(l.subject)}`}
-                          title="Ovozli buyruq uchun tartib raqami"
-                        >
-                          {data!.indexOf(l) + 1}
-                        </span>
-                        {l.subject || "Dars"}
-                      </span>
-                      <span className="text-slate-500">{formatDate(l.created_at)}</span>
-                    </div>
-                    <h2 className="text-lg font-semibold tracking-tight text-slate-900">{l.title}</h2>
-                    {l.description && <p className="mt-1 mb-5 line-clamp-2 text-slate-500">{l.description}</p>}
-                    <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line pt-4 text-sm text-slate-500">
-                      <span className="flex items-center gap-1.5">
-                        <UserRound className="size-4" aria-hidden /> {l.teacher_name}
-                      </span>
-                      {l.assignments_count > 0 && (
-                        <span className="flex items-center gap-1.5">
-                          <ClipboardList className="size-4" aria-hidden /> {l.assignments_count}
-                        </span>
-                      )}
-                      {l.file_name && <FileTypeBadge name={l.file_name} />}
-                      {l.has_subtitles && (
-                        <span className="badge bg-sky-50 text-sky-700">
-                          <Captions className="size-3.5" aria-hidden /> Subtitr
-                        </span>
-                      )}
-                      {l.has_simple_text && (
-                        <span className="badge bg-emerald-50 text-emerald-700">
-                          <MessageSquareText className="size-3.5" aria-hidden /> Oddiy til
-                        </span>
-                      )}
-                    </div>
+            <div className="space-y-10">
+              {(() => {
+                const today = new Date().toDateString();
+                const todayLessons = filtered.filter((l) => new Date(l.created_at).toDateString() === today);
+                const olderLessons = filtered.filter((l) => new Date(l.created_at).toDateString() !== today);
+
+                const renderCards = (list: typeof filtered) => (
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {list.map((l) => (
+                      <Link key={l.id} href={`/student/lessons/${l.id}`} className="card card-hover flex flex-col overflow-hidden">
+                        <div className={`h-1.5 bg-gradient-to-r ${subjectTone(l.subject)}`} aria-hidden />
+                        <div className="flex flex-1 flex-col p-5">
+                          <div className="mb-3 flex items-center justify-between gap-2 text-sm">
+                            <span className="flex items-center gap-2 font-semibold text-slate-700">
+                              <span
+                                className={`inline-flex size-7 items-center justify-center rounded-full bg-gradient-to-br text-xs font-bold text-white ${subjectTone(l.subject)}`}
+                                title="Ovozli buyruq uchun tartib raqami"
+                              >
+                                {data!.indexOf(l) + 1}
+                              </span>
+                              {l.subject || "Dars"}
+                            </span>
+                            <span className="text-slate-500">{formatDate(l.created_at)}</span>
+                          </div>
+                          <h2 className="text-lg font-semibold tracking-tight text-slate-900">{l.title}</h2>
+                          {l.description && <p className="mt-1 mb-5 line-clamp-2 text-slate-500">{l.description}</p>}
+                          <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line pt-4 text-sm text-slate-500">
+                            <span className="flex items-center gap-1.5">
+                              <UserRound className="size-4" aria-hidden /> {l.teacher_name}
+                            </span>
+                            {l.assignments_count > 0 && (
+                              <span className="flex items-center gap-1.5">
+                                <ClipboardList className="size-4" aria-hidden /> {l.assignments_count}
+                              </span>
+                            )}
+                            {l.file_name && <FileTypeBadge name={l.file_name} />}
+                            {l.youtube_url && (
+                              <span className="badge bg-red-50 text-red-700">
+                                <CirclePlay className="size-3.5" aria-hidden /> Video
+                              </span>
+                            )}
+                            {l.has_subtitles && (
+                              <span className="badge bg-sky-50 text-sky-700">
+                                <Captions className="size-3.5" aria-hidden /> Subtitr
+                              </span>
+                            )}
+                            {l.has_simple_text && (
+                              <span className="badge bg-emerald-50 text-emerald-700">
+                                <MessageSquareText className="size-3.5" aria-hidden /> Oddiy til
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
                   </div>
-                </Link>
-              ))}
+                );
+
+                return (
+                  <>
+                    {todayLessons.length > 0 && (
+                      <div>
+                        <h2 className="mb-4 text-xl font-bold tracking-tight text-slate-900">Bugungi darslar</h2>
+                        {renderCards(todayLessons)}
+                      </div>
+                    )}
+                    {olderLessons.length > 0 && (
+                      <div>
+                        <h2 className="mb-4 text-xl font-bold tracking-tight text-slate-900">
+                          {todayLessons.length > 0 ? "Oldingi darslar" : "Barcha darslar"}
+                        </h2>
+                        {renderCards(olderLessons)}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           )}
         </>

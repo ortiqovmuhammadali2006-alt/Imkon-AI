@@ -29,6 +29,7 @@ export type StudentLesson = {
   assignments_count: number;
   has_subtitles: boolean;
   has_simple_text: boolean;
+  youtube_url: string | null;
 };
 
 export type LessonAssignment = {
@@ -58,12 +59,15 @@ export type StudentA11y = {
   examples: string[]; // hayotiy misollar
   key_terms: { term: string; meaning: string }[];
   quiz: QuizQuestion[]; // o'zini tekshirish
+  video_title: string | null; // YouTube video darslik nomi
+  video_segments: TranscriptSegment[]; // YouTube subtitr matni (vaqt bilan)
   processing: boolean;
 };
 
 export type StudentLessonDetail = Omit<StudentLesson, "assignments_count" | "has_subtitles" | "has_simple_text"> & {
   content: string | null;
   file_url: string | null;
+  youtube_url: string | null;
   a11y: StudentA11y;
   assignments: LessonAssignment[];
 };

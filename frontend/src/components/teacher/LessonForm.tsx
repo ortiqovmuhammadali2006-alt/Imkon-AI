@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Captions, Check, FileUp, Loader2, Paperclip, Sparkles, X } from "lucide-react";
+import { Captions, Check, CirclePlay, FileUp, Loader2, Paperclip, Sparkles, X } from "lucide-react";
+import { parseYoutubeId, youtubeThumb } from "@/lib/youtube";
 import { api } from "@/lib/api";
 import { CATEGORIES } from "@/lib/format";
 import { useTeacherMutation, type Lesson } from "@/lib/teacher";
@@ -43,6 +44,7 @@ export default function LessonForm({
     title: lesson?.title ?? "",
     description: lesson?.description ?? "",
     content: lesson?.content ?? "",
+    youtube_url: lesson?.youtube_url ?? "",
     category: (lesson?.category ?? "all") as Category | "all",
   });
   const [file, setFile] = useState<File | null>(null);
@@ -61,6 +63,7 @@ export default function LessonForm({
       data.append("title", form.title);
       data.append("description", form.description);
       data.append("content", form.content);
+      data.append("youtube_url", form.youtube_url.trim()); // bo'sh — video olib tashlanadi
       data.append("category", form.category === "all" ? "" : form.category);
       if (file) data.append("file", file);
       else if (removeFile) data.append("remove_file", "true");
@@ -87,6 +90,7 @@ export default function LessonForm({
     setRemoveFile(false);
   };
 
+  const youtubeId = parseYoutubeId(form.youtube_url);
   const currentFileName = file?.name ?? (!removeFile ? lesson?.file_name : null);
   const currentSubtitleName = subtitle?.name ?? (!removeSubtitle ? lesson?.subtitle_name : null);
   const isMedia = MEDIA_EXT.includes(currentFileName?.split(".").pop()?.toLowerCase() ?? "");
@@ -133,6 +137,35 @@ export default function LessonForm({
           onChange={set("content")}
           placeholder="Darsning asosiy mazmuni. O'quvchi panelida AI shu matn asosida batafsil tushuntiradi va ovoz bilan o'qib beradi."
         />
+      </div>
+
+      <div>
+        <label htmlFor="l-youtube" className="label flex items-center gap-2">
+          <CirclePlay className="size-4 text-red-600" aria-hidden /> YouTube video darslik (ixtiyoriy)
+        </label>
+        <input
+          id="l-youtube"
+          inputMode="url"
+          className="input"
+          value={form.youtube_url}
+          onChange={set("youtube_url")}
+          placeholder="https://www.youtube.com/watch?v=...  yoki  https://youtu.be/..."
+          aria-invalid={Boolean(form.youtube_url.trim() && !youtubeId)}
+          aria-describedby="l-youtube-hint"
+        />
+        {form.youtube_url.trim() && !youtubeId ? (
+          <p id="l-youtube-hint" className="mt-1.5 text-sm text-red-700">Bu YouTube havolasiga o&apos;xshamaydi. Videoni YouTube&apos;da ochib, manzilini nusxalang.</p>
+        ) : youtubeId ? (
+          <div id="l-youtube-hint" className="mt-2 flex items-center gap-3 rounded-lg border border-line p-2">
+            {/* eslint-disable-next-line @next/next/no-img-element -- YouTube rasmi */}
+            <img src={youtubeThumb(youtubeId)} alt="" className="h-14 w-24 rounded object-cover" />
+            <p className="text-sm text-slate-600">Video darslikka qo&apos;shiladi. Subtitrlari bo&apos;lsa, o&apos;quvchi uchun video matni va sodda to&apos;plam tayyorlanadi.</p>
+          </div>
+        ) : (
+          <p id="l-youtube-hint" className="mt-1.5 text-sm text-slate-500">
+            YouTube&apos;dagi video manzilini shu yerga qo&apos;ying — o&apos;quvchi videoni dars sahifasida ko&apos;radi.
+          </p>
+        )}
       </div>
 
       <div>
@@ -218,7 +251,7 @@ export default function LessonForm({
           <Sparkles className="size-4" aria-hidden /> O&apos;quvchilar uchun avtomatik tayyorlanadi
         </p>
         <ul className="space-y-1 text-sm text-indigo-900/80">
-          {autoFeatures(currentFileName, !!currentSubtitleName).map((f) => (
+          {[...(youtubeId ? ["YouTube video: subtitr matni (bo'lsa) va sodda to'plam (AI)"] : []), ...autoFeatures(currentFileName, !!currentSubtitleName)].map((f) => (
             <li key={f} className="flex gap-2">
               <Check className="mt-0.5 size-4 shrink-0 text-indigo-600" aria-hidden />
               {f}

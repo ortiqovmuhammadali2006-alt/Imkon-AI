@@ -11,6 +11,7 @@ const {
 } = require("../../utils/validation");
 const { getMyLesson, getMyAssignment } = require("./access");
 const { enqueueLesson, removeGeneratedFiles } = require("../../services/accessibility");
+const { normalizeVideoUrl } = require("../../services/youtube");
 
 const router = Router();
 
@@ -40,6 +41,7 @@ function parseLessonFields(body) {
     description: (body.description || "").trim() || null,
     content: (body.content || "").trim() || null,
     category: parseOptionalCategory(body.category),
+    youtube_url: normalizeVideoUrl(body.youtube_url) || null,
   };
 }
 
@@ -71,7 +73,7 @@ function validateWithUpload(req, parse) {
 
 router.get("/lessons", async (req, res) => {
   const { rows } = await pool.query(
-    `SELECT l.id, l.title, l.description, l.category, l.file_url, l.file_name, l.created_at,
+    `SELECT l.id, l.title, l.description, l.category, l.file_url, l.file_name, l.youtube_url, l.created_at,
             l.a11y->>'status' AS a11y_status,
             (SELECT COUNT(*) FROM assignments a WHERE a.lesson_id = l.id)::int AS assignments_count
      FROM lessons l
@@ -106,10 +108,10 @@ router.post("/lessons", lessonUpload, async (req, res) => {
 
   const { rows } = await pool.query(
     `INSERT INTO lessons (teacher_id, title, description, content, category, file_url, file_name,
-                          subtitle_url, subtitle_name, a11y)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, '{"status":"pending"}') RETURNING *`,
+                          subtitle_url, subtitle_name, youtube_url, a11y)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, '{"status":"pending"}') RETURNING *`,
     [req.user.id, fields.title, fields.description, fields.content, fields.category,
-     file.file_url, file.file_name, subtitle.file_url, subtitle.file_name]
+     file.file_url, file.file_name, subtitle.file_url, subtitle.file_name, fields.youtube_url]
   );
   enqueueLesson(rows[0].id); // qulaylik to'plami fonda tayyorlanadi
   res.status(201).json(rows[0]);
@@ -137,10 +139,10 @@ router.put("/lessons/:id", lessonUpload, async (req, res) => {
 
   const { rows } = await pool.query(
     `UPDATE lessons SET title = $1, description = $2, content = $3, category = $4, file_url = $5, file_name = $6,
-                        subtitle_url = $7, subtitle_name = $8, a11y = jsonb_set(a11y, '{status}', '"pending"')
-     WHERE id = $9 RETURNING *`,
+                        subtitle_url = $7, subtitle_name = $8, youtube_url = $9, a11y = jsonb_set(a11y, '{status}', '"pending"')
+     WHERE id = $10 RETURNING *`,
     [fields.title, fields.description, fields.content, fields.category, file.file_url, file.file_name,
-     subtitle.file_url, subtitle.file_name, lesson.id]
+     subtitle.file_url, subtitle.file_name, fields.youtube_url, lesson.id]
   );
   if (lesson.file_url !== file.file_url) removeFile(lesson.file_url);
   if (lesson.subtitle_url !== subtitle.file_url) removeFile(lesson.subtitle_url);

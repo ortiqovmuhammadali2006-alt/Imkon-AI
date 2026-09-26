@@ -51,7 +51,7 @@ export default function ScheduleForm({
       }}
       className="grid gap-4 sm:grid-cols-2"
     >
-      <div className="sm:col-span-2">
+      <div>
         <label htmlFor="sc-teacher" className="label">O&apos;qituvchi *</label>
         <select id="sc-teacher" required className="input" value={form.teacher_id} onChange={set("teacher_id")}>
           <option value="">Tanlang</option>
@@ -63,7 +63,7 @@ export default function ScheduleForm({
           ))}
         </select>
       </div>
-      <div className="sm:col-span-2">
+      <div>
         <label htmlFor="sc-day" className="label">Hafta kuni *</label>
         <select id="sc-day" className="input" value={form.day_of_week} onChange={set("day_of_week")}>
           {WEEKDAYS.map((name, i) => (

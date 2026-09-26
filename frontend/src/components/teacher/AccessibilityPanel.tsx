@@ -8,6 +8,7 @@ const STEP_LABELS: Record<string, string> = {
   subtitle: "Subtitr va nutq matni",
   text: "Fayldagi matn",
   image: "Rasm tavsifi",
+  video: "YouTube video: nomi va subtitr matni",
   simple: "Sodda o'rganish: asosiy fikr, oddiy til, misollar, atamalar, test",
 };
 

@@ -12,6 +12,8 @@ function lessonMaterial(lesson, limit = 14000) {
   const parts = [
     lesson.content && `Dars matni:\n${lesson.content}`,
     a.extracted_text && `Fayldagi matn:\n${a.extracted_text}`,
+    a.video_title && `Video darslik: ${a.video_title}`,
+    a.video_transcript && `Video darslikdagi nutq:\n${a.video_transcript}`,
     a.transcript && `Video/audio darsdagi nutq:\n${a.transcript}`,
     a.image_description && `Rasm tavsifi:\n${a.image_description}`,
   ].filter(Boolean);
