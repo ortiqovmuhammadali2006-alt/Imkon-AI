@@ -332,6 +332,22 @@ async function fetchAudio(text: string): Promise<Blob> {
   return data;
 }
 
+// Tayyor iboralarni oldindan yuklash (ovoz rejimi yoqilganda): buyruqdan keyin javob darhol eshitiladi.
+// Ketma-ket yuklanadi — serverga bir vaqtda ko'p so'rov ketmasin; xato bo'lsa jim o'tkazib yuboriladi
+let prefetching = false;
+export async function prefetchSpeech(texts: string[]) {
+  if (prefetching || serverTtsOk === false || typeof window === "undefined") return;
+  prefetching = true;
+  try {
+    for (const text of texts) {
+      const clean = plain(text);
+      if (clean && clean.length <= 160) await fetchAudio(clean).catch(() => {});
+    }
+  } finally {
+    prefetching = false;
+  }
+}
+
 // stopSpeaking() hozirgi ijroni darhol tugatadi — brauzer "pause" hodisasini chiqarmasa ham ("to'xta" buyrug'i)
 let finishPlayback: (() => void) | null = null;
 

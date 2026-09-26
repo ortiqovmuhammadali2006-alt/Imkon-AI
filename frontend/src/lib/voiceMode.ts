@@ -14,7 +14,8 @@ type Handlers = {
   onHeard?: (text: string) => void; // gapirayotgan paytdagi matn
   onFatal: (message: string, code: string) => void; // tinglashni davom ettirib bo'lmaydi (code: "not-allowed", "audio-capture"...)
   onBargeIn?: (kind: BargeInKind, text: string) => void;
-  isAwake?: () => boolean; // "Imkon" deb chaqirilganmi (buyruq kutilyaptimi) // AI gapirayotganda aytilgan buyruq yoki "Imkon" chaqiruvi
+  isAwake?: () => boolean; // "Imkon" deb chaqirilganmi (buyruq kutilyaptimi)
+  isComplete?: (text: string) => boolean; // gap tugallangan buyruqmi — jimlikni kutmasdan darhol bajarish uchun // AI gapirayotganda aytilgan buyruq yoki "Imkon" chaqiruvi
 };
 
 const UTTERANCE_PAUSE_MS = 1300; // shuncha jimlikdan keyin gap tugagan hisoblanadi
@@ -108,14 +109,22 @@ class VoiceMode {
         return;
       }
       let interim = "";
+      let gotFinal = false;
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const text = e.results[i][0].transcript.trim();
-        if (e.results[i].isFinal) this.pending = `${this.pending} ${text}`.trim();
-        else interim += ` ${text}`;
+        if (e.results[i].isFinal) {
+          this.pending = `${this.pending} ${text}`.trim();
+          gotFinal = true;
+        } else interim += ` ${text}`;
       }
       const shown = `${this.pending} ${interim}`.trim();
       if (shown) this.handlers?.onHeard?.(shown);
       if (this.flushTimer) clearTimeout(this.flushTimer);
+      // Tanish buyruq ("Imkon, darslarni och") — jimlikni kutmasdan darhol; aks holda gap tugashini kutamiz
+      if (gotFinal && !interim.trim() && this.handlers?.isComplete?.(this.pending)) {
+        this.flush();
+        return;
+      }
       this.flushTimer = setTimeout(() => this.flush(), UTTERANCE_PAUSE_MS);
     };
     r.onerror = (e) => {

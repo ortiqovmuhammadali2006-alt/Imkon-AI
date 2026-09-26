@@ -27,6 +27,7 @@ import {
   VOICE_COMMAND_EVENT,
   WAKE_EVENT,
   extractWake,
+  prefetchSpeech,
 } from "@/lib/speech";
 import { askRobot } from "@/lib/assistant";
 import { LOGIN_WELCOME_KEY, SESSION_STARTED_KEY, voiceMode } from "@/lib/voiceMode";
@@ -152,6 +153,19 @@ const COMMANDS: Command[] = [
     },
   },
 ];
+// Oddiy buyruqlar qisqa bo'ladi ("darslarni och", "ikkinchi darsni och"). Uzun gap ("ertangi matematika darsimni och")
+// robotga beriladi — u aniq darsni topadi; aks holda "dars" so'zi har doim darslar ro'yxatini ochib yuborardi
+function findCommand(text: string) {
+  return text.split(" ").filter(Boolean).length <= 4 ? COMMANDS.find((c) => c.match(text)) : undefined;
+}
+
+// Tez-tez aytiladigan javoblar — ovoz rejimi yoqilganda oldindan yuklab qo'yiladi (buyruqdan keyin darhol eshitilsin)
+const READY_PHRASES = [
+  "Ha, eshitaman",
+  "Bu buyruq emas. AI bilan gaplashish uchun AI suhbat sahifasida mikrofon tugmasini bosing.",
+  ...COMMANDS.map((c) => c.reply).filter((r): r is string => Boolean(r)),
+];
+
 // Qaysi sahifa va qaysi rejimdaligini Madina ovozida aytish (server ovozi holati avval aniqlanadi)
 function announce(kind: "login" | "reload" | "unsupported", fullName: string, pathname: string) {
   const page = pageName(pathname) || "Imkon AI";
@@ -261,7 +275,7 @@ export default function VoiceControl() {
         }
       }
 
-      const command = COMMANDS.find((c) => c.match(text));
+      const command = findCommand(text);
       if (!command) {
         // Ro'yxatda yo'q buyruq ("Ertangi matematika darsimni och") — robot AI bilan tushunadi, lekin faqat BUYRUQ sifatida:
         // savol yoki suhbat bo'lsa bajarilmaydi ("AI bilan gaplashish uchun mikrofonni bosing")
@@ -346,6 +360,14 @@ export default function VoiceControl() {
     voiceMode.setHandlers({
       onCommand: (text) => onUtteranceRef.current(text),
       isAwake: () => Date.now() < awakeUntilRef.current,
+      // Darhol bajariladi: yolg'iz "Imkon", tanish buyruq yoki chaqiruvsiz gap (u baribir e'tiborsiz qoldiriladi)
+      isComplete: (text) => {
+        const { woke, rest } = extractWake(text);
+        const awakeNow = Date.now() < awakeUntilRef.current;
+        if (!woke && !awakeNow) return true;
+        if (woke && !rest) return true;
+        return Boolean(findCommand(normalizeSpeech(woke ? rest : text)));
+      },
       // Ekranda faqat chaqirilganda aytilayotgan gap ko'rsatiladi (atrofdagi gap-so'zlar emas)
       onHeard: (text) => {
         if (extractWake(text).woke || Date.now() < awakeUntilRef.current) setLastHeard(text);
@@ -384,6 +406,13 @@ export default function VoiceControl() {
       },
     });
   }, [reportMicError]);
+
+  // Ovoz rejimi yoqilganda tayyor javoblar fonda yuklanadi (serverdagi o'zbekcha ovoz holati aniqlangach)
+  useEffect(() => {
+    if (!mode) return;
+    const id = setTimeout(() => checkServerTts().then(() => prefetchSpeech(READY_PHRASES)), 2500);
+    return () => clearTimeout(id);
+  }, [mode]);
 
   const setMode = useCallback((on: boolean) => {
     if (on && !isRecognitionSupported()) {
