@@ -32,6 +32,19 @@ app.use(
 app.use(cors({ origin: config.clientOrigins }));
 app.use(express.json());
 
+// Backend manzili brauzerda ochilsa — "Cannot GET /" o'rniga tushunarli yo'riqnoma (sayt frontend manzilida)
+app.get("/", (req, res) => {
+  const site = config.clientOrigins[0] || "http://localhost:3000";
+  res.type("html").send(
+    `<!doctype html><meta charset="utf-8"><title>Imkon AI — API</title>` +
+      `<body style="font-family:system-ui,sans-serif;max-width:560px;margin:15vh auto;padding:0 16px;color:#0f172a">` +
+      `<h1 style="color:#2563eb">Imkon AI server ishlayapti ✅</h1>` +
+      `<p>Bu — dastur ishlatadigan API server, sayt emas.</p>` +
+      `<p>Saytni ochish: <a href="${site}" style="color:#2563eb;font-weight:600">${site}</a></p>` +
+      `<p style="color:#64748b">Holat: <a href="/api/health" style="color:#64748b">/api/health</a></p></body>`
+  );
+});
+
 app.get("/api/health", async (req, res) => {
   try {
     await pool.query("SELECT 1");
